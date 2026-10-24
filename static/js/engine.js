@@ -95,7 +95,7 @@ export class GameEngine {
     this.animFrameId = requestAnimationFrame(loop);
   }
 
-  _generateOfflineState(seed, depth) {
+  _generateOfflineState(seed, depth, heroClass = "paladin") {
     const w = 45;
     const h = 30;
     const tiles = Array.from({ length: h }, () => Array(w).fill(TileType.WALL));
@@ -124,6 +124,14 @@ export class GameEngine {
     const stairs = rooms[rooms.length - 1].center;
     tiles[stairs[1]][stairs[0]] = TileType.STAIRS_DOWN;
 
+    const merchants = [];
+    if (depth >= 2 && rooms.length >= 2) {
+      const mx = rooms[1].center[0];
+      const my = rooms[1].center[1];
+      tiles[my][mx] = TileType.MERCHANT;
+      merchants.push([mx, my]);
+    }
+
     this.dungeon = new ClientDungeon({
       width: w,
       height: h,
@@ -133,34 +141,94 @@ export class GameEngine {
       player_spawn: spawn,
       stairs_pos: stairs,
       rooms: rooms,
-      chests: [[rooms[1].center[0], rooms[1].center[1]]],
+      chests: [[rooms[1].center[0] + 1, rooms[1].center[1] + 1]],
       traps: [],
       shrines: [[rooms[2].center[0], rooms[2].center[1]]],
       urns: [[rooms[3].center[0], rooms[3].center[1]]],
       sconces: [[rooms[0].center[0], rooms[0].y - 1]],
+      merchants: merchants,
     });
 
-    this.player = {
-      name: "Valerius",
-      x: spawn[0],
-      y: spawn[1],
-      hp: 60,
-      max_hp: 60,
-      mana: 30,
-      max_mana: 30,
-      level: 1,
-      xp: 0,
-      next_xp: 50,
-      gold: 25,
-      attack: 8,
-      defense: 3,
-      inventory: [
-        { id: "potion_health", name: "Health Elixir", type: "potion", rarity: "common", description: "Restores 35 HP.", stats: { heal_hp: 35 } },
-        { id: "sword_iron", name: "Forged Iron Sword", type: "weapon", rarity: "common", description: "+4 ATK.", stats: { attack: 4 } },
-      ],
-      equipped: { weapon: null, armor: null, ring: null },
-      status_effects: {},
-    };
+    if (heroClass === "rogue") {
+      this.player = {
+        name: "Lyra",
+        hero_class: "rogue",
+        class_title: "Shadow Rogue",
+        crit_chance: 0.30,
+        x: spawn[0],
+        y: spawn[1],
+        hp: 48,
+        max_hp: 48,
+        mana: 25,
+        max_mana: 25,
+        level: 1,
+        xp: 0,
+        next_xp: 50,
+        gold: 35,
+        attack: 9,
+        defense: 2,
+        inventory: [
+          { id: "potion_health", name: "Health Elixir", type: "potion", rarity: "common", description: "Restores 35 HP.", stats: { heal_hp: 35 } },
+          { id: "dagger_poison", name: "Serpent's Fang Dagger", type: "weapon", rarity: "rare", description: "+5 ATK, poisons on strike.", stats: { attack: 5, poison_chance: 40 } },
+          { id: "armor_leather", name: "Hardened Leather Armor", type: "armor", rarity: "common", description: "+2 DEF.", stats: { defense: 2 } },
+        ],
+        equipped: { weapon: null, armor: null, ring: null },
+        status_effects: {},
+      };
+    } else if (heroClass === "mage") {
+      this.player = {
+        name: "Ignis",
+        hero_class: "mage",
+        class_title: "Arcane Mage",
+        crit_chance: 0.10,
+        x: spawn[0],
+        y: spawn[1],
+        hp: 42,
+        max_hp: 42,
+        mana: 55,
+        max_mana: 55,
+        level: 1,
+        xp: 0,
+        next_xp: 50,
+        gold: 25,
+        attack: 6,
+        defense: 1,
+        inventory: [
+          { id: "potion_mana", name: "Aether Potion", type: "potion", rarity: "common", description: "Restores 25 MP.", stats: { restore_mana: 25 } },
+          { id: "staff_arcane", name: "Staff of Arcane Focus", type: "weapon", rarity: "common", description: "+5 ATK, +15 Max Mana.", stats: { attack: 5, max_mana: 15 } },
+          { id: "robe_mystic", name: "Runed Silk Robe", type: "armor", rarity: "common", description: "+2 DEF, +10 Max Mana.", stats: { defense: 2, max_mana: 10 } },
+          { id: "scroll_fireball", name: "Scroll of Inferno", type: "scroll", rarity: "common", description: "Deals 30 fire damage.", stats: { spell_damage: 30 } },
+        ],
+        equipped: { weapon: null, armor: null, ring: null },
+        status_effects: {},
+      };
+    } else {
+      this.player = {
+        name: "Valerius",
+        hero_class: "paladin",
+        class_title: "Crusader Paladin",
+        crit_chance: 0.15,
+        x: spawn[0],
+        y: spawn[1],
+        hp: 65,
+        max_hp: 65,
+        mana: 30,
+        max_mana: 30,
+        level: 1,
+        xp: 0,
+        next_xp: 50,
+        gold: 25,
+        attack: 8,
+        defense: 4,
+        inventory: [
+          { id: "potion_health", name: "Health Elixir", type: "potion", rarity: "common", description: "Restores 35 HP.", stats: { heal_hp: 35 } },
+          { id: "sword_iron", name: "Forged Iron Sword", type: "weapon", rarity: "common", description: "+4 ATK.", stats: { attack: 4 } },
+          { id: "armor_leather", name: "Hardened Leather Armor", type: "armor", rarity: "common", description: "+2 DEF.", stats: { defense: 2 } },
+        ],
+        equipped: { weapon: null, armor: null, ring: null },
+        status_effects: {},
+      };
+    }
 
     if (depth >= 3) {
       this.monsters = [
@@ -370,26 +438,29 @@ export class GameEngine {
     this.ui.logMessage(`You descended into Depth B${this.depth}F! The catacombs grow colder...`, "system");
 
     try {
-      const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${this.depth}`;
+      const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${this.depth}&class=${this.heroClass}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load map from server");
       const data = await res.json();
 
       this.dungeon = new ClientDungeon(data.dungeon);
       this.monsters = data.monsters;
+      this.merchantStock = data.merchant_stock || this.merchantStock;
       this.player.x = data.dungeon.player_spawn[0];
       this.player.y = data.dungeon.player_spawn[1];
     } catch (err) {
       console.warn("Server API fallback to offline procedural generator on descent:", err);
       const prevPlayer = this.player;
-      this._generateOfflineState(Date.now() % 1000000, this.depth);
+      this._generateOfflineState(Date.now() % 1000000, this.depth, this.heroClass);
       prevPlayer.x = this.dungeon.playerSpawn[0];
       prevPlayer.y = this.dungeon.playerSpawn[1];
       this.player = prevPlayer;
     }
 
+    sounds.setBiome(this.dungeon.biome);
     this.dungeon.updateFOV(this.player.x, this.player.y, 7);
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
   }
 
   stepPlayer(dx, dy) {
@@ -526,7 +597,8 @@ export class GameEngine {
     const atk = this.player.attack;
     const def = monster.defense;
     const baseDmg = Math.max(1, atk - def);
-    const isCrit = Math.random() < 0.15;
+    const critChance = this.player.crit_chance || (this.heroClass === "rogue" ? 0.30 : (this.heroClass === "mage" ? 0.10 : 0.15));
+    const isCrit = Math.random() < critChance;
     const dmg = Math.floor(baseDmg * (isCrit ? 1.5 : (0.85 + Math.random() * 0.3)));
 
     monster.hp = Math.max(0, monster.hp - dmg);
@@ -916,7 +988,7 @@ export class GameEngine {
     const cleansed = [];
     if (this.player.status_effects.poison) {
       delete this.player.status_effects.poison;
-      cleansed.append ? cleansed.push("Poison") : cleansed.push("Poison");
+      cleansed.push("Poison");
     }
     if (this.player.status_effects.burn) {
       delete this.player.status_effects.burn;
@@ -1064,17 +1136,20 @@ export class GameEngine {
     let baseDef = 3;
     let baseHp = 60;
     let baseMp = 30;
+    let critChance = 0.15;
 
     if (cls === "rogue") {
       baseAtk = 9;
       baseDef = 2;
       baseHp = 48;
       baseMp = 25;
+      critChance = 0.30;
     } else if (cls === "mage") {
       baseAtk = 6;
       baseDef = 1;
       baseHp = 42;
       baseMp = 55;
+      critChance = 0.10;
     }
 
     let atk = baseAtk + (this.player.level - 1) * 2 + (this.player.perm_attack || 0);
@@ -1088,6 +1163,7 @@ export class GameEngine {
         if (slot.stats.defense) def += slot.stats.defense;
         if (slot.stats.max_hp) maxHpBonus += slot.stats.max_hp;
         if (slot.stats.max_mana) maxMpBonus += slot.stats.max_mana;
+        if (slot.stats.crit_bonus) critChance += slot.stats.crit_bonus / 100;
       }
     }
 
@@ -1100,6 +1176,7 @@ export class GameEngine {
 
     this.player.attack = atk;
     this.player.defense = def;
+    this.player.crit_chance = critChance;
     this.player.max_hp = baseHp + (this.player.level - 1) * 12 + maxHpBonus;
     this.player.max_mana = baseMp + (this.player.level - 1) * 6 + maxMpBonus;
   }
@@ -1253,6 +1330,7 @@ export class GameEngine {
 
   _isOccupied(x, y) {
     if (this.player.x === x && this.player.y === y) return true;
+    if (this.dungeon?.merchants?.some((m) => m.x === x && m.y === y)) return true;
     return this.monsters.some((m) => m.x === x && m.y === y && m.hp > 0);
   }
 

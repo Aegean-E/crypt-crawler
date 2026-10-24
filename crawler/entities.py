@@ -461,6 +461,8 @@ class Player(Entity):
         self.xp = 0
         self.next_xp = 50
         self.gold = 35 if class_key == "rogue" else 25
+        self.perm_attack = 0
+        self.perm_defense = 0
         self.max_slots = 12
         self.inventory: List[Item] = []
         self.equipped: Dict[str, Optional[Item]] = {
@@ -585,9 +587,11 @@ class Player(Entity):
                 msg_parts.append(f"restored {mana_amount} Mana")
             if perm_atk > 0:
                 self.attack += perm_atk
+                self.perm_attack += perm_atk
                 msg_parts.append(f"permanently gained +{perm_atk} Attack")
             if perm_def > 0:
                 self.defense += perm_def
+                self.perm_defense += perm_def
                 msg_parts.append(f"permanently gained +{perm_def} Defense")
             # If rejuvenation, cleanse negative statuses
             if item.item_id == "potion_rejuvenation":
@@ -617,6 +621,8 @@ class Player(Entity):
             "gold": self.gold,
             "attack": self.effective_attack,
             "defense": self.effective_defense,
+            "perm_attack": self.perm_attack,
+            "perm_defense": self.perm_defense,
             "inventory": [item.to_dict() for item in self.inventory],
             "equipped": {
                 k: (v.to_dict() if v is not None else None)

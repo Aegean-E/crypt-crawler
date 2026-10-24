@@ -74,6 +74,12 @@ class TestServer(unittest.TestCase):
             self.assertIn("merchant_stock", data)
             self.assertGreater(len(data["merchant_stock"]), 0)
 
+            # Ensure merchants have safe sanctuary (no overlapping monsters)
+            merchant_coords = set(tuple(m) for m in data["dungeon"]["merchants"])
+            monster_coords = set((m["x"], m["y"]) for m in data["monsters"])
+            self.assertGreater(len(merchant_coords), 0)
+            self.assertTrue(merchant_coords.isdisjoint(monster_coords))
+
 
 if __name__ == "__main__":
     unittest.main()

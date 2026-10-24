@@ -135,6 +135,12 @@ class TestCombat(unittest.TestCase):
         self.assertTrue(used_def)
         self.assertEqual(self.player.defense, init_def + 2)
 
+        self.assertEqual(self.player.perm_attack, 2)
+        self.assertEqual(self.player.perm_defense, 2)
+        p_dict = self.player.to_dict()
+        self.assertEqual(p_dict["perm_attack"], 2)
+        self.assertEqual(p_dict["perm_defense"], 2)
+
     def test_shadow_strike_and_smoke_bomb(self):
         rogue = Player(name="Lyra", hero_class="rogue")
         res = shadow_strike(rogue, self.skeleton, self.rng)

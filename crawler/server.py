@@ -90,10 +90,18 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             for room in dungeon.rooms[1:]:
                 if depth >= 3 and room == farthest_room:
                     continue
+                # Keep the Merchant's sanctuary room free of aggressive monsters
+                if any(room.center == m for m in dungeon.merchants):
+                    continue
                 m_count = dungeon.rng.randint(1, 2)
                 for _ in range(m_count):
                     mx = dungeon.rng.randint(room.x1 + 1, room.x2 - 2)
                     my = dungeon.rng.randint(room.y1 + 1, room.y2 - 2)
+                    if (
+                        (mx, my) in dungeon.merchants
+                        or (mx, my) in (dungeon.player_spawn, dungeon.stairs_pos)
+                    ):
+                        continue
                     m_type = dungeon.rng.choice(monster_types)
                     monsters.append(spawn_monster(m_type, mx, my, depth=depth))
 

@@ -303,9 +303,10 @@ class DungeonGenerator:
                 if rng.random() < 0.6:
                     cx = rng.randint(room.x1 + 1, room.x2 - 2)
                     cy = rng.randint(room.y1 + 1, room.y2 - 2)
-                    if dungeon.tiles[cy][cx] == TileType.FLOOR and (cx, cy) not in (
-                        dungeon.player_spawn,
-                        dungeon.stairs_pos,
+                    if (
+                        dungeon.tiles[cy][cx] == TileType.FLOOR
+                        and (cx, cy) not in (dungeon.player_spawn, dungeon.stairs_pos)
+                        and (cx, cy) not in dungeon.merchants
                     ):
                         dungeon.tiles[cy][cx] = TileType.CHEST
                         dungeon.chests.append((cx, cy))
@@ -314,9 +315,10 @@ class DungeonGenerator:
                 if rng.random() < 0.4:
                     tx = rng.randint(room.x1 + 1, room.x2 - 2)
                     ty = rng.randint(room.y1 + 1, room.y2 - 2)
-                    if dungeon.tiles[ty][tx] == TileType.FLOOR and (tx, ty) not in (
-                        dungeon.player_spawn,
-                        dungeon.stairs_pos,
+                    if (
+                        dungeon.tiles[ty][tx] == TileType.FLOOR
+                        and (tx, ty) not in (dungeon.player_spawn, dungeon.stairs_pos)
+                        and (tx, ty) not in dungeon.merchants
                     ):
                         dungeon.tiles[ty][tx] = TileType.TRAP
                         dungeon.traps.append((tx, ty))
@@ -325,9 +327,10 @@ class DungeonGenerator:
                 if rng.random() < 0.7:
                     ux = rng.randint(room.x1 + 1, room.x2 - 2)
                     uy = rng.randint(room.y1 + 1, room.y2 - 2)
-                    if dungeon.tiles[uy][ux] == TileType.FLOOR and (ux, uy) not in (
-                        dungeon.player_spawn,
-                        dungeon.stairs_pos,
+                    if (
+                        dungeon.tiles[uy][ux] == TileType.FLOOR
+                        and (ux, uy) not in (dungeon.player_spawn, dungeon.stairs_pos)
+                        and (ux, uy) not in dungeon.merchants
                     ):
                         dungeon.tiles[uy][ux] = TileType.URN
                         dungeon.urns.append((ux, uy))

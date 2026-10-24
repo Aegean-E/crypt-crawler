@@ -897,8 +897,19 @@ export class DungeonRenderer {
       for (let x = 0; x < dungeon.width; x++) {
         if (!dungeon.isExplored(x, y)) continue;
         const tile = dungeon.tiles[y][x];
-        if (tile === TileType.FLOOR || tile === TileType.STAIRS_DOWN || tile === TileType.CHEST) {
-          ctx.fillStyle = tile === TileType.STAIRS_DOWN ? "#ecc94b" : "#2d3748";
+        if (
+          tile === TileType.FLOOR ||
+          tile === TileType.STAIRS_DOWN ||
+          tile === TileType.CHEST ||
+          tile === TileType.MERCHANT ||
+          tile === TileType.SHRINE ||
+          tile === TileType.URN
+        ) {
+          if (tile === TileType.STAIRS_DOWN) ctx.fillStyle = "#ecc94b";
+          else if (tile === TileType.MERCHANT) ctx.fillStyle = "#b794f4";
+          else if (tile === TileType.SHRINE) ctx.fillStyle = "#38b2ac";
+          else if (tile === TileType.CHEST) ctx.fillStyle = "#ed8936";
+          else ctx.fillStyle = "#2d3748";
           ctx.fillRect(mx + x * scaleX, my + y * scaleY, Math.max(1, scaleX), Math.max(1, scaleY));
         }
       }

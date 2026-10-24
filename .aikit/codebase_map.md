@@ -10,7 +10,7 @@
 - **Total Classes**: `14`
 - **Total Top-Level Functions**: `16`
 - **Total Class Methods**: `75`
-- **Total Source Lines**: `2309`
+- **Total Source Lines**: `2338`
 
 ---
 
@@ -47,7 +47,7 @@
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `370` lines (`12585` bytes)
+**Size**: `373` lines (`12774` bytes)
 
 **Classes:**
 - `class TileType`
@@ -79,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `626` lines (`20145` bytes)
+**Size**: `632` lines (`20387` bytes)
 
 **Classes:**
 - `class Item`
@@ -117,7 +117,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `137` lines (`5452` bytes)
+**Size**: `145` lines (`5848` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -153,7 +153,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `174` lines (`6549` bytes)
+**Size**: `180` lines (`6799` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -205,7 +205,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `79` lines (`2928` bytes)
+**Size**: `85` lines (`3293` bytes)
 
 **Classes:**
 - `class TestServer`

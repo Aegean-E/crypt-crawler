@@ -108,11 +108,12 @@ class SoundSystem {
     };
     this.chimeTimer = setTimeout(triggerChime, 1200);
 
-    // 3. Low Catacomb Heartbeat Pulse (every ~3.8 seconds)
+    // 3. Low Catacomb Heartbeat Pulse (dynamically paced by biome)
     const triggerPulse = () => {
       if (!this.musicPlaying || this.musicMuted || !this.ctx) return;
       this._playDungeonPulse();
-      this.pulseTimer = setTimeout(triggerPulse, 3800);
+      const interval = this.currentBiome === "inferno" ? 2200 : (this.currentBiome === "cavern" ? 3200 : 3800);
+      this.pulseTimer = setTimeout(triggerPulse, interval);
     };
     this.pulseTimer = setTimeout(triggerPulse, 2000);
   }
@@ -176,11 +177,15 @@ class SoundSystem {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(52, now);
-    osc.frequency.exponentialRampToValueAtTime(32, now + 0.35);
+    const isInferno = this.currentBiome === "inferno";
+    const startFreq = isInferno ? 65 : 52;
+    const endFreq = isInferno ? 38 : 32;
 
-    gain.gain.setValueAtTime(0.035, now);
+    osc.type = isInferno ? "triangle" : "sine";
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.35);
+
+    gain.gain.setValueAtTime(isInferno ? 0.045 : 0.035, now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
 
     osc.connect(gain);
