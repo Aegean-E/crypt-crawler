@@ -12,11 +12,13 @@ Tactical turn-based web dungeon crawler with procedural levels, inventory, comba
   python -m unittest discover -s tests
   ```
 
-### 🎮 Running the Game
-```bash
-python run.py
-```
-Then navigate to `http://localhost:8080` in your web browser.
+### 🎮 One-Click Launch
+- **Windows**: Double-click `PLAY.bat` (automatically detects Python, starts server, and launches default browser)
+- **Linux/macOS**: Run `./play.sh`
+- **Manual Command**:
+  ```bash
+  python run.py --open
+  ```
 
 ### 📸 Headless Browser UI Review & Inspection
 ```bash
@@ -37,6 +39,8 @@ python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario dungeon 
 crypt-crawler/
 ├── .gitignore                <- transient state & screenshots excluded
 ├── LICENSE                   <- GNU AGPL-3.0
+├── PLAY.bat                  <- Windows one-click launcher
+├── play.sh                   <- POSIX one-click launcher
 ├── README.md                 <- documentation and quickstart
 ├── run.py                    <- lightweight HTTP server entrypoint
 ├── crawler/                  <- Python engine package

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
 - **Total Classes**: `14`
-- **Total Top-Level Functions**: `9`
-- **Total Class Methods**: `57`
-- **Total Source Lines**: `1420`
+- **Total Top-Level Functions**: `10`
+- **Total Class Methods**: `60`
+- **Total Source Lines**: `1474`
 
 ---
 
@@ -41,7 +41,7 @@
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `298` lines (`9775` bytes)
+**Size**: `301` lines (`9872` bytes)
 
 **Classes:**
 - `class TileType`
@@ -106,7 +106,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `99` lines (`3867` bytes)
+**Size**: `107` lines (`4115` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -124,9 +124,10 @@
 ### [`run.py`](run.py)
 > *Run script for Crypt-Crawler web game server.*
 
-**Size**: `38` lines (`1144` bytes)
+**Size**: `60` lines (`2022` bytes)
 
 **Functions:**
+- `def find_available_server(host, start_port, max_attempts)`
 - `def main()`
 
 ---
@@ -184,7 +185,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `48` lines (`1582` bytes)
+**Size**: `69` lines (`2407` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -192,6 +193,9 @@
   - Method `.tearDownClass()`
   - Method `.test_api_status()`
   - Method `.test_api_new_game()`
+  - Method `.test_api_new_game_invalid_params_fallback()`
+  - Method `.test_favicon_no_content()`
+  - Method `.test_find_available_server()`
 
 ---
 

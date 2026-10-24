@@ -253,7 +253,10 @@ class DungeonGenerator:
                 if rng.random() < 0.6:
                     cx = rng.randint(room.x1 + 1, room.x2 - 2)
                     cy = rng.randint(room.y1 + 1, room.y2 - 2)
-                    if dungeon.tiles[cy][cx] == TileType.FLOOR and (cx, cy) != dungeon.player_spawn:
+                    if dungeon.tiles[cy][cx] == TileType.FLOOR and (cx, cy) not in (
+                        dungeon.player_spawn,
+                        dungeon.stairs_pos,
+                    ):
                         dungeon.tiles[cy][cx] = TileType.CHEST
                         dungeon.chests.append((cx, cy))
                 if rng.random() < 0.4:

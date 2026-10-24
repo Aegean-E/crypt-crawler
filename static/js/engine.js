@@ -273,6 +273,34 @@ export class GameEngine {
     });
   }
 
+  async descendFloor() {
+    this.depth += 1;
+    this.ui.logMessage(`You descended into Depth B${this.depth}F! The air grows colder...`, "system");
+
+    try {
+      const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${this.depth}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to load map from server");
+      const data = await res.json();
+
+      this.dungeon = new ClientDungeon(data.dungeon);
+      this.monsters = data.monsters;
+      // Preserve player progression and relocate to the new depth's spawn point
+      this.player.x = data.dungeon.player_spawn[0];
+      this.player.y = data.dungeon.player_spawn[1];
+    } catch (err) {
+      console.warn("Server API fallback to offline procedural generator on descent:", err);
+      const prevPlayer = this.player;
+      this._generateOfflineState(Date.now() % 1000000, this.depth);
+      prevPlayer.x = this.dungeon.playerSpawn[0];
+      prevPlayer.y = this.dungeon.playerSpawn[1];
+      this.player = prevPlayer;
+    }
+
+    this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+  }
+
   stepPlayer(dx, dy) {
     if (this.gameOver || this.victory) return;
 
@@ -343,9 +371,7 @@ export class GameEngine {
         this.handleVictory();
         return;
       } else {
-        this.depth += 1;
-        this.ui.logMessage(`You descended into Depth B${this.depth}F! The air grows colder...`, "system");
-        this.start(Date.now() % 1000000, this.depth);
+        this.descendFloor();
         return;
       }
     }

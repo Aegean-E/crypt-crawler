@@ -49,8 +49,16 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             )
         elif parsed.path == "/api/new-game":
             params = parse_qs(parsed.query)
-            seed = int(params.get("seed", ["0"])[0]) or None
-            depth = int(params.get("depth", ["1"])[0])
+            try:
+                raw_seed = int(params.get("seed", ["0"])[0])
+                seed = raw_seed if raw_seed != 0 else None
+            except (ValueError, TypeError):
+                seed = None
+
+            try:
+                depth = max(1, int(params.get("depth", ["1"])[0]))
+            except (ValueError, TypeError):
+                depth = 1
 
             gen = DungeonGenerator(width=45, height=30, depth=depth)
             dungeon = gen.generate(seed=seed)
