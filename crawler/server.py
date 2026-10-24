@@ -1,0 +1,99 @@
+"""Lightweight HTTP server and REST dispatch for Crypt-Crawler."""
+
+from __future__ import annotations
+
+import json
+import os
+import threading
+from http import HTTPStatus
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
+from urllib.parse import parse_qs, urlparse
+
+from crawler.dungeon import DungeonGenerator
+from crawler.entities import Player, spawn_monster
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATIC_DIR = PROJECT_ROOT / "static"
+
+
+class CryptCrawlerHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, directory=str(STATIC_DIR), **kwargs)
+
+    def log_message(self, format: str, *args: Any) -> None:
+        # Keep test runs clean; suppress default access logs
+        if os.environ.get("CRAWLER_VERBOSE"):
+            super().log_message(format, *args)
+
+    def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path == "/favicon.ico":
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self.end_headers()
+        elif parsed.path.startswith("/api/"):
+            self._handle_api_get(parsed)
+        else:
+            # Fall back to static files
+            super().do_GET()
+
+    def _handle_api_get(self, parsed: Any) -> None:
+        if parsed.path == "/api/status":
+            self._send_json(
+                {
+                    "status": "ok",
+                    "project": "crypt-crawler",
+                    "version": "1.0.0",
+                }
+            )
+        elif parsed.path == "/api/new-game":
+            params = parse_qs(parsed.query)
+            seed = int(params.get("seed", ["0"])[0]) or None
+            depth = int(params.get("depth", ["1"])[0])
+
+            gen = DungeonGenerator(width=45, height=30, depth=depth)
+            dungeon = gen.generate(seed=seed)
+            player = Player(name="Champion", x=dungeon.player_spawn[0], y=dungeon.player_spawn[1])
+
+            # Spawn 1-2 monsters per room outside spawn room
+            monsters = []
+            monster_types = ["skeleton", "goblin", "bat"]
+            if depth >= 2:
+                monster_types.append("necromancer")
+
+            for room in dungeon.rooms[1:]:
+                m_count = dungeon.rng.randint(1, 2)
+                for _ in range(m_count):
+                    mx = dungeon.rng.randint(room.x1 + 1, room.x2 - 2)
+                    my = dungeon.rng.randint(room.y1 + 1, room.y2 - 2)
+                    m_type = dungeon.rng.choice(monster_types)
+                    monsters.append(spawn_monster(m_type, mx, my, depth=depth))
+
+            self._send_json(
+                {
+                    "dungeon": dungeon.to_dict(),
+                    "player": player.to_dict(),
+                    "monsters": [m.to_dict() for m in monsters],
+                }
+            )
+        else:
+            self.send_error(HTTPStatus.NOT_FOUND, f"API endpoint not found: {parsed.path}")
+
+    def _send_json(self, payload: Dict[str, Any], status: HTTPStatus = HTTPStatus.OK) -> None:
+        body = json.dumps(payload, indent=2).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def start_background_server(port: int = 0, host: str = "127.0.0.1") -> Tuple[ThreadingHTTPServer, int]:
+    """Start the HTTP server on a daemon thread, returning the server and the bound port."""
+    server = ThreadingHTTPServer((host, port), CryptCrawlerHandler)
+    bound_port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, bound_port

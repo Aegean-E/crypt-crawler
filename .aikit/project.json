@@ -1,9 +1,13 @@
 {
   "schema": 1,
   "name": "crypt-crawler",
-  "test_command": null,
+  "test_command": "python -m unittest discover -s tests",
   "topics": [
-    "aikit"
+    "aikit",
+    "game",
+    "roguelike",
+    "dungeon-crawler",
+    "playwright"
   ],
   "gates": {},
   "ui_required": false,

@@ -1,0 +1,68 @@
+"""Unit tests for procedural dungeon generation and pathfinding."""
+
+import unittest
+from crawler.dungeon import Dungeon, DungeonGenerator, TileType
+
+
+class TestDungeon(unittest.TestCase):
+    def test_generator_bounds_and_rooms(self):
+        gen = DungeonGenerator(width=40, height=30, min_room_size=4, max_room_size=8, max_rooms=10)
+        dungeon = gen.generate(seed=42)
+
+        self.assertEqual(dungeon.width, 40)
+        self.assertEqual(dungeon.height, 30)
+        self.assertGreater(len(dungeon.rooms), 0)
+
+        # Spawn must be walkable
+        sx, sy = dungeon.player_spawn
+        self.assertTrue(dungeon.is_walkable(sx, sy))
+        self.assertEqual(dungeon.tiles[sy][sx], TileType.FLOOR)
+
+        # Stairs must be walkable
+        st_x, st_y = dungeon.stairs_pos
+        self.assertTrue(dungeon.is_walkable(st_x, st_y))
+        self.assertEqual(dungeon.tiles[st_y][st_x], TileType.STAIRS_DOWN)
+
+    def test_all_rooms_connected(self):
+        """Verify that every room center can be reached from player spawn."""
+        gen = DungeonGenerator(width=50, height=35, max_rooms=12)
+        dungeon = gen.generate(seed=12345)
+
+        start = dungeon.player_spawn
+        for i, room in enumerate(dungeon.rooms):
+            path = dungeon.find_path(start, room.center)
+            self.assertIsNotNone(
+                path,
+                f"Room {i} at {room.center} is not connected to player spawn {start}",
+            )
+
+        # Stairs must also be reachable
+        stairs_path = dungeon.find_path(start, dungeon.stairs_pos)
+        self.assertIsNotNone(stairs_path, "Stairs down are not reachable from spawn")
+
+    def test_seed_reproducibility(self):
+        gen = DungeonGenerator(width=35, height=25, max_rooms=8)
+        d1 = gen.generate(seed=999)
+        d2 = gen.generate(seed=999)
+
+        self.assertEqual(d1.tiles, d2.tiles)
+        self.assertEqual(d1.player_spawn, d2.player_spawn)
+        self.assertEqual(d1.stairs_pos, d2.stairs_pos)
+
+    def test_fov_computation(self):
+        dungeon = Dungeon(width=20, height=20, seed=1)
+        # Clear out a 5x5 room
+        for y in range(5, 10):
+            for x in range(5, 10):
+                dungeon.tiles[y][x] = TileType.FLOOR
+
+        fov = dungeon.compute_fov(px=7, py=7, radius=5)
+        self.assertIn((7, 7), fov)
+        self.assertIn((6, 6), fov)
+        self.assertIn((8, 8), fov)
+        # Wall tile just outside room should be in FOV (visible boundary)
+        self.assertIn((5, 4), fov)
+
+
+if __name__ == "__main__":
+    unittest.main()

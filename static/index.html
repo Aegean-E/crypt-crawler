@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Crypt-Crawler: Tactical Turn-Based Dungeon</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-dark">
+  <div id="game-container" class="game-shell">
+    <!-- Top Navigation Bar -->
+    <header class="game-header">
+      <div class="header-branding">
+        <h1 class="game-title">⚔️ CRYPT-CRAWLER</h1>
+        <span class="depth-badge" id="depthBadge">Depth: B1F</span>
+      </div>
+      <div class="header-metrics">
+        <span class="metric-pill" id="turnCounterPill">Turn: <strong id="turnCount">1</strong></span>
+        <span class="metric-pill" id="goldCounterPill">🪙 <strong id="goldCount">20</strong> Gold</span>
+      </div>
+      <div class="header-actions">
+        <button id="btnAudioToggle" class="btn btn-icon" title="Toggle Sound">🔊</button>
+        <button id="btnHelp" class="btn btn-secondary" title="How to Play">❓ Guide</button>
+        <button id="btnRestart" class="btn btn-danger" title="Restart with New Seed">🔄 New Game</button>
+      </div>
+    </header>
+
+    <!-- Main Game Workspace Grid -->
+    <main class="game-main">
+      <!-- Left Panel: Character Stats & Equipment -->
+      <aside class="panel panel-character" id="characterPanel">
+        <h2 class="panel-title">Hero Sheet</h2>
+        <div class="hero-card">
+          <div class="hero-avatar-box">
+            <div class="hero-avatar" id="heroAvatar">🛡️</div>
+            <div class="hero-identity">
+              <strong id="heroName">Valerius</strong>
+              <span class="hero-class" id="heroClass">Crypt Paladin</span>
+            </div>
+          </div>
+
+          <!-- Gauges -->
+          <div class="gauge-group">
+            <div class="gauge-label-row">
+              <span class="gauge-name">Health</span>
+              <span class="gauge-val" id="hpText">60 / 60</span>
+            </div>
+            <div class="gauge-bar-track">
+              <div class="gauge-bar-fill fill-hp" id="hpBar" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="gauge-group">
+            <div class="gauge-label-row">
+              <span class="gauge-name">Mana</span>
+              <span class="gauge-val" id="manaText">30 / 30</span>
+            </div>
+            <div class="gauge-bar-track">
+              <div class="gauge-bar-fill fill-mana" id="manaBar" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="gauge-group">
+            <div class="gauge-label-row">
+              <span class="gauge-name">Experience (Lvl <span id="levelVal">1</span>)</span>
+              <span class="gauge-val" id="xpText">0 / 50</span>
+            </div>
+            <div class="gauge-bar-track">
+              <div class="gauge-bar-fill fill-xp" id="xpBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Core Attributes -->
+          <div class="stats-grid">
+            <div class="stat-cell" id="statAttackCell">
+              <span class="stat-icon">⚔️</span>
+              <span class="stat-lbl">ATK</span>
+              <strong class="stat-num" id="statAttack">8</strong>
+            </div>
+            <div class="stat-cell" id="statDefenseCell">
+              <span class="stat-icon">🛡️</span>
+              <span class="stat-lbl">DEF</span>
+              <strong class="stat-num" id="statDefense">3</strong>
+            </div>
+            <div class="stat-cell" id="statKillsCell">
+              <span class="stat-icon">💀</span>
+              <span class="stat-lbl">Kills</span>
+              <strong class="stat-num" id="statKills">0</strong>
+            </div>
+          </div>
+
+          <!-- Equipment Paperdoll Slots -->
+          <h3 class="subpanel-title">Equipped Relics</h3>
+          <div class="equipment-slots">
+            <div class="equip-slot" id="slotWeapon" data-slot="weapon" title="Weapon Slot (Click to unequip)">
+              <span class="slot-type-label">Weapon</span>
+              <div class="slot-content" id="slotWeaponContent">⚔️ Iron Sword</div>
+            </div>
+            <div class="equip-slot" id="slotArmor" data-slot="armor" title="Armor Slot (Click to unequip)">
+              <span class="slot-type-label">Armor</span>
+              <div class="slot-content" id="slotArmorContent">Empty</div>
+            </div>
+            <div class="equip-slot" id="slotRing" data-slot="ring" title="Ring Slot (Click to unequip)">
+              <span class="slot-type-label">Relic Ring</span>
+              <div class="slot-content" id="slotRingContent">Empty</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Panel: Canvas Viewport & Action Deck -->
+      <section class="panel panel-viewport" id="viewportPanel">
+        <div class="canvas-wrapper">
+          <canvas id="gameCanvas" width="720" height="520"></canvas>
+          <div id="targetCrosshair" class="target-crosshair hidden"></div>
+          <div id="combatBanner" class="combat-banner hidden"></div>
+        </div>
+
+        <!-- Tactical Command Deck -->
+        <div class="tactical-deck" id="tacticalDeck">
+          <button class="deck-btn" id="btnActionMelee" title="Melee Attack adjacent enemy (Hotkey: 1 or Bump)">
+            <span class="deck-icon">🗡️</span>
+            <span class="deck-label">Strike</span>
+            <span class="deck-hotkey">[1]</span>
+          </button>
+          <button class="deck-btn" id="btnActionFireball" title="Cast Fireball spell (10 MP) (Hotkey: 2)">
+            <span class="deck-icon">🔥</span>
+            <span class="deck-label">Fireball</span>
+            <span class="deck-hotkey">[2]</span>
+          </button>
+          <button class="deck-btn" id="btnActionHeal" title="Cast Divine Healing (8 MP) (Hotkey: 3)">
+            <span class="deck-icon">✨</span>
+            <span class="deck-label">Heal</span>
+            <span class="deck-hotkey">[3]</span>
+          </button>
+          <button class="deck-btn" id="btnActionPotion" title="Drink Health Potion (Hotkey: 4)">
+            <span class="deck-icon">🧪</span>
+            <span class="deck-label">Potion</span>
+            <span class="deck-hotkey">[4]</span>
+          </button>
+          <button class="deck-btn" id="btnActionWait" title="Wait / Pass Turn (Hotkey: Space / 5)">
+            <span class="deck-icon">⏳</span>
+            <span class="deck-label">Wait</span>
+            <span class="deck-hotkey">[Space]</span>
+          </button>
+        </div>
+
+        <!-- Mobile Touch Virtual D-Pad (visible on small screens) -->
+        <div class="virtual-dpad" id="virtualDpad">
+          <button class="dpad-btn dpad-up" id="btnDpadUp">▲</button>
+          <div class="dpad-middle-row">
+            <button class="dpad-btn dpad-left" id="btnDpadLeft">◀</button>
+            <button class="dpad-btn dpad-center" id="btnDpadCenter">●</button>
+            <button class="dpad-btn dpad-right" id="btnDpadRight">▶</button>
+          </div>
+          <button class="dpad-btn dpad-down" id="btnDpadDown">▼</button>
+        </div>
+      </section>
+
+      <!-- Right Panel: Inventory & Chronicle Log -->
+      <aside class="panel panel-inventory" id="inventoryPanel">
+        <h2 class="panel-title">Backpack & Items</h2>
+        <div class="inventory-grid" id="inventoryGrid">
+          <!-- 12 Item slots rendered dynamically -->
+        </div>
+
+        <!-- Item Hover / Selection Info Card -->
+        <div class="item-card" id="itemInfoCard">
+          <h4 id="itemCardName">No Item Selected</h4>
+          <p id="itemCardDesc" class="item-card-desc">Click an item in your backpack to view details, use, or equip.</p>
+          <div class="item-card-actions">
+            <button id="btnItemUse" class="btn btn-primary btn-sm hidden">Use / Equip</button>
+            <button id="btnItemDrop" class="btn btn-secondary btn-sm hidden">Drop</button>
+          </div>
+        </div>
+
+        <h2 class="panel-title log-title">Dungeon Chronicle</h2>
+        <div class="chronicle-log" id="chronicleLog">
+          <div class="log-entry log-system">You step into the damp, shadowed catacombs. Light your torch...</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Modal Overlays -->
+    <div id="modalOverlay" class="modal-overlay hidden">
+      <div class="modal-card" id="modalCard">
+        <h2 id="modalTitle">Tomb of the Forsaken</h2>
+        <div id="modalBody"></div>
+        <div class="modal-actions">
+          <button id="btnModalClose" class="btn btn-primary">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Scripts (ES6 Modules) -->
+  <script type="module" src="js/engine.js"></script>
+</body>
+</html>
