@@ -64,6 +64,16 @@ class TestServer(unittest.TestCase):
         finally:
             server.server_close()
 
+    def test_api_new_game_with_class_and_merchant(self):
+        url = f"{self.base_url}/api/new-game?seed=101&depth=2&class=rogue"
+        with urlopen(url, timeout=3) as response:
+            self.assertEqual(response.status, 200)
+            data = json.loads(response.read().decode("utf-8"))
+            self.assertEqual(data["player"]["hero_class"], "rogue")
+            self.assertIn("classes", data)
+            self.assertIn("merchant_stock", data)
+            self.assertGreater(len(data["merchant_stock"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

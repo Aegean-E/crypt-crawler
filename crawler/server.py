@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 from crawler.dungeon import DungeonGenerator
-from crawler.entities import Player, spawn_monster
+from crawler.entities import HERO_CLASSES, MERCHANT_STOCK, Player, create_item, spawn_monster
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = PROJECT_ROOT / "static"
@@ -60,9 +60,17 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             except (ValueError, TypeError):
                 depth = 1
 
+            raw_class = params.get("class", params.get("hero_class", ["paladin"]))[0].lower()
+            hero_class = raw_class if raw_class in HERO_CLASSES else "paladin"
+
             gen = DungeonGenerator(width=45, height=30, depth=depth)
             dungeon = gen.generate(seed=seed)
-            player = Player(name="Champion", x=dungeon.player_spawn[0], y=dungeon.player_spawn[1])
+            player = Player(
+                name="Champion",
+                x=dungeon.player_spawn[0],
+                y=dungeon.player_spawn[1],
+                hero_class=hero_class,
+            )
 
             # Spawn monsters per room outside spawn room
             monsters = []
@@ -89,11 +97,22 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                     m_type = dungeon.rng.choice(monster_types)
                     monsters.append(spawn_monster(m_type, mx, my, depth=depth))
 
+            stock = []
+            for entry in MERCHANT_STOCK:
+                item_obj = create_item(entry["item_id"])
+                if item_obj:
+                    stock.append({
+                        "item": item_obj.to_dict(),
+                        "price": entry["price"],
+                    })
+
             self._send_json(
                 {
                     "dungeon": dungeon.to_dict(),
                     "player": player.to_dict(),
                     "monsters": [m.to_dict() for m in monsters],
+                    "classes": HERO_CLASSES,
+                    "merchant_stock": stock,
                 }
             )
         else:

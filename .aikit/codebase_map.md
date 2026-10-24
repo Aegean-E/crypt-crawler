@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
 - **Total Classes**: `14`
-- **Total Top-Level Functions**: `12`
-- **Total Class Methods**: `66`
-- **Total Source Lines**: `1772`
+- **Total Top-Level Functions**: `16`
+- **Total Class Methods**: `75`
+- **Total Source Lines**: `2309`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`crawler/combat.py`](crawler/combat.py)
 > *Turn-based tactical combat resolution for Crypt-Crawler.*
 
-**Size**: `260` lines (`8788` bytes)
+**Size**: `473` lines (`16127` bytes)
 
 **Classes:**
 - `class CombatResult`
@@ -37,13 +37,17 @@
 - `def shield_wall(player)` - *Raise defensive guard (+6 DEF for 4 turns), costing 6 Mana.*
 - `def cast_fireball(player, target, rng)` - *Cast Fireball spell costing 10 Mana, dealing direct damage and applying Burn.*
 - `def cast_heal(player, rng)` - *Cast Divine Healing spell costing 8 Mana, restoring HP and cleansing negative statuses.*
+- `def shadow_strike(player, target, rng)` - *Execute a precision sneak attack costing 4 Mana with +40% Crit Chance and venom.*
+- `def smoke_bomb(player, monsters, radius)` - *Toss a blinding smoke canister costing 6 Mana, stunning all nearby foes for 2 turns.*
+- `def frost_nova(player, target, rng)` - *Blast an enemy with sub-zero frost costing 6 Mana, dealing cold damage and freezing (stun) for 2 turns.*
+- `def arcane_nova(player, monsters, radius, rng)` - *Pulse cataclysmic arcane waves in a 3-tile radius costing 10 Mana, dealing heavy magic damage to all foes.*
 
 ---
 
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `342` lines (`11477` bytes)
+**Size**: `370` lines (`12585` bytes)
 
 **Classes:**
 - `class TileType`
@@ -56,6 +60,7 @@
   - Method `.intersects(other, padding)`
 - `class Dungeon`
   - Method `.__init__(width, height, seed)`
+  - Property `.biome`
   - Method `.in_bounds(x, y)`
   - Method `.is_walkable(x, y)`
   - Method `.is_transparent(x, y)`
@@ -74,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `497` lines (`15552` bytes)
+**Size**: `626` lines (`20145` bytes)
 
 **Classes:**
 - `class Item`
@@ -91,7 +96,8 @@
   - Method `.__init__(name, monster_type, x, y, hp, attack, defense, xp_reward, gold_reward, loot_drop, is_boss)`
   - Method `.to_dict()`
 - `class Player`
-  - Method `.__init__(name, x, y)`
+  - Method `.__init__(name, x, y, hero_class)`
+  - Property `.effective_crit_chance`
   - Property `.effective_attack`
   - Property `.effective_defense`
   - Property `.effective_max_hp`
@@ -111,7 +117,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `118` lines (`4733` bytes)
+**Size**: `137` lines (`5452` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -147,7 +153,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `102` lines (`3815` bytes)
+**Size**: `174` lines (`6549` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -162,13 +168,17 @@
   - Method `.test_shield_bash_stuns_target()`
   - Method `.test_shield_wall_buff()`
   - Method `.test_status_effects_tick()`
+  - Method `.test_hero_classes_and_crit_chance()`
+  - Method `.test_permanent_stat_elixirs()`
+  - Method `.test_shadow_strike_and_smoke_bomb()`
+  - Method `.test_arcane_nova_and_frost_nova()`
 
 ---
 
 ### [`tests/test_dungeon.py`](tests/test_dungeon.py)
 > *Unit tests for procedural dungeon generation and pathfinding.*
 
-**Size**: `68` lines (`2535` bytes)
+**Size**: `89` lines (`3230` bytes)
 
 **Classes:**
 - `class TestDungeon`
@@ -176,6 +186,8 @@
   - Method `.test_all_rooms_connected()` - *Verify that every room center can be reached from player spawn.*
   - Method `.test_seed_reproducibility()`
   - Method `.test_fov_computation()`
+  - Method `.test_biomes_and_depth_scaling()`
+  - Method `.test_merchant_spawns_on_depth_2()`
 
 ---
 
@@ -193,7 +205,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `69` lines (`2407` bytes)
+**Size**: `79` lines (`2928` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -204,13 +216,14 @@
   - Method `.test_api_new_game_invalid_params_fallback()`
   - Method `.test_favicon_no_content()`
   - Method `.test_find_available_server()`
+  - Method `.test_api_new_game_with_class_and_merchant()`
 
 ---
 
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `232` lines (`9087` bytes)
+**Size**: `277` lines (`11806` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

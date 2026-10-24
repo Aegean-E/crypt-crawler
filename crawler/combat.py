@@ -40,8 +40,11 @@ def resolve_melee_attack(
     variance = rng.uniform(0.85, 1.15)
     damage = max(1, int(base_damage * variance))
 
-    # Critical hit check (15% for player, 5% for monster)
-    crit_chance = 0.15 if is_player_atk else 0.05
+    # Critical hit check (uses player's class & gear crit chance, 5% for monsters)
+    if is_player_atk:
+        crit_chance = getattr(attacker, "effective_crit_chance", 0.15)
+    else:
+        crit_chance = 0.05
     is_crit = rng.random() < crit_chance
     if is_crit:
         damage = int(damage * 1.5)
@@ -258,3 +261,213 @@ def cast_heal(
 
     cl_msg = f" (Cleansed {', '.join(cleansed)})" if cleansed else ""
     return True, f"✨ Sacred light restored {restored} HP{cl_msg}!"
+
+
+def shadow_strike(
+    player: Player,
+    target: Monster,
+    rng: Optional[random.Random] = None,
+) -> CombatResult:
+    """Execute a precision sneak attack costing 4 Mana with +40% Crit Chance and venom."""
+    if rng is None:
+        rng = random.Random()
+
+    mana_cost = 4
+    if player.mana < mana_cost:
+        return CombatResult(
+            damage_dealt=0,
+            is_critical=False,
+            target_killed=False,
+            messages=["Not enough mana to Shadow Strike! (Needs 4 MP)"],
+        )
+
+    player.mana -= mana_cost
+    crit_chance = min(0.95, player.effective_crit_chance + 0.40)
+    is_crit = rng.random() < crit_chance
+
+    base_dmg = max(3, player.effective_attack - target.defense)
+    damage = int(base_dmg * (1.8 if is_crit else 1.2))
+    dmg = target.take_damage(damage)
+    killed = not target.is_alive
+
+    msgs = []
+    crit_label = "CRITICAL LETHAL STRIKE! " if is_crit else ""
+    msgs.append(f"🗡️ You plunged your shadow blade into {target.name} for {crit_label}{dmg} damage!")
+
+    if not killed and rng.random() < 0.6:
+        target.apply_status("poison", 3)
+        msgs.append(f"☠️ {target.name} was afflicted with deadly shadow venom!")
+
+    xp = 0
+    gold = 0
+    loot: Optional[Item] = None
+    if killed:
+        msgs.append(f"{target.name} collapsed into shadows!")
+        xp = target.xp_reward
+        gold = target.gold_reward
+        player.gold += gold
+        leveled = player.add_xp(xp)
+        msgs.append(f"Gained {xp} XP and {gold} Gold.")
+        if leveled:
+            msgs.append(f"🌟 LEVEL UP! You reached Level {player.level}!")
+        if target.loot_drop and (target.is_boss or rng.random() < 0.65):
+            dropped = create_item(target.loot_drop)
+            if dropped and len(player.inventory) < player.max_slots:
+                player.inventory.append(dropped)
+                loot = dropped
+                msgs.append(f"Found loot: {dropped.name}!")
+
+    return CombatResult(
+        damage_dealt=dmg,
+        is_critical=is_crit,
+        target_killed=killed,
+        xp_gained=xp,
+        gold_gained=gold,
+        loot_gained=loot,
+        messages=msgs,
+    )
+
+
+def smoke_bomb(
+    player: Player,
+    monsters: List[Monster],
+    radius: int = 2,
+) -> Tuple[bool, str, List[Monster]]:
+    """Toss a blinding smoke canister costing 6 Mana, stunning all nearby foes for 2 turns."""
+    mana_cost = 6
+    if player.mana < mana_cost:
+        return False, "Not enough mana to toss Smoke Bomb! (Needs 6 MP)", []
+
+    player.mana -= mana_cost
+    affected: List[Monster] = []
+    for m in monsters:
+        if m.hp > 0:
+            dist = max(abs(m.x - player.x), abs(m.y - player.y))
+            if dist <= radius:
+                m.apply_status("stun", 2)
+                affected.append(m)
+
+    if affected:
+        names = ", ".join(m.name for m in affected)
+        return True, f"💨 Dense smoke enveloped the area! {names} stunned for 2 turns!", affected
+    return True, "💨 Smoke billowed out, but no foes were caught in the blast.", []
+
+
+def frost_nova(
+    player: Player,
+    target: Monster,
+    rng: Optional[random.Random] = None,
+) -> CombatResult:
+    """Blast an enemy with sub-zero frost costing 6 Mana, dealing cold damage and freezing (stun) for 2 turns."""
+    if rng is None:
+        rng = random.Random()
+
+    mana_cost = 6
+    if player.mana < mana_cost:
+        return CombatResult(
+            damage_dealt=0,
+            is_critical=False,
+            target_killed=False,
+            messages=["Not enough mana to cast Frost Nova! (Needs 6 MP)"],
+        )
+
+    player.mana -= mana_cost
+    base_dmg = rng.randint(16, 24)
+    dmg = target.take_damage(base_dmg)
+    killed = not target.is_alive
+
+    msgs = [f"❄️ Glacial frost blasted {target.name} for {dmg} cold damage!"]
+    if not killed:
+        target.apply_status("stun", 2)
+        msgs.append(f"🧊 {target.name} is frozen solid for 2 turns!")
+
+    xp = 0
+    gold = 0
+    loot: Optional[Item] = None
+    if killed:
+        msgs.append(f"{target.name} shattered into ice shards!")
+        xp = target.xp_reward
+        gold = target.gold_reward
+        player.gold += gold
+        leveled = player.add_xp(xp)
+        msgs.append(f"Gained {xp} XP and {gold} Gold.")
+        if leveled:
+            msgs.append(f"🌟 LEVEL UP! You reached Level {player.level}!")
+        if target.loot_drop and (target.is_boss or rng.random() < 0.65):
+            dropped = create_item(target.loot_drop)
+            if dropped and len(player.inventory) < player.max_slots:
+                player.inventory.append(dropped)
+                loot = dropped
+                msgs.append(f"Found loot: {dropped.name}!")
+
+    return CombatResult(
+        damage_dealt=dmg,
+        is_critical=False,
+        target_killed=killed,
+        xp_gained=xp,
+        gold_gained=gold,
+        loot_gained=loot,
+        messages=msgs,
+    )
+
+
+def arcane_nova(
+    player: Player,
+    monsters: List[Monster],
+    radius: int = 3,
+    rng: Optional[random.Random] = None,
+) -> Tuple[bool, List[CombatResult], str]:
+    """Pulse cataclysmic arcane waves in a 3-tile radius costing 10 Mana, dealing heavy magic damage to all foes."""
+    if rng is None:
+        rng = random.Random()
+
+    mana_cost = 10
+    if player.mana < mana_cost:
+        return False, [], "Not enough mana to cast Arcane Nova! (Needs 10 MP)"
+
+    player.mana -= mana_cost
+    results: List[CombatResult] = []
+    hit_names: List[str] = []
+
+    for m in monsters:
+        if m.hp > 0:
+            dist = max(abs(m.x - player.x), abs(m.y - player.y))
+            if dist <= radius:
+                dmg = m.take_damage(rng.randint(20, 32))
+                killed = not m.is_alive
+                hit_names.append(m.name)
+                xp = 0
+                gold = 0
+                loot = None
+                msgs = [f"🔮 Arcane wave pulsed through {m.name} for {dmg} arcane damage!"]
+                if killed:
+                    msgs.append(f"{m.name} was obliterated!")
+                    xp = m.xp_reward
+                    gold = m.gold_reward
+                    player.gold += gold
+                    leveled = player.add_xp(xp)
+                    if leveled:
+                        msgs.append(f"🌟 LEVEL UP! You reached Level {player.level}!")
+                    if m.loot_drop and (m.is_boss or rng.random() < 0.65):
+                        dropped = create_item(m.loot_drop)
+                        if dropped and len(player.inventory) < player.max_slots:
+                            player.inventory.append(dropped)
+                            loot = dropped
+                results.append(
+                    CombatResult(
+                        damage_dealt=dmg,
+                        is_critical=False,
+                        target_killed=killed,
+                        xp_gained=xp,
+                        gold_gained=gold,
+                        loot_gained=loot,
+                        messages=msgs,
+                    )
+                )
+
+    summary = (
+        f"🔮 Arcane Nova pulsed! Hit {len(results)} enemies: {', '.join(hit_names)}."
+        if results
+        else "🔮 Arcane Nova pulsed into empty corridors."
+    )
+    return True, results, summary

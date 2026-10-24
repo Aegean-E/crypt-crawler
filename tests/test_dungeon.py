@@ -63,6 +63,27 @@ class TestDungeon(unittest.TestCase):
         # Wall tile just outside room should be in FOV (visible boundary)
         self.assertIn((5, 4), fov)
 
+    def test_biomes_and_depth_scaling(self):
+        d1 = Dungeon(20, 20)
+        d1.depth = 1
+        self.assertEqual(d1.biome, "crypt")
+
+        d2 = Dungeon(20, 20)
+        d2.depth = 2
+        self.assertEqual(d2.biome, "cavern")
+
+        d3 = Dungeon(20, 20)
+        d3.depth = 3
+        self.assertEqual(d3.biome, "inferno")
+
+    def test_merchant_spawns_on_depth_2(self):
+        gen = DungeonGenerator(width=45, height=30, depth=2)
+        dungeon = gen.generate(seed=777)
+        self.assertGreater(len(dungeon.merchants), 0)
+        mx, my = dungeon.merchants[0]
+        self.assertEqual(dungeon.tiles[my][mx], TileType.MERCHANT)
+        self.assertTrue(dungeon.is_walkable(mx, my))
+
 
 if __name__ == "__main__":
     unittest.main()

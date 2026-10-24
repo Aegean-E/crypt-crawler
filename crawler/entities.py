@@ -133,6 +133,46 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "stats": {"attack": 3, "max_mana": 10},
         "rarity": "rare",
     },
+    "ring_shadow": {
+        "name": "Band of the Shadowstalker",
+        "type": "ring",
+        "value": 85,
+        "description": "Hones reflexes for lethal precision (+15% Crit Rate, +3 ATK).",
+        "stats": {"attack": 3, "crit_bonus": 15},
+        "rarity": "rare",
+    },
+    "staff_arcane": {
+        "name": "Staff of Arcane Focus",
+        "type": "weapon",
+        "value": 45,
+        "description": "Ancient ash wood staff channeling raw arcane energy (+5 ATK, +15 Max Mana).",
+        "stats": {"attack": 5, "max_mana": 15},
+        "rarity": "common",
+    },
+    "robe_mystic": {
+        "name": "Runed Silk Robe",
+        "type": "armor",
+        "value": 35,
+        "description": "Woven with protective ley-threads (+2 DEF, +10 Max Mana).",
+        "stats": {"defense": 2, "max_mana": 10},
+        "rarity": "common",
+    },
+    "potion_elixir_str": {
+        "name": "Elixir of the Titan",
+        "type": "potion",
+        "value": 60,
+        "description": "Permanently increases base Attack by +2.",
+        "stats": {"perm_attack": 2},
+        "rarity": "rare",
+    },
+    "potion_elixir_def": {
+        "name": "Elixir of Ironhide",
+        "type": "potion",
+        "value": 60,
+        "description": "Permanently increases base Defense by +2.",
+        "stats": {"perm_defense": 2},
+        "rarity": "rare",
+    },
     "crown_eternity": {
         "name": "Crown of Eternity",
         "type": "ring",
@@ -157,6 +197,57 @@ def create_item(item_id: str) -> Optional[Item]:
         stats=dict(data.get("stats", {})),
         rarity=data.get("rarity", "common"),
     )
+
+
+HERO_CLASSES: Dict[str, Dict[str, Any]] = {
+    "paladin": {
+        "name": "Valerius",
+        "title": "Crusader Paladin",
+        "hp": 65,
+        "mana": 30,
+        "attack": 8,
+        "defense": 4,
+        "crit_chance": 0.15,
+        "starter_items": ["potion_health", "sword_iron", "armor_leather"],
+        "description": "Devout defender with superior armor, crushing shield bash, and divine healing.",
+    },
+    "rogue": {
+        "name": "Lyra",
+        "title": "Shadow Rogue",
+        "hp": 48,
+        "mana": 25,
+        "attack": 9,
+        "defense": 2,
+        "crit_chance": 0.30,
+        "starter_items": ["potion_health", "dagger_poison", "armor_leather"],
+        "description": "Lethal blade dancer with 30% base critical strikes, poison daggers, and blinding smoke bombs.",
+    },
+    "mage": {
+        "name": "Ignis",
+        "title": "Arcane Mage",
+        "hp": 42,
+        "mana": 55,
+        "attack": 6,
+        "defense": 1,
+        "crit_chance": 0.10,
+        "starter_items": ["potion_mana", "staff_arcane", "robe_mystic", "scroll_fireball"],
+        "description": "Scholar of the forbidden arts commanding blazing fireballs, arcane novas, and frost stuns.",
+    },
+}
+
+MERCHANT_STOCK: List[Dict[str, Any]] = [
+    {"item_id": "potion_health", "price": 18},
+    {"item_id": "potion_mana", "price": 18},
+    {"item_id": "potion_rejuvenation", "price": 40},
+    {"item_id": "scroll_fireball", "price": 35},
+    {"item_id": "scroll_nova", "price": 55},
+    {"item_id": "sword_runic", "price": 85},
+    {"item_id": "armor_plate", "price": 75},
+    {"item_id": "shield_tower", "price": 90},
+    {"item_id": "ring_shadow", "price": 95},
+    {"item_id": "potion_elixir_str", "price": 70},
+    {"item_id": "potion_elixir_def", "price": 70},
+]
 
 
 class Entity:
@@ -342,14 +433,34 @@ def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
 
 
 class Player(Entity):
-    def __init__(self, name: str = "Valerius", x: int = 0, y: int = 0):
-        super().__init__(name, x, y, hp=60, max_hp=60, attack=8, defense=3)
-        self.mana = 30
-        self.max_mana = 30
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        x: int = 0,
+        y: int = 0,
+        hero_class: str = "paladin",
+    ):
+        class_key = hero_class.lower() if hero_class else "paladin"
+        class_info = HERO_CLASSES.get(class_key, HERO_CLASSES["paladin"])
+        player_name = name if name is not None else class_info["name"]
+        super().__init__(
+            player_name,
+            x,
+            y,
+            hp=class_info["hp"],
+            max_hp=class_info["hp"],
+            attack=class_info["attack"],
+            defense=class_info["defense"],
+        )
+        self.hero_class = class_key
+        self.class_title = class_info["title"]
+        self.base_crit_chance = class_info["crit_chance"]
+        self.mana = class_info["mana"]
+        self.max_mana = class_info["mana"]
         self.level = 1
         self.xp = 0
         self.next_xp = 50
-        self.gold = 25
+        self.gold = 35 if class_key == "rogue" else 25
         self.max_slots = 12
         self.inventory: List[Item] = []
         self.equipped: Dict[str, Optional[Item]] = {
@@ -358,13 +469,20 @@ class Player(Entity):
             "ring": None,
         }
 
-        # Starter kit
-        potion = create_item("potion_health")
-        if potion:
-            self.inventory.append(potion)
-        sword = create_item("sword_iron")
-        if sword:
-            self.inventory.append(sword)
+        # Starter kit in inventory
+        for item_id in class_info.get("starter_items", []):
+            item = create_item(item_id)
+            if item:
+                self.inventory.append(item)
+
+    @property
+    def effective_crit_chance(self) -> float:
+        bonus = sum(
+            (eq.stats.get("crit_bonus", 0) / 100.0)
+            for eq in self.equipped.values()
+            if eq is not None
+        )
+        return min(0.75, self.base_crit_chance + bonus)
 
     @property
     def effective_attack(self) -> int:
@@ -456,6 +574,8 @@ class Player(Entity):
         if item.item_type == "potion":
             heal_amount = item.stats.get("heal_hp", 0)
             mana_amount = item.stats.get("restore_mana", 0)
+            perm_atk = item.stats.get("perm_attack", 0)
+            perm_def = item.stats.get("perm_defense", 0)
             msg_parts = []
             if heal_amount > 0:
                 restored = self.heal(heal_amount)
@@ -463,6 +583,12 @@ class Player(Entity):
             if mana_amount > 0:
                 self.mana = min(self.effective_max_mana, self.mana + mana_amount)
                 msg_parts.append(f"restored {mana_amount} Mana")
+            if perm_atk > 0:
+                self.attack += perm_atk
+                msg_parts.append(f"permanently gained +{perm_atk} Attack")
+            if perm_def > 0:
+                self.defense += perm_def
+                msg_parts.append(f"permanently gained +{perm_def} Defense")
             # If rejuvenation, cleanse negative statuses
             if item.item_id == "potion_rejuvenation":
                 self.status_effects.pop("poison", None)
@@ -476,6 +602,9 @@ class Player(Entity):
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
+            "hero_class": self.hero_class,
+            "class_title": self.class_title,
+            "crit_chance": round(self.effective_crit_chance, 2),
             "x": self.x,
             "y": self.y,
             "hp": self.hp,

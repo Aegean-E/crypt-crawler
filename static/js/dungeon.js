@@ -12,6 +12,7 @@ export const TileType = {
   TRAP: 6,
   SHRINE: 7,
   URN: 8,
+  MERCHANT: 9,
 };
 
 export class ClientDungeon {
@@ -20,6 +21,7 @@ export class ClientDungeon {
     this.height = data.height;
     this.seed = data.seed;
     this.depth = data.depth || 1;
+    this.biome = data.biome || (this.depth <= 1 ? "crypt" : (this.depth === 2 ? "cavern" : "inferno"));
     this.tiles = data.tiles;
     this.playerSpawn = data.player_spawn;
     this.stairsPos = data.stairs_pos;
@@ -29,6 +31,7 @@ export class ClientDungeon {
     this.shrines = (data.shrines || []).map((s) => ({ x: s[0], y: s[1], activated: false }));
     this.urns = (data.urns || []).map((u) => ({ x: u[0], y: u[1], broken: false }));
     this.sconces = (data.sconces || []).map((sc) => ({ x: sc[0], y: sc[1] }));
+    this.merchants = (data.merchants || []).map((m) => ({ x: m[0], y: m[1] }));
 
     // Fog of War: explored (2D boolean array) and visible (Set of "x,y" keys)
     this.explored = Array.from({ length: this.height }, () =>

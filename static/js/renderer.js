@@ -83,6 +83,21 @@ export class DungeonRenderer {
     // Camera offset: Center player on screen
     const camX = Math.floor(w / 2 - player.x * ts - ts / 2);
     const camY = Math.floor(h / 2 - player.y * ts - ts / 2);
+    const biome = dungeon.biome || (dungeon.depth <= 1 ? "crypt" : (dungeon.depth === 2 ? "cavern" : "inferno"));
+
+    // Spawn floating embers in inferno biome
+    if (biome === "inferno" && Math.random() < 0.22) {
+      this.particles.push({
+        x: (player.x + (Math.random() - 0.5) * 12) * ts,
+        y: (player.y + (Math.random() - 0.5) * 10) * ts,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.7 - Math.random() * 0.7,
+        color: Math.random() < 0.5 ? "#f6ad55" : "#e53e3e",
+        size: 1.5 + Math.random() * 2,
+        alpha: 0.85,
+        decay: 0.02,
+      });
+    }
 
     ctx.save();
     ctx.translate(camX, camY);
@@ -105,7 +120,7 @@ export class DungeonRenderer {
         const isVis = dungeon.isVisible(x, y);
         const tile = dungeon.tiles[y][x];
 
-        this._drawTile(ctx, tile, x, y, ts, isVis, timestamp);
+        this._drawTile(ctx, tile, x, y, ts, isVis, timestamp, biome);
 
         if (!isVis) {
           ctx.fillStyle = "rgba(7, 10, 16, 0.72)";
@@ -137,7 +152,12 @@ export class DungeonRenderer {
     }
     for (const sconce of (dungeon.sconces || [])) {
       if (dungeon.isVisible(sconce.x, sconce.y)) {
-        this._drawSconce(ctx, sconce, ts, timestamp);
+        this._drawSconce(ctx, sconce, ts, timestamp, biome);
+      }
+    }
+    for (const merchant of (dungeon.merchants || [])) {
+      if (dungeon.isExplored(merchant.x, merchant.y)) {
+        this._drawMerchant(ctx, merchant, ts, timestamp, dungeon.isVisible(merchant.x, merchant.y));
       }
     }
 
@@ -152,7 +172,7 @@ export class DungeonRenderer {
     this._drawPlayer(ctx, player, ts, timestamp);
 
     // 5. Dynamic Torchlight / Radial Lighting
-    this._drawTorchlight(ctx, player, ts, timestamp);
+    this._drawTorchlight(ctx, player, ts, timestamp, biome);
 
     // 6. Draw Visual FX (Slashes, Projectiles, Particles, Floating Text)
     this._renderSlashes(ctx);
@@ -166,45 +186,116 @@ export class DungeonRenderer {
     this._drawMinimap(ctx, dungeon, player, monsters);
   }
 
-  _drawTile(ctx, tile, x, y, ts, isVis, timestamp) {
+  _drawTile(ctx, tile, x, y, ts, isVis, timestamp, biome = "crypt") {
     const px = x * ts;
     const py = y * ts;
 
     if (tile === TileType.WALL) {
-      // Beveled stone wall with brick patterns
-      ctx.fillStyle = isVis ? "#232936" : "#141822";
-      ctx.fillRect(px, py, ts, ts);
-
-      ctx.strokeStyle = isVis ? "#363f52" : "#1e2330";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px + 1, py + 1, ts - 2, ts - 2);
-      ctx.beginPath();
-      ctx.moveTo(px, py + ts / 2);
-      ctx.lineTo(px + ts, py + ts / 2);
-      ctx.stroke();
-
-      // Moss creeping up some walls
-      if ((x * 7 + y * 13) % 5 === 0) {
-        ctx.fillStyle = isVis ? "#2f4838" : "#1b2820";
-        ctx.fillRect(px + 2, py + ts - 5, ts - 4, 3);
-      }
-    } else if (tile === TileType.FLOOR || tile === TileType.CHEST || tile === TileType.TRAP || tile === TileType.SHRINE || tile === TileType.URN) {
-      // Alternating flagstones
-      const altColor = (x + y) % 2 === 0;
-      ctx.fillStyle = isVis ? (altColor ? "#191f28" : "#151b24") : "#0d1117";
-      ctx.fillRect(px, py, ts, ts);
-
-      ctx.strokeStyle = isVis ? "#242c38" : "#131820";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px, py, ts, ts);
-
-      // Random ancient bone / skull scatter on occasional tiles
-      if ((x * 11 + y * 17) % 9 === 0 && tile === TileType.FLOOR) {
-        ctx.fillStyle = isVis ? "#4a5568" : "#2d3748";
+      if (biome === "cavern") {
+        ctx.fillStyle = isVis ? "#122629" : "#091517";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#1e3c40" : "#112225";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 1, py + 1, ts - 2, ts - 2);
+        // Bioluminescent cyan lichen
+        if ((x * 7 + y * 13) % 4 === 0) {
+          ctx.fillStyle = isVis ? "#234e52" : "#132729";
+          ctx.fillRect(px + 2, py + ts - 5, ts - 4, 3);
+        }
+      } else if (biome === "inferno") {
+        ctx.fillStyle = isVis ? "#271418" : "#15090c";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#4a1e26" : "#240d12";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 1, py + 1, ts - 2, ts - 2);
+        // Basalt crack vein
+        if ((x * 7 + y * 13) % 4 === 0) {
+          ctx.fillStyle = isVis ? "#742a2a" : "#3c1515";
+          ctx.fillRect(px + 2, py + ts - 4, ts - 4, 2);
+        }
+      } else {
+        // Crypt default
+        ctx.fillStyle = isVis ? "#232936" : "#141822";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#363f52" : "#1e2330";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 1, py + 1, ts - 2, ts - 2);
         ctx.beginPath();
-        ctx.arc(px + 8, py + 8, 2, 0, Math.PI * 2);
-        ctx.arc(px + 12, py + 9, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(px, py + ts / 2);
+        ctx.lineTo(px + ts, py + ts / 2);
+        ctx.stroke();
+
+        if ((x * 7 + y * 13) % 5 === 0) {
+          ctx.fillStyle = isVis ? "#2f4838" : "#1b2820";
+          ctx.fillRect(px + 2, py + ts - 5, ts - 4, 3);
+        }
+      }
+    } else if (
+      tile === TileType.FLOOR ||
+      tile === TileType.CHEST ||
+      tile === TileType.TRAP ||
+      tile === TileType.SHRINE ||
+      tile === TileType.URN ||
+      tile === TileType.MERCHANT
+    ) {
+      const altColor = (x + y) % 2 === 0;
+
+      if (biome === "cavern") {
+        ctx.fillStyle = isVis ? (altColor ? "#0e1c20" : "#0a1619") : "#060e10";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#172e35" : "#0e1c21";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px, py, ts, ts);
+
+        // Water puddle with animated shimmer
+        if ((x * 11 + y * 7) % 6 === 0 && tile === TileType.FLOOR) {
+          const shimmer = Math.sin(timestamp * 0.003 + x + y) * 0.15 + 0.35;
+          ctx.fillStyle = isVis ? `rgba(49, 130, 206, ${shimmer})` : "rgba(20, 50, 80, 0.2)";
+          ctx.beginPath();
+          ctx.ellipse(px + ts / 2, py + ts / 2, ts / 3, ts / 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (biome === "inferno") {
+        ctx.fillStyle = isVis ? (altColor ? "#1b0e12" : "#13080b") : "#0a0406";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#2c1218" : "#18080b";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px, py, ts, ts);
+
+        // Molten lava fissures
+        if ((x * 13 + y * 11) % 5 === 0 && tile === TileType.FLOOR) {
+          const glow = Math.sin(timestamp * 0.005 + x) * 0.2 + 0.6;
+          ctx.strokeStyle = isVis ? `rgba(221, 107, 32, ${glow})` : "rgba(100, 30, 10, 0.3)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(px + 4, py + ts / 2);
+          ctx.lineTo(px + ts - 4, py + ts / 2 + 2);
+          ctx.stroke();
+        }
+      } else {
+        // Crypt default
+        ctx.fillStyle = isVis ? (altColor ? "#191f28" : "#151b24") : "#0d1117";
+        ctx.fillRect(px, py, ts, ts);
+        ctx.strokeStyle = isVis ? "#242c38" : "#131820";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px, py, ts, ts);
+
+        if ((x * 11 + y * 17) % 9 === 0 && tile === TileType.FLOOR) {
+          ctx.fillStyle = isVis ? "#4a5568" : "#2d3748";
+          ctx.beginPath();
+          ctx.arc(px + 8, py + 8, 2, 0, Math.PI * 2);
+          ctx.arc(px + 12, py + 9, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Merchant Rug Tile
+      if (tile === TileType.MERCHANT) {
+        ctx.fillStyle = isVis ? "#552222" : "#2d1111";
+        ctx.fillRect(px + 2, py + 2, ts - 4, ts - 4);
+        ctx.strokeStyle = isVis ? "#ecc94b" : "#744210";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px + 4, py + 4, ts - 8, ts - 8);
       }
     } else if (tile === TileType.STAIRS_DOWN) {
       ctx.fillStyle = "#161b24";
@@ -284,7 +375,7 @@ export class DungeonRenderer {
     ctx.fillRect(cx - 5, cy - 8, 10, 2);
   }
 
-  _drawSconce(ctx, sconce, ts, timestamp) {
+  _drawSconce(ctx, sconce, ts, timestamp, biome = "crypt") {
     const cx = sconce.x * ts + ts / 2;
     const cy = sconce.y * ts + ts - 4;
 
@@ -296,9 +387,19 @@ export class DungeonRenderer {
     ctx.lineTo(cx, cy);
     ctx.stroke();
 
-    // Flickering torch fire
+    // Flickering torch fire tuned to biome
     const flameH = 6 + Math.sin(timestamp * 0.02 + sconce.x) * 2;
-    ctx.fillStyle = "#dd6b20";
+    let outerColor = "#dd6b20";
+    let innerColor = "#ecc94b";
+    if (biome === "cavern") {
+      outerColor = "#38b2ac";
+      innerColor = "#81e6d9";
+    } else if (biome === "inferno") {
+      outerColor = "#e53e3e";
+      innerColor = "#f6ad55";
+    }
+
+    ctx.fillStyle = outerColor;
     ctx.beginPath();
     ctx.moveTo(cx - 3, cy - 6);
     ctx.lineTo(cx, cy - 6 - flameH);
@@ -306,10 +407,73 @@ export class DungeonRenderer {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = "#ecc94b";
+    ctx.fillStyle = innerColor;
     ctx.beginPath();
     ctx.arc(cx, cy - 7, 2, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  _drawMerchant(ctx, merchant, ts, timestamp, isVis) {
+    const px = merchant.x * ts;
+    const py = merchant.y * ts;
+    const bob = Math.sin(timestamp * 0.004) * 1.5;
+
+    ctx.save();
+    ctx.translate(0, bob);
+
+    // Deep hooded traveling cloak
+    ctx.fillStyle = isVis ? "#322659" : "#1a1330";
+    ctx.beginPath();
+    ctx.moveTo(px + ts / 2, py + 4);
+    ctx.lineTo(px + ts - 5, py + ts - 4);
+    ctx.lineTo(px + 5, py + ts - 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cowl Hood
+    ctx.fillStyle = isVis ? "#44337a" : "#21193d";
+    ctx.beginPath();
+    ctx.arc(px + ts / 2, py + ts / 2 - 3, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Glowing Golden Eyes in darkness of cowl
+    if (isVis) {
+      ctx.fillStyle = "#ecc94b";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 2, 2);
+      ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 4, 2, 2);
+    }
+
+    // Heavy traveling pack on back
+    ctx.fillStyle = isVis ? "#744210" : "#3b2108";
+    ctx.fillRect(px + 4, py + ts / 2 - 2, 5, 8);
+
+    // Brass Lantern hanging from wooden staff
+    const lanX = px + ts - 6;
+    const lanY = py + ts / 2 + 2;
+    ctx.strokeStyle = "#ecc94b";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(lanX - 2, lanY - 3, 4, 6);
+    if (isVis) {
+      ctx.fillStyle = "rgba(236, 201, 75, 0.7)";
+      ctx.fillRect(lanX - 1, lanY - 2, 2, 4);
+    }
+
+    // Floating SHOP Pill Label
+    if (isVis) {
+      ctx.fillStyle = "rgba(26, 32, 44, 0.85)";
+      ctx.fillRect(px + 2, py - 6, ts - 4, 11);
+      ctx.strokeStyle = "#ecc94b";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 2, py - 6, ts - 4, 11);
+
+      ctx.fillStyle = "#ecc94b";
+      ctx.font = "bold 8px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🪙 SHOP", px + ts / 2, py + 2);
+      ctx.textAlign = "start";
+    }
+
+    ctx.restore();
   }
 
   _drawMonster(ctx, monster, ts, timestamp) {
@@ -460,6 +624,7 @@ export class DungeonRenderer {
     const px = player.x * ts;
     const py = player.y * ts;
     const bob = Math.sin(timestamp * 0.005) * 1.5;
+    const heroClass = player.hero_class || "paladin";
 
     ctx.save();
     ctx.translate(0, bob);
@@ -473,37 +638,110 @@ export class DungeonRenderer {
       ctx.stroke();
     }
 
-    // Knight Paladin Armor
-    ctx.fillStyle = "#e2e8f0";
-    ctx.beginPath();
-    ctx.arc(px + ts / 2, py + ts / 2 - 3, 8, 0, Math.PI * 2);
-    ctx.fill();
+    if (heroClass === "rogue") {
+      // Shadow Rogue Sprite: Dark stealth cowl with emerald assassin eyes and dual daggers
+      ctx.fillStyle = "#1a202c";
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2 - 3, 7, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Visor slit
-    ctx.fillStyle = "#1a202c";
-    ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 8, 2);
+      // Glowing venomous green slit eyes
+      ctx.fillStyle = "#48bb78";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 2, 2);
+      ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 4, 2, 2);
 
-    // Body armor
-    ctx.fillStyle = "#4a5568";
-    ctx.fillRect(px + ts / 2 - 6, py + ts / 2 + 4, 12, 10);
+      // Dark leather tunic
+      ctx.fillStyle = "#2d3748";
+      ctx.fillRect(px + ts / 2 - 5, py + ts / 2 + 3, 10, 9);
 
-    // Shield on left arm
-    ctx.fillStyle = "#d69e2e";
-    ctx.beginPath();
-    ctx.arc(px + 6, py + ts / 2 + 2, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#3182ce";
-    ctx.beginPath();
-    ctx.arc(px + 6, py + ts / 2 + 2, 4, 0, Math.PI * 2);
-    ctx.fill();
+      // Left poison dagger
+      ctx.strokeStyle = "#cbd5e0";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px + 6, py + ts / 2 + 7);
+      ctx.lineTo(px + 4, py + ts / 2 - 4);
+      ctx.stroke();
+      ctx.fillStyle = "#48bb78"; // venom tip
+      ctx.fillRect(px + 3, py + ts / 2 - 5, 2, 2);
 
-    // Sword on right arm
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + ts - 6, py + ts / 2 + 8);
-    ctx.lineTo(px + ts - 4, py + ts / 2 - 8);
-    ctx.stroke();
+      // Right poison dagger
+      ctx.strokeStyle = "#cbd5e0";
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 6, py + ts / 2 + 7);
+      ctx.lineTo(px + ts - 4, py + ts / 2 - 4);
+      ctx.stroke();
+      ctx.fillStyle = "#48bb78";
+      ctx.fillRect(px + ts - 5, py + ts / 2 - 5, 2, 2);
+    } else if (heroClass === "mage") {
+      // Arcane Mage Sprite: Flowing purple robes, wizard hat, and glowing rune staff
+      ctx.fillStyle = "#553c9a";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2, py + 2);
+      ctx.lineTo(px + ts - 4, py + ts - 2);
+      ctx.lineTo(px + 4, py + ts - 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Wizard Cowl / Hat
+      ctx.fillStyle = "#6b46c1";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2, py - 4);
+      ctx.lineTo(px + ts / 2 + 7, py + 8);
+      ctx.lineTo(px + ts / 2 - 7, py + 8);
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing sapphire eyes / face
+      ctx.fillStyle = "#63b3ed";
+      ctx.fillRect(px + ts / 2 - 3, py + 6, 2, 2);
+      ctx.fillRect(px + ts / 2 + 1, py + 6, 2, 2);
+
+      // Arcane Staff on right arm with glowing pulsing orb
+      ctx.strokeStyle = "#d69e2e";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 5, py + ts - 4);
+      ctx.lineTo(px + ts - 5, py);
+      ctx.stroke();
+
+      const pulse = Math.sin(timestamp * 0.008) * 0.3 + 0.7;
+      ctx.fillStyle = `rgba(0, 240, 255, ${pulse})`;
+      ctx.beginPath();
+      ctx.arc(px + ts - 5, py - 1, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Crusader Paladin Default Sprite: Knight Paladin Armor
+      ctx.fillStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2 - 3, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Visor slit
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 8, 2);
+
+      // Body armor
+      ctx.fillStyle = "#4a5568";
+      ctx.fillRect(px + ts / 2 - 6, py + ts / 2 + 4, 12, 10);
+
+      // Shield on left arm
+      ctx.fillStyle = "#d69e2e";
+      ctx.beginPath();
+      ctx.arc(px + 6, py + ts / 2 + 2, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#3182ce";
+      ctx.beginPath();
+      ctx.arc(px + 6, py + ts / 2 + 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sword on right arm
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 6, py + ts / 2 + 8);
+      ctx.lineTo(px + ts - 4, py + ts / 2 - 8);
+      ctx.stroke();
+    }
 
     // Poison / Might status indicators on player
     if (player.status_effects && player.status_effects.poison) {
@@ -520,7 +758,7 @@ export class DungeonRenderer {
     ctx.restore();
   }
 
-  _drawTorchlight(ctx, player, ts, timestamp) {
+  _drawTorchlight(ctx, player, ts, timestamp, biome = "crypt") {
     const flicker = Math.sin(timestamp * 0.006) * 6 + Math.cos(timestamp * 0.015) * 4;
     const radius = Math.max(160, 240 + flicker);
 
@@ -528,8 +766,17 @@ export class DungeonRenderer {
     const cy = player.y * ts + ts / 2;
 
     const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, radius);
-    grad.addColorStop(0, "rgba(255, 210, 120, 0.15)");
-    grad.addColorStop(0.5, "rgba(230, 150, 40, 0.05)");
+
+    if (biome === "cavern") {
+      grad.addColorStop(0, "rgba(56, 178, 172, 0.14)");
+      grad.addColorStop(0.5, "rgba(35, 110, 115, 0.05)");
+    } else if (biome === "inferno") {
+      grad.addColorStop(0, "rgba(229, 62, 62, 0.16)");
+      grad.addColorStop(0.5, "rgba(180, 50, 40, 0.06)");
+    } else {
+      grad.addColorStop(0, "rgba(255, 210, 120, 0.15)");
+      grad.addColorStop(0.5, "rgba(230, 150, 40, 0.05)");
+    }
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
     ctx.fillStyle = grad;

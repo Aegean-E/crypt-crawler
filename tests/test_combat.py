@@ -3,8 +3,18 @@
 import random
 import unittest
 
-from crawler.combat import cast_fireball, cast_heal, resolve_melee_attack, shield_bash, shield_wall
-from crawler.entities import Player, create_item, spawn_monster
+from crawler.combat import (
+    arcane_nova,
+    cast_fireball,
+    cast_heal,
+    frost_nova,
+    resolve_melee_attack,
+    shadow_strike,
+    shield_bash,
+    shield_wall,
+    smoke_bomb,
+)
+from crawler.entities import Monster, Player, create_item, spawn_monster
 
 
 class TestCombat(unittest.TestCase):
@@ -96,6 +106,68 @@ class TestCombat(unittest.TestCase):
         msgs = self.player.tick_status_effects()
         self.assertEqual(self.player.hp, 46)
         self.assertEqual(self.player.status_effects["poison"], 1)
+
+    def test_hero_classes_and_crit_chance(self):
+        rogue = Player(name="Lyra", hero_class="rogue")
+        self.assertEqual(rogue.hero_class, "rogue")
+        self.assertEqual(rogue.base_crit_chance, 0.30)
+        self.assertGreaterEqual(rogue.effective_crit_chance, 0.30)
+
+        mage = Player(name="Ignis", hero_class="mage")
+        self.assertEqual(mage.hero_class, "mage")
+        self.assertEqual(mage.max_mana, 55)
+
+    def test_permanent_stat_elixirs(self):
+        init_atk = self.player.attack
+        init_def = self.player.defense
+        str_potion = create_item("potion_elixir_str")
+        def_potion = create_item("potion_elixir_def")
+        self.assertIsNotNone(str_potion)
+        self.assertIsNotNone(def_potion)
+
+        self.player.inventory.append(str_potion)  # type: ignore[arg-type]
+        used_str, msg_str = self.player.use_item(len(self.player.inventory) - 1)
+        self.assertTrue(used_str)
+        self.assertEqual(self.player.attack, init_atk + 2)
+
+        self.player.inventory.append(def_potion)  # type: ignore[arg-type]
+        used_def, msg_def = self.player.use_item(len(self.player.inventory) - 1)
+        self.assertTrue(used_def)
+        self.assertEqual(self.player.defense, init_def + 2)
+
+    def test_shadow_strike_and_smoke_bomb(self):
+        rogue = Player(name="Lyra", hero_class="rogue")
+        res = shadow_strike(rogue, self.skeleton, self.rng)
+        self.assertGreater(res.damage_dealt, 0)
+        self.assertEqual(rogue.mana, 25 - 4)
+
+        # Smoke bomb
+        m1 = Monster("M1", "goblin", 1, 1, 10, 3, 1, 10, 5)
+        m2 = Monster("M2", "bat", 10, 10, 5, 2, 0, 5, 2)
+        rogue.x, rogue.y = 0, 0
+        success, msg, affected = smoke_bomb(rogue, [m1, m2], radius=2)
+        self.assertTrue(success)
+        self.assertIn(m1, affected)
+        self.assertNotIn(m2, affected)
+        self.assertTrue(m1.is_stunned)
+
+    def test_arcane_nova_and_frost_nova(self):
+        mage = Player(name="Ignis", hero_class="mage")
+        # Frost Nova
+        res_frost = frost_nova(mage, self.skeleton, self.rng)
+        self.assertGreater(res_frost.damage_dealt, 0)
+        self.assertTrue(self.skeleton.is_stunned)
+        self.assertEqual(mage.mana, 55 - 6)
+
+        # Arcane Nova
+        m1 = Monster("M1", "goblin", 1, 0, 20, 3, 1, 10, 5)
+        m2 = Monster("M2", "skeleton", 0, 1, 20, 4, 1, 10, 5)
+        mage.x, mage.y = 0, 0
+        success, results, summary = arcane_nova(mage, [m1, m2], radius=3, rng=self.rng)
+        self.assertTrue(success)
+        self.assertEqual(len(results), 2)
+        self.assertLess(m1.hp, 20)
+        self.assertLess(m2.hp, 20)
 
 
 if __name__ == "__main__":

@@ -17,9 +17,11 @@ export class GameEngine {
     this.dungeon = null;
     this.player = null;
     this.monsters = [];
+    this.merchantStock = [];
     this.turn = 1;
     this.depth = 1;
     this.kills = 0;
+    this.heroClass = "paladin";
     this.gameOver = false;
     this.victory = false;
     this.animFrameId = null;
@@ -29,14 +31,35 @@ export class GameEngine {
     this._setupInputListeners();
   }
 
-  async start(seed = null, depth = 1) {
+  async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true) {
     this.depth = depth;
     this.turn = 1;
     this.gameOver = false;
     this.victory = false;
+    this.heroClass = heroClass || "paladin";
+
+    // Attempt to resume saved run if starting fresh at depth 1 without explicit seed
+    if (allowResume && depth === 1 && !seed) {
+      const saved = this.loadSavedRun();
+      if (saved) {
+        this.player = saved.player;
+        this.dungeon = new ClientDungeon(saved.dungeon);
+        this.monsters = saved.monsters;
+        this.turn = saved.turn;
+        this.depth = saved.depth;
+        this.kills = saved.kills;
+        this.heroClass = saved.heroClass || this.player.hero_class || "paladin";
+        sounds.setBiome(this.dungeon.biome);
+        this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+        this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+        this.ui.logMessage("⚔️ Resumed your ongoing dungeon run from crystal memory.", "system");
+        this._startRenderLoop();
+        return;
+      }
+    }
 
     try {
-      const url = `/api/new-game?seed=${seed || Date.now() % 1000000}&depth=${this.depth}`;
+      const url = `/api/new-game?seed=${seed || Date.now() % 1000000}&depth=${this.depth}&class=${this.heroClass}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load map from server");
       const data = await res.json();
@@ -44,19 +67,26 @@ export class GameEngine {
       this.dungeon = new ClientDungeon(data.dungeon);
       this.player = data.player;
       this.monsters = data.monsters;
+      this.merchantStock = data.merchant_stock || [];
     } catch (err) {
       console.warn("Server API fallback to offline procedural generator:", err);
-      this._generateOfflineState(seed, depth);
+      this._generateOfflineState(seed, depth, this.heroClass);
     }
+
+    sounds.setBiome(this.dungeon.biome);
 
     // Initialize FOV
     this.dungeon.updateFOV(this.player.x, this.player.y, 7);
 
     // Initial UI update
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
-    this.ui.logMessage(`Entered Depth B${this.depth}F of the ancient catacombs.`, "system");
+    this.ui.logMessage(`Entered Depth B${this.depth}F of the ancient catacombs as ${this.player.class_title || "Champion"}.`, "system");
 
-    // Start animation render loop
+    this._startRenderLoop();
+    this.saveGameState();
+  }
+
+  _startRenderLoop() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
     const loop = (ts) => {
       this.renderer.render(this.dungeon, this.player, this.monsters, ts);
@@ -151,7 +181,8 @@ export class GameEngine {
     this.ui.onUnequip = (slot) => this.unequipSlot(slot);
     this.ui.onModalClose = () => {
       if (this.gameOver || this.victory) {
-        this.start(Date.now() % 1000000, 1);
+        this.clearSavedRun();
+        this.start(Date.now() % 1000000, 1, this.heroClass, false);
       }
     };
   }
@@ -219,19 +250,19 @@ export class GameEngine {
           dy = 1;
           break;
         case "1":
-          this.tacticalStrike();
+          this.triggerSlotAction(1);
           return;
         case "2":
-          this.tacticalFireball();
+          this.triggerSlotAction(2);
           return;
         case "3":
-          this.tacticalBash();
+          this.triggerSlotAction(3);
           return;
         case "4":
-          this.tacticalHeal();
+          this.triggerSlotAction(4);
           return;
         case "5":
-          this.tacticalShieldWall();
+          this.triggerSlotAction(5);
           return;
         case "6":
           this.quickPotion();
@@ -253,23 +284,23 @@ export class GameEngine {
     // Action deck buttons
     document.getElementById("btnActionMelee").addEventListener("click", () => {
       this._triggerMusicStart();
-      this.tacticalStrike();
+      this.triggerSlotAction(1);
     });
     document.getElementById("btnActionFireball").addEventListener("click", () => {
       this._triggerMusicStart();
-      this.tacticalFireball();
+      this.triggerSlotAction(2);
     });
     document.getElementById("btnActionBash").addEventListener("click", () => {
       this._triggerMusicStart();
-      this.tacticalBash();
+      this.triggerSlotAction(3);
     });
     document.getElementById("btnActionHeal").addEventListener("click", () => {
       this._triggerMusicStart();
-      this.tacticalHeal();
+      this.triggerSlotAction(4);
     });
     document.getElementById("btnActionShieldWall").addEventListener("click", () => {
       this._triggerMusicStart();
-      this.tacticalShieldWall();
+      this.triggerSlotAction(5);
     });
     document.getElementById("btnActionPotion").addEventListener("click", () => {
       this._triggerMusicStart();
@@ -299,7 +330,10 @@ export class GameEngine {
     });
 
     document.getElementById("btnRestart").addEventListener("click", () => {
-      this.start(Date.now() % 1000000, 1);
+      this.ui.showClassSelectModal((chosenClass) => {
+        this.clearSavedRun();
+        this.start(Date.now() % 1000000, 1, chosenClass, false);
+      });
     });
 
     document.getElementById("btnHelp").addEventListener("click", () => {
@@ -381,6 +415,12 @@ export class GameEngine {
     this.player.x = nx;
     this.player.y = ny;
     sounds.playStep();
+
+    // Check Hermit Merchant
+    const merchant = (this.dungeon.merchants || []).find((m) => m.x === nx && m.y === ny);
+    if (merchant || this.dungeon.tiles[ny][nx] === TileType.MERCHANT) {
+      this.openMerchantShop();
+    }
 
     // Check Ancient Shrine
     const shrine = (this.dungeon.shrines || []).find((s) => s.x === nx && s.y === ny && !s.activated);
@@ -555,6 +595,210 @@ export class GameEngine {
       this.renderer.addFloatingText("LEVEL UP!", this.player.x, this.player.y, "#4fd1c5");
       this.ui.logMessage(`🌟 LEVEL UP! You reached Level ${this.player.level}!`, "level");
     }
+  }
+
+  triggerSlotAction(slotNum) {
+    const cls = this.heroClass || this.player?.hero_class || "paladin";
+    if (slotNum === 1) {
+      this.tacticalStrike();
+    } else if (slotNum === 2) {
+      if (cls === "rogue") this.tacticalShadowStrike();
+      else this.tacticalFireball();
+    } else if (slotNum === 3) {
+      if (cls === "rogue") this.tacticalSmokeBomb();
+      else if (cls === "mage") this.tacticalFrostNova();
+      else this.tacticalBash();
+    } else if (slotNum === 4) {
+      if (cls === "mage") this.tacticalArcaneNova();
+      else if (cls === "rogue") this.tacticalFireball();
+      else this.tacticalHeal();
+    } else if (slotNum === 5) {
+      if (cls === "rogue") this.tacticalHeal();
+      else this.tacticalShieldWall();
+    }
+  }
+
+  tacticalShadowStrike() {
+    if (this.player.mana < 4) {
+      this.ui.logMessage("Not enough mana for Shadow Strike! (Needs 4 MP)", "system");
+      return;
+    }
+    const target = this._findTargetInRange(3);
+    if (!target) {
+      this.ui.logMessage("No enemy in range for Shadow Strike.", "system");
+      return;
+    }
+
+    this.player.mana -= 4;
+    const isCrit = Math.random() < 0.70;
+    const baseDmg = Math.max(3, this.player.attack - target.defense);
+    const dmg = Math.floor(baseDmg * (isCrit ? 1.9 : 1.3));
+    target.hp = Math.max(0, target.hp - dmg);
+    sounds.playHit(isCrit);
+
+    this.renderer.addSlash(target.x, target.y);
+    this.renderer.addFloatingText(isCrit ? `SHADOW CRIT! -${dmg}` : `-${dmg}`, target.x, target.y, isCrit ? "#f6ad55" : "#48bb78");
+    this.renderer.addParticles(target.x, target.y, "#48bb78", 14);
+
+    if (Math.random() < 0.65 && target.hp > 0) {
+      target.status_effects = target.status_effects || {};
+      target.status_effects.poison = 3;
+      this.ui.logMessage(`🗡️ Shadow Strike hit ${target.name} for ${dmg} damage! (${target.name} poisoned!)`, "crit");
+    } else {
+      this.ui.logMessage(`🗡️ Shadow Strike hit ${target.name} for ${dmg} damage!`, "crit");
+    }
+
+    if (target.hp <= 0) {
+      this._handleMonsterDefeat(target);
+    }
+    this.finishPlayerTurn();
+  }
+
+  tacticalSmokeBomb() {
+    if (this.player.mana < 6) {
+      this.ui.logMessage("Not enough mana for Smoke Bomb! (Needs 6 MP)", "system");
+      return;
+    }
+
+    this.player.mana -= 6;
+    sounds.playSmoke();
+
+    let count = 0;
+    for (const m of this.monsters) {
+      if (m.hp > 0 && Math.hypot(m.x - this.player.x, m.y - this.player.y) <= 2.5) {
+        m.status_effects = m.status_effects || {};
+        m.status_effects.stun = 2;
+        this.renderer.addFloatingText("💫 STUNNED", m.x, m.y, "#ecc94b");
+        this.renderer.addParticles(m.x, m.y, "#a0aec0", 14);
+        count++;
+      }
+    }
+
+    this.renderer.addParticles(this.player.x, this.player.y, "#cbd5e0", 25);
+    this.renderer.addFloatingText("💨 SMOKE BOMB", this.player.x, this.player.y, "#e2e8f0");
+
+    if (count > 0) {
+      this.ui.logMessage(`💨 Dense smoke billowed out! Stunned ${count} foes for 2 turns!`, "loot");
+    } else {
+      this.ui.logMessage("💨 Dense smoke filled the hall, cloaking your movements.", "system");
+    }
+
+    this.finishPlayerTurn();
+  }
+
+  tacticalFrostNova() {
+    if (this.player.mana < 6) {
+      this.ui.logMessage("Not enough mana for Frost Nova! (Needs 6 MP)", "system");
+      return;
+    }
+    const target = this._findTargetInRange(4);
+    if (!target) {
+      this.ui.logMessage("No enemy in range for Frost Nova.", "system");
+      return;
+    }
+
+    this.player.mana -= 6;
+    const dmg = 18 + Math.floor(Math.random() * 8);
+    target.hp = Math.max(0, target.hp - dmg);
+    sounds.playFreeze();
+
+    this.renderer.addProjectile(this.player.x, this.player.y, target.x, target.y, "#63b3ed");
+    this.renderer.addFloatingText(`❄️ -${dmg} FROZEN`, target.x, target.y, "#90cdf4");
+    this.renderer.addParticles(target.x, target.y, "#63b3ed", 16);
+
+    target.status_effects = target.status_effects || {};
+    target.status_effects.stun = 2;
+    this.ui.logMessage(`❄️ Frost Nova blasted ${target.name} for ${dmg} cold damage! (Frozen for 2 turns!)`, "crit");
+
+    if (target.hp <= 0) {
+      this._handleMonsterDefeat(target);
+    }
+    this.finishPlayerTurn();
+  }
+
+  tacticalArcaneNova() {
+    if (this.player.mana < 10) {
+      this.ui.logMessage("Not enough mana for Arcane Nova! (Needs 10 MP)", "system");
+      return;
+    }
+
+    this.player.mana -= 10;
+    sounds.playNova();
+
+    let count = 0;
+    for (const m of this.monsters) {
+      if (m.hp > 0 && Math.hypot(m.x - this.player.x, m.y - this.player.y) <= 3.8) {
+        const dmg = 22 + Math.floor(Math.random() * 10);
+        m.hp = Math.max(0, m.hp - dmg);
+        this.renderer.addFloatingText(`🔮 -${dmg}`, m.x, m.y, "#b794f4");
+        this.renderer.addParticles(m.x, m.y, "#9f7aea", 12);
+        count++;
+        if (m.hp <= 0) this._handleMonsterDefeat(m);
+      }
+    }
+
+    this.renderer.addParticles(this.player.x, this.player.y, "#9f7aea", 30);
+    this.renderer.addFloatingText("🔮 ARCANE NOVA", this.player.x, this.player.y, "#d6bcfa");
+
+    if (count > 0) {
+      this.ui.logMessage(`🔮 Cataclysmic Arcane Nova exploded! Obliterated ${count} foes in a 3-tile radius!`, "crit");
+    } else {
+      this.ui.logMessage("🔮 Arcane Nova pulsed into empty corridors.", "system");
+    }
+
+    this.finishPlayerTurn();
+  }
+
+  _findTargetInRange(range = 4) {
+    let closest = null;
+    let minDist = 999;
+    for (const m of this.monsters) {
+      if (m.hp <= 0) continue;
+      const d = Math.hypot(m.x - this.player.x, m.y - this.player.y);
+      if (d <= range && this.dungeon.isVisible(m.x, m.y) && d < minDist) {
+        minDist = d;
+        closest = m;
+      }
+    }
+    return closest;
+  }
+
+  openMerchantShop() {
+    if (!this.merchantStock || this.merchantStock.length === 0) {
+      this.merchantStock = [
+        { item: { id: "potion_health", name: "Health Elixir", type: "potion", rarity: "common", description: "Restores 35 HP.", stats: { heal_hp: 35 } }, price: 18 },
+        { item: { id: "potion_mana", name: "Aether Potion", type: "potion", rarity: "common", description: "Restores 25 MP.", stats: { restore_mana: 25 } }, price: 18 },
+        { item: { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 MP, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } }, price: 40 },
+        { item: { id: "sword_runic", name: "Runic Claymore", type: "weapon", rarity: "rare", description: "+10 ATK.", stats: { attack: 10 } }, price: 85 },
+        { item: { id: "armor_plate", name: "Knightly Plate Mail", type: "armor", rarity: "rare", description: "+6 DEF.", stats: { defense: 6 } }, price: 75 },
+        { item: { id: "ring_shadow", name: "Band of the Shadowstalker", type: "ring", rarity: "rare", description: "+15% Crit Rate, +3 ATK.", stats: { attack: 3, crit_bonus: 15 } }, price: 95 },
+        { item: { id: "potion_elixir_str", name: "Elixir of the Titan", type: "potion", rarity: "rare", description: "Permanently increases base Attack by +2.", stats: { perm_attack: 2 } }, price: 70 },
+        { item: { id: "potion_elixir_def", name: "Elixir of Ironhide", type: "potion", rarity: "rare", description: "Permanently increases base Defense by +2.", stats: { perm_defense: 2 } }, price: 70 },
+      ];
+    }
+    sounds.playShopBuy();
+    this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (itemId) => this.buyMerchantItem(itemId));
+  }
+
+  buyMerchantItem(itemId) {
+    const entry = this.merchantStock.find((e) => e.item.id === itemId);
+    if (!entry) return;
+    if (this.player.gold < entry.price) {
+      this.ui.logMessage("Not enough gold to purchase this item!", "system");
+      return;
+    }
+    if (this.player.inventory.length >= 12) {
+      this.ui.logMessage("Your backpack is full! Free up space first.", "system");
+      return;
+    }
+    this.player.gold -= entry.price;
+    this.player.inventory.push(JSON.parse(JSON.stringify(entry.item)));
+    sounds.playShopBuy();
+    this.renderer.addFloatingText(`-🪙${entry.price}`, this.player.x, this.player.y, "#ecc94b");
+    this.ui.logMessage(`Purchased ${entry.item.name} from Hermit Grimbold for ${entry.price} Gold.`, "loot");
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
+    this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (id) => this.buyMerchantItem(id));
   }
 
   tacticalStrike() {
@@ -748,6 +992,16 @@ export class GameEngine {
         delete this.player.status_effects.burn;
         this.ui.logMessage("Purified body of all poisons and burning wounds.", "heal");
       }
+      if (item.stats?.perm_attack) {
+        this.player.perm_attack = (this.player.perm_attack || 0) + item.stats.perm_attack;
+        this.renderer.addFloatingText(`+${item.stats.perm_attack} ATK PERM`, this.player.x, this.player.y, "#e53e3e");
+        this.ui.logMessage(`Gained +${item.stats.perm_attack} Permanent Attack!`, "level");
+      }
+      if (item.stats?.perm_defense) {
+        this.player.perm_defense = (this.player.perm_defense || 0) + item.stats.perm_defense;
+        this.renderer.addFloatingText(`+${item.stats.perm_defense} DEF PERM`, this.player.x, this.player.y, "#ecc94b");
+        this.ui.logMessage(`Gained +${item.stats.perm_defense} Permanent Defense!`, "level");
+      }
       this.player.inventory.splice(idx, 1);
       this.ui.clearItemSelection();
       this.finishPlayerTurn();
@@ -805,8 +1059,26 @@ export class GameEngine {
   }
 
   _recalculatePlayerStats() {
-    let atk = 8 + (this.player.level - 1) * 2;
-    let def = 3 + (this.player.level - 1) * 1;
+    const cls = this.heroClass || this.player?.hero_class || "paladin";
+    let baseAtk = 8;
+    let baseDef = 3;
+    let baseHp = 60;
+    let baseMp = 30;
+
+    if (cls === "rogue") {
+      baseAtk = 9;
+      baseDef = 2;
+      baseHp = 48;
+      baseMp = 25;
+    } else if (cls === "mage") {
+      baseAtk = 6;
+      baseDef = 1;
+      baseHp = 42;
+      baseMp = 55;
+    }
+
+    let atk = baseAtk + (this.player.level - 1) * 2 + (this.player.perm_attack || 0);
+    let def = baseDef + (this.player.level - 1) * 1 + (this.player.perm_defense || 0);
     let maxHpBonus = 0;
     let maxMpBonus = 0;
 
@@ -828,8 +1100,8 @@ export class GameEngine {
 
     this.player.attack = atk;
     this.player.defense = def;
-    this.player.max_hp = 60 + (this.player.level - 1) * 12 + maxHpBonus;
-    this.player.max_mana = 30 + (this.player.level - 1) * 6 + maxMpBonus;
+    this.player.max_hp = baseHp + (this.player.level - 1) * 12 + maxHpBonus;
+    this.player.max_mana = baseMp + (this.player.level - 1) * 6 + maxMpBonus;
   }
 
   finishPlayerTurn() {
@@ -852,6 +1124,7 @@ export class GameEngine {
 
     this._recalculatePlayerStats();
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
   }
 
   _tickPlayerStatuses() {
@@ -986,6 +1259,7 @@ export class GameEngine {
   handlePlayerDeath(cause = "unknown") {
     this.gameOver = true;
     sounds.stopMusic();
+    this.clearSavedRun();
     this.ui.showModal(
       "💀 YOU PERISHED IN THE CRYPT",
       `<p>Your torch flickers and dies... You fell to ${cause}.</p>
@@ -1004,11 +1278,13 @@ export class GameEngine {
   handleVictory() {
     this.victory = true;
     sounds.stopMusic();
+    this.clearSavedRun();
     this.ui.showModal(
-      "🏆 TRIUMPH OF THE PALADIN",
+      "🏆 TRIUMPH OF THE DUNGEON",
       `<p>You conquered the deepest vault, defeated Arch-Lich Malakor, and recovered the legendary <strong>Crown of Eternity</strong>!</p>
        <br>
        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 4px; border: 1px solid #d69e2e;">
+         <p><strong>Hero Archetype:</strong> ${this.player.class_title || "Champion"}</p>
          <p><strong>Hero Level:</strong> ${this.player.level}</p>
          <p><strong>Monsters Slain:</strong> ${this.kills}</p>
          <p><strong>Total Gold:</strong> ${this.player.gold} 🪙</p>
@@ -1017,6 +1293,63 @@ export class GameEngine {
        <br>
        <p>The light returns to the realm. Descend again for a new challenge?</p>`
     );
+  }
+
+  saveGameState() {
+    if (this.gameOver || this.victory || !this.player || !this.dungeon) return;
+    try {
+      const state = {
+        version: 2,
+        savedAt: Date.now(),
+        turn: this.turn,
+        depth: this.depth,
+        kills: this.kills,
+        heroClass: this.heroClass,
+        player: this.player,
+        monsters: this.monsters,
+        merchantStock: this.merchantStock,
+        dungeon: {
+          width: this.dungeon.width,
+          height: this.dungeon.height,
+          seed: this.dungeon.seed,
+          depth: this.dungeon.depth,
+          biome: this.dungeon.biome,
+          tiles: this.dungeon.tiles,
+          player_spawn: this.dungeon.playerSpawn,
+          stairs_pos: this.dungeon.stairsPos,
+          rooms: this.dungeon.rooms,
+          chests: this.dungeon.chests.map((c) => [c.x, c.y]),
+          traps: this.dungeon.traps.map((t) => [t.x, t.y]),
+          shrines: this.dungeon.shrines.map((s) => [s.x, s.y]),
+          urns: this.dungeon.urns.map((u) => [u.x, u.y]),
+          sconces: this.dungeon.sconces.map((sc) => [sc.x, sc.y]),
+          merchants: (this.dungeon.merchants || []).map((m) => [m.x, m.y]),
+        },
+      };
+      localStorage.setItem("crypt_crawler_save_v2", JSON.stringify(state));
+      this.ui.showSaveIndicator();
+    } catch (err) {
+      console.warn("Failed to persist save to localStorage:", err);
+    }
+  }
+
+  loadSavedRun() {
+    try {
+      const raw = localStorage.getItem("crypt_crawler_save_v2");
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !data.player || !data.dungeon) return null;
+      return data;
+    } catch (err) {
+      console.warn("Failed to parse saved game:", err);
+      return null;
+    }
+  }
+
+  clearSavedRun() {
+    try {
+      localStorage.removeItem("crypt_crawler_save_v2");
+    } catch (_) {}
   }
 }
 

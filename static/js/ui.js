@@ -8,6 +8,12 @@ export class UIController {
     this.depthBadge = document.getElementById("depthBadge");
     this.turnCount = document.getElementById("turnCount");
     this.goldCount = document.getElementById("goldCount");
+    this.saveIndicator = document.getElementById("saveIndicator");
+
+    // Hero identity
+    this.heroName = document.getElementById("heroName");
+    this.heroClass = document.getElementById("heroClass");
+    this.heroAvatar = document.getElementById("heroAvatar");
 
     // Gauges
     this.hpBar = document.getElementById("hpBar");
@@ -92,6 +98,17 @@ export class UIController {
     this.turnCount.textContent = turn;
     this.goldCount.textContent = player.gold;
 
+    // Identity & Avatar
+    if (this.heroName) this.heroName.textContent = player.name || "Champion";
+    if (this.heroClass) this.heroClass.textContent = player.class_title || "Crypt Champion";
+    if (this.heroAvatar) {
+      const cls = player.hero_class || "paladin";
+      this.heroAvatar.textContent = cls === "rogue" ? "🗡️" : (cls === "mage" ? "🔮" : "🛡️");
+    }
+
+    // Dynamic Action Deck
+    this.updateActionDeck(player.hero_class || "paladin");
+
     // HP
     const hpPct = Math.max(0, Math.min(100, (player.hp / player.max_hp) * 100));
     this.hpBar.style.width = `${hpPct}%`;
@@ -124,6 +141,167 @@ export class UIController {
 
     // Inventory
     this.renderInventory(player.inventory);
+  }
+
+  updateActionDeck(heroClass) {
+    const btn2 = document.getElementById("btnActionFireball");
+    const btn3 = document.getElementById("btnActionBash");
+    const btn4 = document.getElementById("btnActionHeal");
+    const btn5 = document.getElementById("btnActionShieldWall");
+    if (!btn2 || !btn3 || !btn4 || !btn5) return;
+
+    if (heroClass === "rogue") {
+      btn2.innerHTML = '<span class="deck-icon">🗡️</span><span class="deck-label">Shadow</span><span class="deck-hotkey">[2]</span>';
+      btn2.title = "Shadow Strike (4 MP, +40% Crit, Poison) [2]";
+      btn3.innerHTML = '<span class="deck-icon">💨</span><span class="deck-label">Smoke</span><span class="deck-hotkey">[3]</span>';
+      btn3.title = "Smoke Bomb (6 MP, Stuns adjacent foes) [3]";
+      btn4.innerHTML = '<span class="deck-icon">🔥</span><span class="deck-label">Fireball</span><span class="deck-hotkey">[4]</span>';
+      btn4.title = "Cast Fireball (10 MP, Burn) [4]";
+      btn5.innerHTML = '<span class="deck-icon">✨</span><span class="deck-label">Heal</span><span class="deck-hotkey">[5]</span>';
+      btn5.title = "Divine Healing (8 MP, Cleanses statuses) [5]";
+    } else if (heroClass === "mage") {
+      btn2.innerHTML = '<span class="deck-icon">🔥</span><span class="deck-label">Fireball</span><span class="deck-hotkey">[2]</span>';
+      btn2.title = "Cast Fireball (10 MP, Burn) [2]";
+      btn3.innerHTML = '<span class="deck-icon">❄️</span><span class="deck-label">Frost</span><span class="deck-hotkey">[3]</span>';
+      btn3.title = "Frost Nova (6 MP, Freezes foe for 2 turns) [3]";
+      btn4.innerHTML = '<span class="deck-icon">🔮</span><span class="deck-label">Nova</span><span class="deck-hotkey">[4]</span>';
+      btn4.title = "Arcane Nova (10 MP, 3-tile blast to all foes) [4]";
+      btn5.innerHTML = '<span class="deck-icon">🛡️</span><span class="deck-label">Barrier</span><span class="deck-hotkey">[5]</span>';
+      btn5.title = "Raise Shield Wall (6 MP, +6 DEF for 4 turns) [5]";
+    } else {
+      btn2.innerHTML = '<span class="deck-icon">🔥</span><span class="deck-label">Fireball</span><span class="deck-hotkey">[2]</span>';
+      btn2.title = "Cast Fireball (10 MP, Burn) [2]";
+      btn3.innerHTML = '<span class="deck-icon">💥</span><span class="deck-label">Bash</span><span class="deck-hotkey">[3]</span>';
+      btn3.title = "Shield Bash target (4 MP, 1 Turn Stun) [3]";
+      btn4.innerHTML = '<span class="deck-icon">✨</span><span class="deck-label">Heal</span><span class="deck-hotkey">[4]</span>';
+      btn4.title = "Divine Healing (8 MP, Cleanses statuses) [4]";
+      btn5.innerHTML = '<span class="deck-icon">🛡️</span><span class="deck-label">Barrier</span><span class="deck-hotkey">[5]</span>';
+      btn5.title = "Raise Shield Wall (6 MP, +6 DEF for 4 turns) [5]";
+    }
+  }
+
+  showSaveIndicator() {
+    if (!this.saveIndicator) return;
+    this.saveIndicator.classList.remove("hidden");
+    this.saveIndicator.style.display = "inline-block";
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      this.saveIndicator.classList.add("hidden");
+      this.saveIndicator.style.display = "none";
+    }, 1600);
+  }
+
+  showClassSelectModal(onSelect) {
+    const html = `
+      <p style="color: #cbd5e0; font-size: 0.85rem; margin-bottom: 8px;">
+        Choose your hero archetype to venture into the forsaken depths:
+      </p>
+      <div class="class-grid">
+        <div class="class-card" data-class="paladin">
+          <div class="class-avatar-badge">🛡️</div>
+          <div class="class-details">
+            <h3>Crusader Paladin</h3>
+            <p>Holy knight with supreme defense, crushing shield stuns, and restorative prayers.</p>
+            <div class="class-stats-row">
+              <span>HP: <strong>65</strong></span>
+              <span>MP: <strong>30</strong></span>
+              <span>ATK: <strong>8</strong></span>
+              <span>DEF: <strong>4</strong></span>
+              <span>Crit: <strong>15%</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="class-card" data-class="rogue">
+          <div class="class-avatar-badge">🗡️</div>
+          <div class="class-details">
+            <h3>Shadow Rogue</h3>
+            <p>Lethal assassin with 30% base crit, venomous daggers, and blinding smoke bombs.</p>
+            <div class="class-stats-row">
+              <span>HP: <strong>48</strong></span>
+              <span>MP: <strong>25</strong></span>
+              <span>ATK: <strong>9</strong></span>
+              <span>DEF: <strong>2</strong></span>
+              <span>Crit: <strong>30%</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="class-card" data-class="mage">
+          <div class="class-avatar-badge">🔮</div>
+          <div class="class-details">
+            <h3>Arcane Mage</h3>
+            <p>Forbidden scholar commanding devastating fireballs, freezing frost, and arcane novas.</p>
+            <div class="class-stats-row">
+              <span>HP: <strong>42</strong></span>
+              <span>MP: <strong>55</strong></span>
+              <span>ATK: <strong>6</strong></span>
+              <span>DEF: <strong>1</strong></span>
+              <span>Crit: <strong>10%</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    this.showModal("Select Hero Archetype", html);
+    this.btnModalClose.textContent = "Cancel";
+
+    const cards = this.modalBody.querySelectorAll(".class-card");
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const cls = card.getAttribute("data-class");
+        this.closeModal();
+        if (onSelect) onSelect(cls);
+      });
+    });
+  }
+
+  showMerchantShopModal(merchantStock, playerGold, onBuy) {
+    let itemsHtml = "";
+    for (const entry of merchantStock) {
+      const item = entry.item;
+      const price = entry.price;
+      const canAfford = playerGold >= price;
+      const icon = this._getItemIcon(item);
+      const rarity = item.rarity || "common";
+
+      itemsHtml += `
+        <div class="shop-item-row">
+          <div class="shop-item-info">
+            <span class="shop-item-icon">${icon}</span>
+            <div class="shop-item-text">
+              <h4>${item.name} <span class="rarity-pill pill-${rarity}">${rarity}</span></h4>
+              <p>${item.description}</p>
+            </div>
+          </div>
+          <div class="shop-buy-action">
+            <span class="shop-price-tag">🪙 ${price}</span>
+            <button class="btn-buy" data-item-id="${item.id}" ${canAfford ? "" : "disabled"}>
+              Buy
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div class="shop-container">
+        <div class="shop-balance-bar">
+          <span>Hermit Grimbold's Wares</span>
+          <span>Your Gold: <strong style="color: #ecc94b;">🪙 ${playerGold}</strong></span>
+        </div>
+        ${itemsHtml}
+      </div>
+    `;
+
+    this.showModal("Grimbold the Wandering Hermit", html);
+    this.btnModalClose.textContent = "Leave Shop";
+
+    const buyBtns = this.modalBody.querySelectorAll(".btn-buy");
+    buyBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const itemId = btn.getAttribute("data-item-id");
+        if (onBuy) onBuy(itemId);
+      });
+    });
   }
 
   renderStatusTray(effects) {

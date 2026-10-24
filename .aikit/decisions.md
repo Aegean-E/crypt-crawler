@@ -23,3 +23,10 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Elevate gameplay mechanics with status effects, boss encounters, shrines, minimap HUD, dynamic lighting sconces, and procedural ambient music while retaining zero-external-asset footprint.
 - **Decision**: Implement status effects (Poison, Stun, Shield Wall, Burn), an Arch-Lich boss at depth 3, interactive ancient shrines and urns, a radar minimap, and a procedural multi-oscillator Web Audio ambient synthesizer with drone and arpeggio generators.
 - **Consequences**: Enriches immersion, tactical depth, and audio atmosphere with zero external audio assets or npm packages.
+
+### ADR-004: Hero Class Archetypes, Biome Visuals, Wandering Merchant, and Local Storage Save System
+- **Date**: 2026-10-25
+- **Status**: Accepted
+- **Context**: Players require diverse playstyles and tactical variety, varied dungeon visuals per floor, in-dungeon economic progression (spending gold), and run state persistence against accidental browser refreshes.
+- **Decision**: Introduce three hero classes (Crusader Paladin, Shadow Rogue, Arcane Mage) with distinct base stats, starter equipment, and tactical deck abilities (Shadow Strike, Smoke Bomb, Frost Nova, Arcane Nova). Implement floor biomes with unique tile palettes and dynamic lighting (B1F Damp Crypt, B2F Sunken Caverns with water ripples, B3F Infernal Sanctum with lava fissures and ember particles). Spawn an in-dungeon Hermit Merchant (Grimbold) on B2F with an interactive shop UI for gold expenditure on potions, permanent stat elixirs, and rare relics. Add localStorage serialization (crypt_crawler_save_v2) for seamless run resumption on reload.
+- **Consequences**: Significantly expands replayability, strategic depth, and audiovisual variety while preserving the zero external npm/pip dependency architectural invariant.

@@ -147,6 +147,51 @@ def run_inspection(
                         )
                         print(f"      Saved screenshot: {combat_shot.name}")
 
+                    if "shop" in scenarios or "all" in scenarios:
+                        print("      Driving Scenario: Merchant Shop Modal...")
+                        page.evaluate("() => window.gameEngine.openMerchantShop()")
+                        time.sleep(0.3)
+                        shop_shot = out_dir / "merchant_shop_modal.png"
+                        page.screenshot(path=str(shop_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "shop", "file": str(shop_shot)}
+                        )
+                        print(f"      Saved screenshot: {shop_shot.name}")
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+
+                    if "classes" in scenarios or "all" in scenarios:
+                        print("      Driving Scenario: Class Selection Modal...")
+                        page.click("#btnRestart")
+                        time.sleep(0.3)
+                        class_shot = out_dir / "class_select_modal.png"
+                        page.screenshot(path=str(class_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "classes", "file": str(class_shot)}
+                        )
+                        print(f"      Saved screenshot: {class_shot.name}")
+                        # Pick Rogue and descend to B2F Caverns
+                        page.click(".class-card[data-class='rogue']")
+                        time.sleep(0.4)
+                        page.evaluate("() => window.gameEngine.start(42, 2, 'rogue')")
+                        time.sleep(0.4)
+                        cavern_shot = out_dir / "cavern_rogue_desktop.png"
+                        page.screenshot(path=str(cavern_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "cavern", "file": str(cavern_shot)}
+                        )
+                        print(f"      Saved screenshot: {cavern_shot.name}")
+
+                        # Switch to Mage on Depth 3 Inferno
+                        page.evaluate("() => window.gameEngine.start(42, 3, 'mage')")
+                        time.sleep(0.4)
+                        inferno_shot = out_dir / "inferno_mage_desktop.png"
+                        page.screenshot(path=str(inferno_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "inferno", "file": str(inferno_shot)}
+                        )
+                        print(f"      Saved screenshot: {inferno_shot.name}")
+
                     if "gameover" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Death Modal...")
                         page.evaluate("() => window.gameEngine.handlePlayerDeath('a crypt wraith')")

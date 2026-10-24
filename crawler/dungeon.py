@@ -19,6 +19,7 @@ class TileType:
     TRAP = 6
     SHRINE = 7
     URN = 8
+    MERCHANT = 9
 
 
 @dataclass
@@ -72,7 +73,16 @@ class Dungeon:
         self.shrines: List[Tuple[int, int]] = []
         self.urns: List[Tuple[int, int]] = []
         self.sconces: List[Tuple[int, int]] = []
+        self.merchants: List[Tuple[int, int]] = []
         self.depth: int = 1
+
+    @property
+    def biome(self) -> str:
+        if self.depth <= 1:
+            return "crypt"
+        elif self.depth == 2:
+            return "cavern"
+        return "inferno"
 
     def in_bounds(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height
@@ -90,6 +100,7 @@ class Dungeon:
             TileType.TRAP,
             TileType.SHRINE,
             TileType.URN,
+            TileType.MERCHANT,
         )
 
     def is_transparent(self, x: int, y: int) -> bool:
@@ -104,6 +115,7 @@ class Dungeon:
             TileType.TRAP,
             TileType.SHRINE,
             TileType.URN,
+            TileType.MERCHANT,
         )
 
     def compute_fov(self, px: int, py: int, radius: int = 8) -> Set[Tuple[int, int]]:
@@ -181,6 +193,7 @@ class Dungeon:
             "height": self.height,
             "seed": self.seed,
             "depth": self.depth,
+            "biome": self.biome,
             "player_spawn": list(self.player_spawn),
             "stairs_pos": list(self.stairs_pos),
             "chests": [list(c) for c in self.chests],
@@ -188,6 +201,7 @@ class Dungeon:
             "shrines": [list(s) for s in self.shrines],
             "urns": [list(u) for u in self.urns],
             "sconces": [list(sc) for sc in self.sconces],
+            "merchants": [list(m) for m in self.merchants],
             "rooms": [
                 {"x": r.x, "y": r.y, "w": r.w, "h": r.h, "center": list(r.center)}
                 for r in self.rooms
@@ -258,6 +272,19 @@ class DungeonGenerator:
             dungeon.stairs_pos = farthest_room.center
             dungeon.tiles[dungeon.stairs_pos[1]][dungeon.stairs_pos[0]] = TileType.STAIRS_DOWN
 
+            # Wandering Hermit Merchant on Depth 2 (or depths >= 2)
+            if self.depth >= 2 and len(dungeon.rooms) >= 2:
+                shop_room = dungeon.rooms[1]
+                if shop_room != farthest_room:
+                    mx = shop_room.center[0]
+                    my = shop_room.center[1]
+                    if dungeon.tiles[my][mx] == TileType.FLOOR and (mx, my) not in (
+                        dungeon.player_spawn,
+                        dungeon.stairs_pos,
+                    ):
+                        dungeon.tiles[my][mx] = TileType.MERCHANT
+                        dungeon.merchants.append((mx, my))
+
             # Scatter chests, traps, shrines, and urns
             for i, room in enumerate(dungeon.rooms[1:], 1):
                 if room == farthest_room:
@@ -267,9 +294,10 @@ class DungeonGenerator:
                 if i == len(dungeon.rooms) // 2:
                     sx = room.center[0]
                     sy = room.center[1]
-                    dungeon.tiles[sy][sx] = TileType.SHRINE
-                    dungeon.shrines.append((sx, sy))
-                    continue
+                    if (sx, sy) not in dungeon.merchants:
+                        dungeon.tiles[sy][sx] = TileType.SHRINE
+                        dungeon.shrines.append((sx, sy))
+                        continue
 
                 # Chests
                 if rng.random() < 0.6:
