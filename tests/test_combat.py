@@ -3,7 +3,7 @@
 import random
 import unittest
 
-from crawler.combat import cast_fireball, cast_heal, resolve_melee_attack
+from crawler.combat import cast_fireball, cast_heal, resolve_melee_attack, shield_bash, shield_wall
 from crawler.entities import Player, create_item, spawn_monster
 
 
@@ -19,7 +19,6 @@ class TestCombat(unittest.TestCase):
         self.assertIsNotNone(sword)
         self.player.equip(sword)  # type: ignore[arg-type]
 
-        # Equipped sword gives +4 ATK
         self.assertEqual(self.player.effective_attack, base_atk + 4)
         self.assertEqual(self.player.equipped["weapon"], sword)
 
@@ -67,14 +66,36 @@ class TestCombat(unittest.TestCase):
         self.assertGreater(res.damage_dealt, 0)
         self.assertEqual(self.player.mana, init_mana - 10)
 
-    def test_heal_spell(self):
+    def test_heal_spell_and_cleansing(self):
         self.player.hp = 25
+        self.player.apply_status("poison", 3)
         init_mana = self.player.mana
         success, msg = cast_heal(self.player, self.rng)
 
         self.assertTrue(success)
         self.assertGreater(self.player.hp, 25)
         self.assertEqual(self.player.mana, init_mana - 8)
+        self.assertNotIn("poison", self.player.status_effects)
+
+    def test_shield_bash_stuns_target(self):
+        init_mana = self.player.mana
+        res = shield_bash(self.player, self.skeleton, self.rng)
+        self.assertGreater(res.damage_dealt, 0)
+        self.assertEqual(self.player.mana, init_mana - 4)
+        self.assertTrue(self.skeleton.is_stunned)
+
+    def test_shield_wall_buff(self):
+        init_def = self.player.effective_defense
+        success, msg = shield_wall(self.player)
+        self.assertTrue(success)
+        self.assertEqual(self.player.effective_defense, init_def + 6)
+
+    def test_status_effects_tick(self):
+        self.player.hp = 50
+        self.player.apply_status("poison", 2)
+        msgs = self.player.tick_status_effects()
+        self.assertEqual(self.player.hp, 46)
+        self.assertEqual(self.player.status_effects["poison"], 1)
 
 
 if __name__ == "__main__":

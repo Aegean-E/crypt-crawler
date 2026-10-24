@@ -128,11 +128,17 @@ def run_inspection(
 
                     if "combat" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Combat & Magic...")
+                        # Test music toggle
+                        page.click("#btnMusicToggle")
+                        time.sleep(0.2)
+                        # Cast shield wall (barrier)
+                        page.click("#btnActionShieldWall")
+                        time.sleep(0.2)
+                        # Shield bash / strike
+                        page.click("#btnActionBash")
+                        time.sleep(0.2)
                         # Cast heal spell to test particle & floating text
                         page.click("#btnActionHeal")
-                        time.sleep(0.3)
-                        # Attack/Strike
-                        page.click("#btnActionMelee")
                         time.sleep(0.3)
                         combat_shot = out_dir / "combat_action.png"
                         page.screenshot(path=str(combat_shot), full_page=True)

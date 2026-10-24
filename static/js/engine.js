@@ -1,5 +1,6 @@
 /**
- * Main game engine for Crypt-Crawler: turn management, input handling, and loop.
+ * Main game engine for Crypt-Crawler: turn management, input handling, combat,
+ * status effects, interactive shrines/urns, boss battles, and ambient music.
  */
 
 import { sounds } from "./audio.js";
@@ -22,6 +23,7 @@ export class GameEngine {
     this.gameOver = false;
     this.victory = false;
     this.animFrameId = null;
+    this.musicStarted = false;
 
     this._setupCallbacks();
     this._setupInputListeners();
@@ -64,12 +66,10 @@ export class GameEngine {
   }
 
   _generateOfflineState(seed, depth) {
-    // Robust client-side fallback if server API is unavailable
     const w = 45;
     const h = 30;
     const tiles = Array.from({ length: h }, () => Array(w).fill(TileType.WALL));
 
-    // Carve 5 simple rooms
     const rooms = [];
     for (let r = 0; r < 5; r++) {
       const rw = 6;
@@ -83,7 +83,6 @@ export class GameEngine {
         }
       }
       if (r > 0) {
-        // connect to prev room
         const px = rooms[r - 1].center[0];
         const py = rooms[r - 1].center[1];
         for (let x = Math.min(px, rx + 3); x <= Math.max(px, rx + 3); x++) tiles[py][x] = TileType.FLOOR;
@@ -106,10 +105,13 @@ export class GameEngine {
       rooms: rooms,
       chests: [[rooms[1].center[0], rooms[1].center[1]]],
       traps: [],
+      shrines: [[rooms[2].center[0], rooms[2].center[1]]],
+      urns: [[rooms[3].center[0], rooms[3].center[1]]],
+      sconces: [[rooms[0].center[0], rooms[0].y - 1]],
     });
 
     this.player = {
-      name: "Champion",
+      name: "Valerius",
       x: spawn[0],
       y: spawn[1],
       hp: 60,
@@ -119,20 +121,28 @@ export class GameEngine {
       level: 1,
       xp: 0,
       next_xp: 50,
-      gold: 20,
+      gold: 25,
       attack: 8,
       defense: 3,
       inventory: [
-        { id: "potion_health", name: "Health Elixir", type: "potion", description: "Restores 35 HP.", stats: { heal_hp: 35 } },
-        { id: "sword_iron", name: "Forged Iron Sword", type: "weapon", description: "+4 ATK.", stats: { attack: 4 } },
+        { id: "potion_health", name: "Health Elixir", type: "potion", rarity: "common", description: "Restores 35 HP.", stats: { heal_hp: 35 } },
+        { id: "sword_iron", name: "Forged Iron Sword", type: "weapon", rarity: "common", description: "+4 ATK.", stats: { attack: 4 } },
       ],
       equipped: { weapon: null, armor: null, ring: null },
+      status_effects: {},
     };
 
-    this.monsters = [
-      { name: "Crypt Skeleton", type: "skeleton", x: rooms[1].center[0] + 1, y: rooms[1].center[1], hp: 18, max_hp: 18, attack: 6, defense: 2, xp_reward: 20, gold_reward: 10, loot_drop: "potion_health" },
-      { name: "Sneaky Goblin", type: "goblin", x: rooms[2].center[0], y: rooms[2].center[1], hp: 12, max_hp: 12, attack: 5, defense: 1, xp_reward: 15, gold_reward: 15, loot_drop: null },
-    ];
+    if (depth >= 3) {
+      this.monsters = [
+        { name: "Arch-Lich Malakor", type: "boss_lich", x: stairs[0], y: stairs[1], hp: 95, max_hp: 95, attack: 13, defense: 5, xp_reward: 200, gold_reward: 150, loot_drop: "crown_eternity", is_boss: true, status_effects: {} },
+        { name: "Crypt Skeleton", type: "skeleton", x: stairs[0] - 1, y: stairs[1], hp: 20, max_hp: 20, attack: 6, defense: 2, xp_reward: 20, gold_reward: 10, loot_drop: null, is_boss: false, status_effects: {} },
+      ];
+    } else {
+      this.monsters = [
+        { name: "Crypt Skeleton", type: "skeleton", x: rooms[1].center[0] + 1, y: rooms[1].center[1], hp: 18, max_hp: 18, attack: 6, defense: 2, xp_reward: 20, gold_reward: 10, loot_drop: "potion_health", is_boss: false, status_effects: {} },
+        { name: "Venomous Brood-Spider", type: "spider", x: rooms[2].center[0], y: rooms[2].center[1], hp: 12, max_hp: 12, attack: 6, defense: 1, xp_reward: 18, gold_reward: 12, loot_drop: "dagger_poison", is_boss: false, status_effects: {} },
+      ];
+    }
   }
 
   _setupCallbacks() {
@@ -146,8 +156,16 @@ export class GameEngine {
     };
   }
 
+  _triggerMusicStart() {
+    if (!this.musicStarted) {
+      this.musicStarted = true;
+      sounds.startMusic();
+    }
+  }
+
   _setupInputListeners() {
     window.addEventListener("keydown", (e) => {
+      this._triggerMusicStart();
       if (this.gameOver || this.victory) return;
 
       let dx = 0;
@@ -193,33 +211,34 @@ export class GameEngine {
           dy = -1;
           break;
         case "b":
-        case "1":
-          if (e.key === "1") {
-            this.tacticalStrike();
-            return;
-          }
           dx = -1;
           dy = 1;
           break;
         case "n":
-        case "3":
-          if (e.key === "3") {
-            this.tacticalHeal();
-            return;
-          }
           dx = 1;
           dy = 1;
           break;
-        case " ":
-        case "5":
-        case ".":
-          this.waitTurn();
+        case "1":
+          this.tacticalStrike();
           return;
         case "2":
           this.tacticalFireball();
           return;
+        case "3":
+          this.tacticalBash();
+          return;
         case "4":
+          this.tacticalHeal();
+          return;
+        case "5":
+          this.tacticalShieldWall();
+          return;
+        case "6":
           this.quickPotion();
+          return;
+        case " ":
+        case ".":
+          this.waitTurn();
           return;
         default:
           return;
@@ -232,11 +251,34 @@ export class GameEngine {
     });
 
     // Action deck buttons
-    document.getElementById("btnActionMelee").addEventListener("click", () => this.tacticalStrike());
-    document.getElementById("btnActionFireball").addEventListener("click", () => this.tacticalFireball());
-    document.getElementById("btnActionHeal").addEventListener("click", () => this.tacticalHeal());
-    document.getElementById("btnActionPotion").addEventListener("click", () => this.quickPotion());
-    document.getElementById("btnActionWait").addEventListener("click", () => this.waitTurn());
+    document.getElementById("btnActionMelee").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.tacticalStrike();
+    });
+    document.getElementById("btnActionFireball").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.tacticalFireball();
+    });
+    document.getElementById("btnActionBash").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.tacticalBash();
+    });
+    document.getElementById("btnActionHeal").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.tacticalHeal();
+    });
+    document.getElementById("btnActionShieldWall").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.tacticalShieldWall();
+    });
+    document.getElementById("btnActionPotion").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.quickPotion();
+    });
+    document.getElementById("btnActionWait").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.waitTurn();
+    });
 
     // D-Pad buttons
     document.getElementById("btnDpadUp").addEventListener("click", () => this.stepPlayer(0, -1));
@@ -246,8 +288,13 @@ export class GameEngine {
     document.getElementById("btnDpadCenter").addEventListener("click", () => this.waitTurn());
 
     // Header buttons
+    document.getElementById("btnMusicToggle").addEventListener("click", (e) => {
+      const isMuted = sounds.toggleMusic();
+      e.target.textContent = isMuted ? "🔇" : "🎵";
+    });
+
     document.getElementById("btnAudioToggle").addEventListener("click", (e) => {
-      const isMuted = sounds.toggleMute();
+      const isMuted = sounds.toggleSFX();
       e.target.textContent = isMuted ? "🔇" : "🔊";
     });
 
@@ -260,22 +307,33 @@ export class GameEngine {
         "Crypt-Crawler Guide",
         `<p>Welcome to <strong>Crypt-Crawler</strong>, a tactical turn-based dungeon crawler!</p>
          <br>
-         <p><strong>Controls:</strong></p>
+         <p><strong>Controls & Tactics:</strong></p>
          <ul style="margin-left: 20px; line-height: 1.6;">
            <li><strong>Move / Attack:</strong> Arrow keys, WASD, Vi keys (HJKL), Numpad</li>
-           <li><strong>Wait Turn:</strong> Spacebar or 5</li>
-           <li><strong>Action Deck:</strong> [1] Strike, [2] Fireball, [3] Heal, [4] Potion, [5] Wait</li>
-           <li><strong>Inventory:</strong> Click an item on the right panel to Equip or Use</li>
+           <li><strong>[1] Strike:</strong> Melee strike adjacent foe</li>
+           <li><strong>[2] Fireball:</strong> Ranged fire blast (10 MP, Burn effect)</li>
+           <li><strong>[3] Bash:</strong> Shield bash (4 MP, Stuns enemy for 1 turn)</li>
+           <li><strong>[4] Heal:</strong> Divine light (8 MP, restores HP & cleanses Poison/Burn)</li>
+           <li><strong>[5] Barrier:</strong> Shield Wall (6 MP, +6 DEF for 4 turns)</li>
+           <li><strong>[6] Potion:</strong> Quick-drink health or mana elixir</li>
+           <li><strong>[Space] Wait:</strong> Catch breath (+1 MP, ticks effects)</li>
          </ul>
          <br>
-         <p>Descend stairs to reach deeper floors, defeat monsters for XP and loot, and survive the tomb!</p>`
+         <p><strong>Interactive Objects:</strong></p>
+         <ul style="margin-left: 20px; line-height: 1.6;">
+           <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
+           <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
+           <li><strong>Traps & Sconces:</strong> Watch out for poison/spike traps; stay near wall sconces for light!</li>
+         </ul>
+         <br>
+         <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>`
       );
     });
   }
 
   async descendFloor() {
     this.depth += 1;
-    this.ui.logMessage(`You descended into Depth B${this.depth}F! The air grows colder...`, "system");
+    this.ui.logMessage(`You descended into Depth B${this.depth}F! The catacombs grow colder...`, "system");
 
     try {
       const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${this.depth}`;
@@ -285,7 +343,6 @@ export class GameEngine {
 
       this.dungeon = new ClientDungeon(data.dungeon);
       this.monsters = data.monsters;
-      // Preserve player progression and relocate to the new depth's spawn point
       this.player.x = data.dungeon.player_spawn[0];
       this.player.y = data.dungeon.player_spawn[1];
     } catch (err) {
@@ -325,28 +382,68 @@ export class GameEngine {
     this.player.y = ny;
     sounds.playStep();
 
+    // Check Ancient Shrine
+    const shrine = (this.dungeon.shrines || []).find((s) => s.x === nx && s.y === ny && !s.activated);
+    if (shrine) {
+      shrine.activated = true;
+      sounds.playShrine();
+      this.renderer.addParticles(nx, ny, "#38b2ac", 16);
+
+      const roll = Math.random();
+      if (roll < 0.35) {
+        // Full heal & renewal
+        this.player.hp = this.player.max_hp;
+        this.player.mana = this.player.max_mana;
+        this.player.status_effects = {};
+        this.renderer.addFloatingText("FULL RENEWAL!", nx, ny, "#38b2ac");
+        this.ui.logMessage("🏛️ Ancient Shrine bestowed Fountain of Renewal! HP & Mana fully restored!", "level");
+      } else if (roll < 0.7) {
+        // Blessing of Might
+        this.player.status_effects.might = 25;
+        this._recalculatePlayerStats();
+        this.renderer.addFloatingText("+4 ATK MIGHT", nx, ny, "#e53e3e");
+        this.ui.logMessage("🏛️ Ancient Shrine bestowed Blessing of Might (+4 ATK for 25 turns)!", "loot");
+      } else {
+        // Blessing of Aegis
+        this.player.status_effects.shield_wall = 25;
+        this._recalculatePlayerStats();
+        this.renderer.addFloatingText("+6 DEF BARRIER", nx, ny, "#ecc94b");
+        this.ui.logMessage("🏛️ Ancient Shrine bestowed Blessing of the Aegis (+6 DEF for 25 turns)!", "loot");
+      }
+    }
+
+    // Check Ceramic Urn
+    const urn = (this.dungeon.urns || []).find((u) => u.x === nx && u.y === ny && !u.broken);
+    if (urn) {
+      urn.broken = true;
+      sounds.playUrn();
+      this.renderer.addParticles(nx, ny, "#9c4221", 10);
+      const goldDrop = 6 + Math.floor(Math.random() * 14);
+      this.player.gold += goldDrop;
+      this.renderer.addFloatingText(`+${goldDrop} 🪙`, nx, ny, "#ecc94b");
+      this.ui.logMessage(`Shattered burial urn! Found ${goldDrop} gold coins.`, "loot");
+    }
+
     // Check chest
     const chest = this.dungeon.chests.find((c) => c.x === nx && c.y === ny && !c.opened);
     if (chest) {
       chest.opened = true;
       sounds.playChest();
-      const goldFound = 15 + Math.floor(Math.random() * 20);
+      const goldFound = 18 + Math.floor(Math.random() * 24);
       this.player.gold += goldFound;
       this.renderer.addFloatingText(`+${goldFound} 🪙`, nx, ny, "#ecc94b");
-      this.renderer.addParticles(nx, ny, "#ecc94b", 12);
+      this.renderer.addParticles(nx, ny, "#ecc94b", 14);
       this.ui.logMessage(`Opened a locked chest! Found ${goldFound} gold!`, "loot");
 
-      // Chance for potion or relic drop
-      if (Math.random() < 0.7 && this.player.inventory.length < 12) {
-        const dropItem = {
-          id: "potion_mana",
-          name: "Aether Potion",
-          type: "potion",
-          description: "Restores 25 Mana.",
-          stats: { restore_mana: 25 },
-        };
+      if (Math.random() < 0.75 && this.player.inventory.length < 12) {
+        const pool = [
+          { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 Mana, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
+          { id: "shield_tower", name: "Aegis Tower Shield", type: "armor", rarity: "rare", description: "+8 DEF bulwark.", stats: { defense: 8 } },
+          { id: "ring_power", name: "Ring of Arcane Might", type: "ring", rarity: "rare", description: "+3 ATK, +10 Max Mana.", stats: { attack: 3, max_mana: 10 } },
+        ];
+        const dropItem = pool[Math.floor(Math.random() * pool.length)];
         this.player.inventory.push(dropItem);
-        this.ui.logMessage(`Found item in chest: ${dropItem.name}!`, "loot");
+        this.ui.logMessage(`Found rare relic: ${dropItem.name} (${dropItem.rarity.toUpperCase()})!`, "loot");
       }
     }
 
@@ -368,8 +465,14 @@ export class GameEngine {
     // Check stairs down
     if (this.dungeon.tiles[ny][nx] === TileType.STAIRS_DOWN) {
       if (this.depth >= 3) {
-        this.handleVictory();
-        return;
+        // Check if boss defeated
+        const bossAlive = this.monsters.some((m) => m.is_boss && m.hp > 0);
+        if (bossAlive) {
+          this.ui.logMessage("The vault barrier holds! You must slay Arch-Lich Malakor first!", "hit");
+        } else {
+          this.handleVictory();
+          return;
+        }
       } else {
         this.descendFloor();
         return;
@@ -388,38 +491,73 @@ export class GameEngine {
 
     monster.hp = Math.max(0, monster.hp - dmg);
     sounds.playHit(isCrit);
+
+    this.renderer.addSlash(monster.x, monster.y);
     this.renderer.addFloatingText(isCrit ? `CRIT! -${dmg}` : `-${dmg}`, monster.x, monster.y, isCrit ? "#f6ad55" : "#ff4444");
     this.renderer.addParticles(monster.x, monster.y, isCrit ? "#f6ad55" : "#e53e3e", isCrit ? 12 : 6);
 
     const critPrefix = isCrit ? "CRITICAL HIT! " : "";
     this.ui.logMessage(`You strike ${monster.name} for ${critPrefix}${dmg} damage.`, isCrit ? "crit" : "hit");
 
-    if (monster.hp <= 0) {
-      this.kills += 1;
-      this.player.gold += monster.gold_reward;
-      this.ui.logMessage(`Defeated ${monster.name}! Gained ${monster.xp_reward} XP, ${monster.gold_reward} Gold.`, "loot");
-
-      // XP & Level up
-      this.player.xp += monster.xp_reward;
-      while (this.player.xp >= this.player.next_xp) {
-        this.player.xp -= this.player.next_xp;
-        this.player.level += 1;
-        this.player.next_xp = Math.floor(this.player.next_xp * 1.5);
-        this.player.max_hp += 10;
-        this.player.hp = Math.min(this.player.hp + 10, this.player.max_hp);
-        this.player.max_mana += 5;
-        this.player.mana = Math.min(this.player.mana + 5, this.player.max_mana);
-        this.player.attack += 2;
-        this.player.defense += 1;
-        sounds.playLevelUp();
-        this.renderer.addFloatingText("LEVEL UP!", this.player.x, this.player.y, "#4fd1c5");
-        this.ui.logMessage(`🌟 LEVEL UP! You reached Level ${this.player.level}!`, "level");
+    // Weapon poison effect
+    const weapon = this.player.equipped.weapon;
+    if (weapon && weapon.id === "dagger_poison" && monster.hp > 0) {
+      if (Math.random() < 0.45) {
+        monster.status_effects.poison = 3;
+        this.ui.logMessage(`Serpent's venom infected ${monster.name}!`, "loot");
       }
+    }
+
+    if (monster.hp <= 0) {
+      this._handleMonsterDefeat(monster);
+    }
+  }
+
+  _handleMonsterDefeat(monster) {
+    this.kills += 1;
+    this.player.gold += monster.gold_reward;
+    this.ui.logMessage(`Defeated ${monster.name}! Gained ${monster.xp_reward} XP, ${monster.gold_reward} Gold.`, "loot");
+
+    // Boss victory check
+    if (monster.is_boss) {
+      sounds.playLevelUp();
+      this.renderer.addFloatingText("ARCH-LICH SLAIN!", monster.x, monster.y, "#d69e2e");
+      this.ui.logMessage("🏆 ARCH-LICH MALAKOR HAS FALLEN! The realm is redeemed!", "level");
+      // Add legendary drop
+      const crown = {
+        id: "crown_eternity",
+        name: "Crown of Eternity",
+        type: "ring",
+        rarity: "legendary",
+        description: "Imperial artifact of the Lich King (+25 Max HP, +15 Max MP, +5 ATK, +3 DEF).",
+        stats: { max_hp: 25, max_mana: 15, attack: 5, defense: 3 },
+      };
+      if (this.player.inventory.length < 12) {
+        this.player.inventory.push(crown);
+      }
+      setTimeout(() => this.handleVictory(), 1500);
+      return;
+    }
+
+    // XP & Level up
+    this.player.xp += monster.xp_reward;
+    while (this.player.xp >= this.player.next_xp) {
+      this.player.xp -= this.player.next_xp;
+      this.player.level += 1;
+      this.player.next_xp = Math.floor(this.player.next_xp * 1.5);
+      this.player.max_hp += 12;
+      this.player.hp = Math.min(this.player.hp + 12, this.player.max_hp);
+      this.player.max_mana += 6;
+      this.player.mana = Math.min(this.player.mana + 6, this.player.max_mana);
+      this.player.attack += 2;
+      this.player.defense += 1;
+      sounds.playLevelUp();
+      this.renderer.addFloatingText("LEVEL UP!", this.player.x, this.player.y, "#4fd1c5");
+      this.ui.logMessage(`🌟 LEVEL UP! You reached Level ${this.player.level}!`, "level");
     }
   }
 
   tacticalStrike() {
-    // Attack adjacent monster
     const adj = this.monsters.find((m) => {
       if (m.hp <= 0) return false;
       const d = Math.abs(m.x - this.player.x) + Math.abs(m.y - this.player.y);
@@ -439,7 +577,6 @@ export class GameEngine {
       return;
     }
 
-    // Find nearest visible monster
     let target = null;
     let minDist = 999;
     for (const m of this.monsters) {
@@ -458,18 +595,62 @@ export class GameEngine {
     }
 
     this.player.mana -= 10;
-    const dmg = 24 + Math.floor(Math.random() * 10);
+    const dmg = 26 + Math.floor(Math.random() * 12);
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playSpell("fireball");
+
+    this.renderer.addProjectile(this.player.x, this.player.y, target.x, target.y, "#dd6b20");
     this.renderer.addFloatingText(`🔥 -${dmg}`, target.x, target.y, "#f6ad55");
     this.renderer.addParticles(target.x, target.y, "#dd6b20", 16);
-    this.ui.logMessage(`Cast Fireball at ${target.name} for ${dmg} fire damage!`, "crit");
+
+    // Apply burn
+    if (Math.random() < 0.7 && target.hp > 0) {
+      target.status_effects = target.status_effects || {};
+      target.status_effects.burn = 3;
+      this.ui.logMessage(`Cast Fireball at ${target.name} for ${dmg} fire damage! (${target.name} is burning!)`, "crit");
+    } else {
+      this.ui.logMessage(`Cast Fireball at ${target.name} for ${dmg} fire damage!`, "crit");
+    }
 
     if (target.hp <= 0) {
-      this.kills += 1;
-      this.player.gold += target.gold_reward;
-      this.player.xp += target.xp_reward;
-      this.ui.logMessage(`${target.name} incinerated! Gained ${target.xp_reward} XP.`, "loot");
+      this._handleMonsterDefeat(target);
+    }
+
+    this.finishPlayerTurn();
+  }
+
+  tacticalBash() {
+    if (this.player.mana < 4) {
+      this.ui.logMessage("Not enough mana for Shield Bash! (Needs 4 MP)", "system");
+      return;
+    }
+
+    const adj = this.monsters.find((m) => {
+      if (m.hp <= 0) return false;
+      const d = Math.abs(m.x - this.player.x) + Math.abs(m.y - this.player.y);
+      return d === 1;
+    });
+
+    if (!adj) {
+      this.ui.logMessage("No adjacent enemy to Shield Bash.", "system");
+      return;
+    }
+
+    this.player.mana -= 4;
+    const dmg = Math.max(2, Math.floor(this.player.attack * 0.75) - adj.defense);
+    adj.hp = Math.max(0, adj.hp - dmg);
+    sounds.playStun();
+
+    this.renderer.addSlash(adj.x, adj.y);
+    this.renderer.addFloatingText(`💥 -${dmg} STUN`, adj.x, adj.y, "#ecc94b");
+    this.renderer.addParticles(adj.x, adj.y, "#ecc94b", 12);
+
+    adj.status_effects = adj.status_effects || {};
+    adj.status_effects.stun = 1;
+    this.ui.logMessage(`🛡️ Slammed ${adj.name} for ${dmg} damage! (${adj.name} is Stunned for 1 turn!)`, "crit");
+
+    if (adj.hp <= 0) {
+      this._handleMonsterDefeat(adj);
     }
 
     this.finishPlayerTurn();
@@ -482,15 +663,47 @@ export class GameEngine {
     }
 
     this.player.mana -= 8;
-    const healAmt = 22 + Math.floor(Math.random() * 12);
+    const healAmt = 26 + Math.floor(Math.random() * 12);
     const oldHp = this.player.hp;
     this.player.hp = Math.min(this.player.max_hp, this.player.hp + healAmt);
     const restored = this.player.hp - oldHp;
 
+    // Cleanse status
+    const cleansed = [];
+    if (this.player.status_effects.poison) {
+      delete this.player.status_effects.poison;
+      cleansed.append ? cleansed.push("Poison") : cleansed.push("Poison");
+    }
+    if (this.player.status_effects.burn) {
+      delete this.player.status_effects.burn;
+      cleansed.push("Burn");
+    }
+
     sounds.playSpell("heal");
     this.renderer.addFloatingText(`+${restored} HP`, this.player.x, this.player.y, "#68d391");
     this.renderer.addParticles(this.player.x, this.player.y, "#38a169", 14);
-    this.ui.logMessage(`Divine light restored ${restored} HP.`, "heal");
+
+    const clTxt = cleansed.length ? ` (Cleansed ${cleansed.join(", ")})` : "";
+    this.ui.logMessage(`Divine light restored ${restored} HP${clTxt}.`, "heal");
+
+    this.finishPlayerTurn();
+  }
+
+  tacticalShieldWall() {
+    if (this.player.mana < 6) {
+      this.ui.logMessage("Not enough mana for Shield Wall! (Needs 6 MP)", "system");
+      return;
+    }
+
+    this.player.mana -= 6;
+    this.player.status_effects = this.player.status_effects || {};
+    this.player.status_effects.shield_wall = 4;
+    this._recalculatePlayerStats();
+
+    sounds.playShieldWall();
+    this.renderer.addFloatingText("BARRIER (+6 DEF)", this.player.x, this.player.y, "#ecc94b");
+    this.renderer.addParticles(this.player.x, this.player.y, "#d69e2e", 12);
+    this.ui.logMessage("🛡️ Raised Shield Wall! Defense increased by +6 for 4 turns.", "loot");
 
     this.finishPlayerTurn();
   }
@@ -499,14 +712,12 @@ export class GameEngine {
     const potIdx = this.player.inventory.findIndex((i) => i.type === "potion");
     if (potIdx >= 0) {
       this.useInventoryItem(potIdx);
-      this.finishPlayerTurn();
     } else {
       this.ui.logMessage("No potions available in your backpack!", "system");
     }
   }
 
   waitTurn() {
-    // Regenerate 1 MP on wait
     if (this.player.mana < this.player.max_mana) {
       this.player.mana += 1;
     }
@@ -532,9 +743,28 @@ export class GameEngine {
         this.renderer.addFloatingText(`+${mana} MP`, this.player.x, this.player.y, "#63b3ed");
         this.ui.logMessage(`Drank ${item.name}: Restored ${mana} Mana.`, "heal");
       }
+      if (item.id === "potion_rejuvenation") {
+        delete this.player.status_effects.poison;
+        delete this.player.status_effects.burn;
+        this.ui.logMessage("Purified body of all poisons and burning wounds.", "heal");
+      }
       this.player.inventory.splice(idx, 1);
       this.ui.clearItemSelection();
-      this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+      this.finishPlayerTurn();
+    } else if (item.type === "scroll" && item.id === "scroll_nova") {
+      // Arcane Nova scroll: deals 24 damage to all visible enemies
+      this.ui.logMessage("📜 Read Scroll of Arcane Nova! Blinding magical shockwaves explode!", "crit");
+      sounds.playSpell("fireball");
+      for (const m of this.monsters) {
+        if (m.hp > 0 && this.dungeon.isVisible(m.x, m.y)) {
+          m.hp = Math.max(0, m.hp - 24);
+          this.renderer.addFloatingText("-24 NOVA", m.x, m.y, "#9f7aea");
+          this.renderer.addParticles(m.x, m.y, "#b794f4", 10);
+          if (m.hp <= 0) this._handleMonsterDefeat(m);
+        }
+      }
+      this.player.inventory.splice(idx, 1);
+      this.ui.clearItemSelection();
       this.finishPlayerTurn();
     } else if (["weapon", "armor", "ring"].includes(item.type)) {
       const slot = item.type;
@@ -545,7 +775,6 @@ export class GameEngine {
       }
       this.player.equipped[slot] = item;
 
-      // Recalculate stats
       this._recalculatePlayerStats();
       this.ui.clearItemSelection();
       this.ui.logMessage(`Equipped ${item.name}.`, "system");
@@ -578,37 +807,134 @@ export class GameEngine {
   _recalculatePlayerStats() {
     let atk = 8 + (this.player.level - 1) * 2;
     let def = 3 + (this.player.level - 1) * 1;
+    let maxHpBonus = 0;
+    let maxMpBonus = 0;
+
     for (const slot of Object.values(this.player.equipped)) {
       if (slot && slot.stats) {
         if (slot.stats.attack) atk += slot.stats.attack;
         if (slot.stats.defense) def += slot.stats.defense;
+        if (slot.stats.max_hp) maxHpBonus += slot.stats.max_hp;
+        if (slot.stats.max_mana) maxMpBonus += slot.stats.max_mana;
       }
     }
+
+    if (this.player.status_effects && this.player.status_effects.might) {
+      atk += 4;
+    }
+    if (this.player.status_effects && this.player.status_effects.shield_wall) {
+      def += 6;
+    }
+
     this.player.attack = atk;
     this.player.defense = def;
+    this.player.max_hp = 60 + (this.player.level - 1) * 12 + maxHpBonus;
+    this.player.max_mana = 30 + (this.player.level - 1) * 6 + maxMpBonus;
   }
 
   finishPlayerTurn() {
     this.turn += 1;
     this.dungeon.updateFOV(this.player.x, this.player.y, 7);
 
-    // Enemy AI Turns
+    // 1. Tick Player Status Effects
+    this._tickPlayerStatuses();
+
+    // 2. Enemy AI Turns
     this.processEnemyTurns();
 
-    // Check player status
+    // 3. Tick Monster Status Effects
+    this._tickMonsterStatuses();
+
+    // 4. Check player death
     if (this.player.hp <= 0) {
       this.handlePlayerDeath("in mortal combat");
     }
 
+    this._recalculatePlayerStats();
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+  }
+
+  _tickPlayerStatuses() {
+    if (!this.player.status_effects) return;
+    const effects = this.player.status_effects;
+
+    if (effects.poison) {
+      this.player.hp = Math.max(0, this.player.hp - 3);
+      this.renderer.addFloatingText("-3 POISON", this.player.x, this.player.y, "#48bb78");
+      this.ui.logMessage("Venom burns in your veins! (-3 HP)", "hit");
+      effects.poison -= 1;
+      if (effects.poison <= 0) delete effects.poison;
+    }
+    if (effects.burn) {
+      this.player.hp = Math.max(0, this.player.hp - 4);
+      this.renderer.addFloatingText("-4 BURN", this.player.x, this.player.y, "#f6ad55");
+      this.ui.logMessage("Fire singes your armor! (-4 HP)", "hit");
+      effects.burn -= 1;
+      if (effects.burn <= 0) delete effects.burn;
+    }
+    if (effects.shield_wall) {
+      effects.shield_wall -= 1;
+      if (effects.shield_wall <= 0) {
+        delete effects.shield_wall;
+        this.ui.logMessage("Shield Wall collapsed.", "system");
+      }
+    }
+    if (effects.might) {
+      effects.might -= 1;
+      if (effects.might <= 0) {
+        delete effects.might;
+        this.ui.logMessage("Blessing of Might expired.", "system");
+      }
+    }
+  }
+
+  _tickMonsterStatuses() {
+    for (const m of this.monsters) {
+      if (m.hp <= 0 || !m.status_effects) continue;
+      if (m.status_effects.poison) {
+        m.hp = Math.max(0, m.hp - 4);
+        this.renderer.addFloatingText("-4 POISON", m.x, m.y, "#48bb78");
+        m.status_effects.poison -= 1;
+        if (m.status_effects.poison <= 0) delete m.status_effects.poison;
+        if (m.hp <= 0) this._handleMonsterDefeat(m);
+      }
+      if (m.status_effects && m.status_effects.burn) {
+        m.hp = Math.max(0, m.hp - 5);
+        this.renderer.addFloatingText("-5 BURN", m.x, m.y, "#dd6b20");
+        m.status_effects.burn -= 1;
+        if (m.status_effects.burn <= 0) delete m.status_effects.burn;
+        if (m.hp <= 0) this._handleMonsterDefeat(m);
+      }
+    }
   }
 
   processEnemyTurns() {
     for (const monster of this.monsters) {
       if (monster.hp <= 0) continue;
 
+      // Handle Stun
+      if (monster.status_effects && monster.status_effects.stun) {
+        monster.status_effects.stun -= 1;
+        if (monster.status_effects.stun <= 0) delete monster.status_effects.stun;
+        this.ui.logMessage(`${monster.name} is stunned and unable to act!`, "system");
+        continue;
+      }
+
       const dist = Math.hypot(monster.x - this.player.x, monster.y - this.player.y);
       const isVisible = this.dungeon.isVisible(monster.x, monster.y);
+
+      // Boss special ability: Soul Drain
+      if (monster.is_boss && isVisible && dist <= 5 && Math.random() < 0.35) {
+        const drain = 12;
+        this.player.hp = Math.max(0, this.player.hp - drain);
+        monster.hp = Math.min(monster.max_hp, monster.hp + 10);
+        sounds.playSpell("fireball");
+        this.renderer.addProjectile(monster.x, monster.y, this.player.x, this.player.y, "#9f7aea");
+        this.renderer.addFloatingText(`-${drain} DRAIN`, this.player.x, this.player.y, "#b794f4");
+        this.renderer.addFloatingText("+10 HP", monster.x, monster.y, "#9f7aea");
+        this.ui.logMessage(`💀 Malakor casts Soul Drain! Drained ${drain} HP to empower himself!`, "hit");
+        continue;
+      }
 
       // If adjacent: attack player
       if (Math.abs(monster.x - this.player.x) + Math.abs(monster.y - this.player.y) === 1) {
@@ -616,10 +942,24 @@ export class GameEngine {
         const dmg = Math.max(1, Math.floor(baseDmg * (0.8 + Math.random() * 0.4)));
         this.player.hp = Math.max(0, this.player.hp - dmg);
         sounds.playHit(false);
+
+        this.renderer.addSlash(this.player.x, this.player.y);
         this.renderer.addFloatingText(`-${dmg}`, this.player.x, this.player.y, "#ff3333");
         this.ui.logMessage(`${monster.name} attacks you for ${dmg} damage!`, "hit");
-      } else if (isVisible && dist <= 6) {
-        // Simple chase: step toward player
+
+        // Spider poison chance
+        if (monster.type === "spider" && Math.random() < 0.45) {
+          this.player.status_effects.poison = 3;
+          this.ui.logMessage("⚠️ Spider venom coursed into your veins! Afflicted with Poison!", "hit");
+        }
+        // Goblin theft chance
+        if (monster.type === "goblin" && this.player.gold > 5 && Math.random() < 0.5) {
+          const stolen = Math.min(this.player.gold, 5 + Math.floor(Math.random() * 5));
+          this.player.gold -= stolen;
+          this.ui.logMessage(`🪙 Sneaky Goblin stole ${stolen} gold from your coin pouch!`, "hit");
+        }
+      } else if (isVisible && dist <= 7) {
+        // Step toward player
         const dx = Math.sign(this.player.x - monster.x);
         const dy = Math.sign(this.player.y - monster.y);
 
@@ -645,6 +985,7 @@ export class GameEngine {
 
   handlePlayerDeath(cause = "unknown") {
     this.gameOver = true;
+    sounds.stopMusic();
     this.ui.showModal(
       "💀 YOU PERISHED IN THE CRYPT",
       `<p>Your torch flickers and dies... You fell to ${cause}.</p>
@@ -662,17 +1003,19 @@ export class GameEngine {
 
   handleVictory() {
     this.victory = true;
+    sounds.stopMusic();
     this.ui.showModal(
       "🏆 TRIUMPH OF THE PALADIN",
-      `<p>You conquered the deepest vault and recovered the legendary Runic Relic!</p>
+      `<p>You conquered the deepest vault, defeated Arch-Lich Malakor, and recovered the legendary <strong>Crown of Eternity</strong>!</p>
        <br>
        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 4px; border: 1px solid #d69e2e;">
-         <p><strong>Final Level:</strong> ${this.player.level}</p>
+         <p><strong>Hero Level:</strong> ${this.player.level}</p>
          <p><strong>Monsters Slain:</strong> ${this.kills}</p>
          <p><strong>Total Gold:</strong> ${this.player.gold} 🪙</p>
+         <p><strong>Relics Recovered:</strong> Crown of Eternity</p>
        </div>
        <br>
-       <p>The light returns to the realm. Play again?</p>`
+       <p>The light returns to the realm. Descend again for a new challenge?</p>`
     );
   }
 }

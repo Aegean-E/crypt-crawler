@@ -264,6 +264,28 @@ body.theme-dark {
   color: var(--text-muted);
 }
 
+/* Active Status Tray */
+.status-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 18px;
+}
+
+.status-badge {
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-poison { background: #1c4522; color: #68d391; border: 1px solid #2f855a; }
+.badge-burn { background: #5c2214; color: #f6ad55; border: 1px solid #c05621; }
+.badge-shield_wall { background: #4a3810; color: #ecc94b; border: 1px solid #b7791f; }
+.badge-might { background: #4a151b; color: #fc8181; border: 1px solid #9b2c2c; }
+.badge-stun { background: #4a4410; color: #f6e05e; border: 1px solid #d69e2e; }
+
 /* Gauges */
 .gauge-group {
   display: flex;
@@ -519,6 +541,28 @@ body.theme-dark {
   border-color: #ecc94b;
   box-shadow: 0 0 8px rgba(236, 201, 75, 0.4);
 }
+
+.inv-slot.rarity-rare {
+  border-color: #3182ce;
+  box-shadow: 0 0 6px rgba(49, 130, 206, 0.35);
+}
+
+.inv-slot.rarity-legendary {
+  border-color: #d69e2e;
+  box-shadow: 0 0 9px rgba(214, 158, 46, 0.55);
+}
+
+.rarity-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+.pill-common { color: var(--text-muted); background: rgba(255,255,255,0.06); }
+.pill-rare { color: #63b3ed; background: rgba(49, 130, 206, 0.2); border: 1px solid #3182ce; }
+.pill-legendary { color: #f6e05e; background: rgba(214, 158, 46, 0.25); border: 1px solid #d69e2e; }
 
 /* Item Info Card */
 .item-card {

@@ -16,3 +16,10 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Users need immediate zero-friction launching with automated browser opening; furthermore, descending dungeon stairs must preserve character level, equipment, and backpack inventory.
 - **Decision**: Provide `PLAY.bat` and `play.sh` with automatic Python detection and `--open` browser integration. In `engine.js`, implement `descendFloor()` to regenerate the deeper dungeon while preserving all player progression attributes.
 - **Consequences**: Players can start playing with a single click, and RPG progression smoothly persists across dungeon depths.
+
+### ADR-003: Tactical Combat Expansion, Procedural Atmosphere and Web Audio Soundscape
+- **Date**: 2026-10-24
+- **Status**: Accepted
+- **Context**: Elevate gameplay mechanics with status effects, boss encounters, shrines, minimap HUD, dynamic lighting sconces, and procedural ambient music while retaining zero-external-asset footprint.
+- **Decision**: Implement status effects (Poison, Stun, Shield Wall, Burn), an Arch-Lich boss at depth 3, interactive ancient shrines and urns, a radar minimap, and a procedural multi-oscillator Web Audio ambient synthesizer with drone and arpeggio generators.
+- **Consequences**: Enriches immersion, tactical depth, and audio atmosphere with zero external audio assets or npm packages.

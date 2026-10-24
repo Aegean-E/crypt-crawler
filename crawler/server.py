@@ -64,13 +64,24 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             dungeon = gen.generate(seed=seed)
             player = Player(name="Champion", x=dungeon.player_spawn[0], y=dungeon.player_spawn[1])
 
-            # Spawn 1-2 monsters per room outside spawn room
+            # Spawn monsters per room outside spawn room
             monsters = []
-            monster_types = ["skeleton", "goblin", "bat"]
+            monster_types = ["skeleton", "goblin", "bat", "spider"]
             if depth >= 2:
                 monster_types.append("necromancer")
 
+            # Boss Chamber on Depth 3
+            farthest_room = dungeon.rooms[-1] if dungeon.rooms else None
+            if depth >= 3 and farthest_room:
+                bx, by = farthest_room.center
+                monsters.append(spawn_monster("boss_lich", bx, by, depth=depth))
+                if farthest_room.w >= 4 and farthest_room.h >= 4:
+                    monsters.append(spawn_monster("skeleton", bx - 1, by, depth=depth))
+                    monsters.append(spawn_monster("skeleton", bx + 1, by, depth=depth))
+
             for room in dungeon.rooms[1:]:
+                if depth >= 3 and room == farthest_room:
+                    continue
                 m_count = dungeon.rng.randint(1, 2)
                 for _ in range(m_count):
                     mx = dungeon.rng.randint(room.x1 + 1, room.x2 - 2)

@@ -10,6 +10,8 @@ export const TileType = {
   STAIRS_DOWN: 4,
   CHEST: 5,
   TRAP: 6,
+  SHRINE: 7,
+  URN: 8,
 };
 
 export class ClientDungeon {
@@ -24,6 +26,9 @@ export class ClientDungeon {
     this.rooms = data.rooms || [];
     this.chests = (data.chests || []).map((c) => ({ x: c[0], y: c[1], opened: false }));
     this.traps = (data.traps || []).map((t) => ({ x: t[0], y: t[1], triggered: false }));
+    this.shrines = (data.shrines || []).map((s) => ({ x: s[0], y: s[1], activated: false }));
+    this.urns = (data.urns || []).map((u) => ({ x: u[0], y: u[1], broken: false }));
+    this.sconces = (data.sconces || []).map((sc) => ({ x: sc[0], y: sc[1] }));
 
     // Fog of War: explored (2D boolean array) and visible (Set of "x,y" keys)
     this.explored = Array.from({ length: this.height }, () =>
@@ -39,7 +44,7 @@ export class ClientDungeon {
   isWalkable(x, y) {
     if (!this.inBounds(x, y)) return false;
     const tile = this.tiles[y][x];
-    return tile !== TileType.WALL;
+    return tile !== TileType.WALL && tile !== TileType.DOOR_CLOSED;
   }
 
   isTransparent(x, y) {

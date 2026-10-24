@@ -17,6 +17,8 @@ class TileType:
     STAIRS_DOWN = 4
     CHEST = 5
     TRAP = 6
+    SHRINE = 7
+    URN = 8
 
 
 @dataclass
@@ -67,6 +69,9 @@ class Dungeon:
         self.stairs_pos: Tuple[int, int] = (0, 0)
         self.chests: List[Tuple[int, int]] = []
         self.traps: List[Tuple[int, int]] = []
+        self.shrines: List[Tuple[int, int]] = []
+        self.urns: List[Tuple[int, int]] = []
+        self.sconces: List[Tuple[int, int]] = []
         self.depth: int = 1
 
     def in_bounds(self, x: int, y: int) -> bool:
@@ -83,6 +88,8 @@ class Dungeon:
             TileType.STAIRS_DOWN,
             TileType.CHEST,
             TileType.TRAP,
+            TileType.SHRINE,
+            TileType.URN,
         )
 
     def is_transparent(self, x: int, y: int) -> bool:
@@ -95,6 +102,8 @@ class Dungeon:
             TileType.STAIRS_DOWN,
             TileType.CHEST,
             TileType.TRAP,
+            TileType.SHRINE,
+            TileType.URN,
         )
 
     def compute_fov(self, px: int, py: int, radius: int = 8) -> Set[Tuple[int, int]]:
@@ -176,6 +185,9 @@ class Dungeon:
             "stairs_pos": list(self.stairs_pos),
             "chests": [list(c) for c in self.chests],
             "traps": [list(t) for t in self.traps],
+            "shrines": [list(s) for s in self.shrines],
+            "urns": [list(u) for u in self.urns],
+            "sconces": [list(sc) for sc in self.sconces],
             "rooms": [
                 {"x": r.x, "y": r.y, "w": r.w, "h": r.h, "center": list(r.center)}
                 for r in self.rooms
@@ -246,10 +258,20 @@ class DungeonGenerator:
             dungeon.stairs_pos = farthest_room.center
             dungeon.tiles[dungeon.stairs_pos[1]][dungeon.stairs_pos[0]] = TileType.STAIRS_DOWN
 
-            # Scatter chests and traps in other rooms
-            for room in dungeon.rooms[1:]:
+            # Scatter chests, traps, shrines, and urns
+            for i, room in enumerate(dungeon.rooms[1:], 1):
                 if room == farthest_room:
                     continue
+
+                # Ancient Shrine in one room
+                if i == len(dungeon.rooms) // 2:
+                    sx = room.center[0]
+                    sy = room.center[1]
+                    dungeon.tiles[sy][sx] = TileType.SHRINE
+                    dungeon.shrines.append((sx, sy))
+                    continue
+
+                # Chests
                 if rng.random() < 0.6:
                     cx = rng.randint(room.x1 + 1, room.x2 - 2)
                     cy = rng.randint(room.y1 + 1, room.y2 - 2)
@@ -259,6 +281,8 @@ class DungeonGenerator:
                     ):
                         dungeon.tiles[cy][cx] = TileType.CHEST
                         dungeon.chests.append((cx, cy))
+
+                # Traps
                 if rng.random() < 0.4:
                     tx = rng.randint(room.x1 + 1, room.x2 - 2)
                     ty = rng.randint(room.y1 + 1, room.y2 - 2)
@@ -268,6 +292,25 @@ class DungeonGenerator:
                     ):
                         dungeon.tiles[ty][tx] = TileType.TRAP
                         dungeon.traps.append((tx, ty))
+
+                # Urns
+                if rng.random() < 0.7:
+                    ux = rng.randint(room.x1 + 1, room.x2 - 2)
+                    uy = rng.randint(room.y1 + 1, room.y2 - 2)
+                    if dungeon.tiles[uy][ux] == TileType.FLOOR and (ux, uy) not in (
+                        dungeon.player_spawn,
+                        dungeon.stairs_pos,
+                    ):
+                        dungeon.tiles[uy][ux] = TileType.URN
+                        dungeon.urns.append((ux, uy))
+
+            # Wall sconces (torches on walls directly above floors)
+            for room in dungeon.rooms:
+                top_y = room.y1 - 1
+                if top_y >= 0:
+                    mid_x = room.center[0]
+                    if dungeon.tiles[top_y][mid_x] == TileType.WALL:
+                        dungeon.sconces.append((mid_x, top_y))
 
         return dungeon
 
@@ -282,11 +325,9 @@ class DungeonGenerator:
         x2, y2 = end
 
         if rng.random() < 0.5:
-            # Horizontal then vertical
             self._carve_h(dungeon, x1, x2, y1)
             self._carve_v(dungeon, y1, y2, x2)
         else:
-            # Vertical then horizontal
             self._carve_v(dungeon, y1, y2, x1)
             self._carve_h(dungeon, x1, x2, y2)
 

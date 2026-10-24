@@ -14,6 +14,7 @@ class Item:
     value: int
     description: str
     stats: Dict[str, int] = field(default_factory=dict)
+    rarity: str = "common"  # 'common', 'rare', 'legendary'
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -23,6 +24,7 @@ class Item:
             "value": self.value,
             "description": self.description,
             "stats": self.stats,
+            "rarity": self.rarity,
         }
 
 
@@ -33,6 +35,7 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 15,
         "description": "Restores 35 Hit Points instantly.",
         "stats": {"heal_hp": 35},
+        "rarity": "common",
     },
     "potion_mana": {
         "name": "Aether Potion",
@@ -40,6 +43,15 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 15,
         "description": "Restores 25 Mana points instantly.",
         "stats": {"restore_mana": 25},
+        "rarity": "common",
+    },
+    "potion_rejuvenation": {
+        "name": "Draught of Rejuvenation",
+        "type": "potion",
+        "value": 35,
+        "description": "Restores 30 HP and 20 Mana, cleansing negative afflictions.",
+        "stats": {"heal_hp": 30, "restore_mana": 20},
+        "rarity": "rare",
     },
     "scroll_fireball": {
         "name": "Scroll of Inferno",
@@ -47,6 +59,15 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 30,
         "description": "Unleashes a burst of flame dealing 30 damage.",
         "stats": {"spell_damage": 30, "spell_type": "fire"},
+        "rarity": "common",
+    },
+    "scroll_nova": {
+        "name": "Scroll of Arcane Nova",
+        "type": "scroll",
+        "value": 55,
+        "description": "Pulses arcane shockwaves across the chamber.",
+        "stats": {"spell_damage": 22, "spell_type": "arcane"},
+        "rarity": "rare",
     },
     "sword_iron": {
         "name": "Forged Iron Sword",
@@ -54,6 +75,7 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 25,
         "description": "Sturdy blade crafted by crypt smiths (+4 ATK).",
         "stats": {"attack": 4},
+        "rarity": "common",
     },
     "sword_runic": {
         "name": "Runic Claymore",
@@ -61,6 +83,15 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 75,
         "description": "Glows with ancient runes (+10 ATK).",
         "stats": {"attack": 10},
+        "rarity": "rare",
+    },
+    "dagger_poison": {
+        "name": "Serpent's Fang Dagger",
+        "type": "weapon",
+        "value": 60,
+        "description": "Coated in deadly spider venom (+5 ATK, poisons on strike).",
+        "stats": {"attack": 5, "poison_chance": 40},
+        "rarity": "rare",
     },
     "armor_leather": {
         "name": "Hardened Leather Armor",
@@ -68,6 +99,7 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 20,
         "description": "Light, flexible armor offering basic protection (+2 DEF).",
         "stats": {"defense": 2},
+        "rarity": "common",
     },
     "armor_plate": {
         "name": "Knightly Plate Mail",
@@ -75,6 +107,15 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 65,
         "description": "Heavy steel plates deflecting lethal blows (+6 DEF).",
         "stats": {"defense": 6},
+        "rarity": "rare",
+    },
+    "shield_tower": {
+        "name": "Aegis Tower Shield",
+        "type": "armor",
+        "value": 80,
+        "description": "Massive dwarven bulwark (+8 DEF).",
+        "stats": {"defense": 8},
+        "rarity": "rare",
     },
     "ring_vitality": {
         "name": "Ring of Vitality",
@@ -82,13 +123,23 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "value": 50,
         "description": "Imbues the wearer with constitution (+20 Max HP).",
         "stats": {"max_hp": 20},
+        "rarity": "common",
     },
     "ring_power": {
         "name": "Ring of Arcane Might",
         "type": "ring",
-        "value": 50,
+        "value": 70,
         "description": "Amplifies physical and magical force (+3 ATK, +10 Max Mana).",
         "stats": {"attack": 3, "max_mana": 10},
+        "rarity": "rare",
+    },
+    "crown_eternity": {
+        "name": "Crown of Eternity",
+        "type": "ring",
+        "value": 250,
+        "description": "Ancient imperial relic of the Lich King (+25 Max HP, +15 Max MP, +5 ATK, +3 DEF).",
+        "stats": {"max_hp": 25, "max_mana": 15, "attack": 5, "defense": 3},
+        "rarity": "legendary",
     },
 }
 
@@ -104,6 +155,7 @@ def create_item(item_id: str) -> Optional[Item]:
         value=data["value"],
         description=data["description"],
         stats=dict(data.get("stats", {})),
+        rarity=data.get("rarity", "common"),
     )
 
 
@@ -121,6 +173,37 @@ class Entity:
     @property
     def is_alive(self) -> bool:
         return self.hp > 0
+
+    @property
+    def is_stunned(self) -> bool:
+        return self.status_effects.get("stun", 0) > 0
+
+    def apply_status(self, effect: str, duration: int) -> None:
+        self.status_effects[effect] = max(self.status_effects.get(effect, 0), duration)
+
+    def tick_status_effects(self) -> List[str]:
+        messages: List[str] = []
+        to_remove = []
+
+        for effect, turns in list(self.status_effects.items()):
+            if effect == "poison":
+                dmg = self.take_damage(4)
+                messages.append(f"{self.name} suffered {dmg} poison damage.")
+            elif effect == "burn":
+                dmg = self.take_damage(5)
+                messages.append(f"{self.name} suffered {dmg} fire burn damage.")
+
+            new_turns = turns - 1
+            if new_turns <= 0:
+                to_remove.append(effect)
+            else:
+                self.status_effects[effect] = new_turns
+
+        for rem in to_remove:
+            del self.status_effects[rem]
+            messages.append(f"{self.name}'s {rem} wore off.")
+
+        return messages
 
     def take_damage(self, amount: int) -> int:
         actual = max(1, amount)
@@ -146,12 +229,14 @@ class Monster(Entity):
         xp_reward: int,
         gold_reward: int,
         loot_drop: Optional[str] = None,
+        is_boss: bool = False,
     ):
         super().__init__(name, x, y, hp, hp, attack, defense)
         self.monster_type = monster_type
         self.xp_reward = xp_reward
         self.gold_reward = gold_reward
         self.loot_drop = loot_drop
+        self.is_boss = is_boss
         self.ai_state = "idle"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -167,19 +252,35 @@ class Monster(Entity):
             "xp_reward": self.xp_reward,
             "gold_reward": self.gold_reward,
             "loot_drop": self.loot_drop,
+            "is_boss": self.is_boss,
             "ai_state": self.ai_state,
+            "status_effects": dict(self.status_effects),
         }
 
 
 def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
     scale = 1.0 + (depth - 1) * 0.25
-    if monster_type == "skeleton":
+    if monster_type == "boss_lich":
+        return Monster(
+            name="Arch-Lich Malakor",
+            monster_type="boss_lich",
+            x=x,
+            y=y,
+            hp=95,
+            attack=13,
+            defense=5,
+            xp_reward=200,
+            gold_reward=150,
+            loot_drop="crown_eternity",
+            is_boss=True,
+        )
+    elif monster_type == "skeleton":
         return Monster(
             name="Crypt Skeleton",
             monster_type="skeleton",
             x=x,
             y=y,
-            hp=int(18 * scale),
+            hp=int(20 * scale),
             attack=int(6 * scale),
             defense=int(2 * scale),
             xp_reward=20,
@@ -192,12 +293,25 @@ def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
             monster_type="goblin",
             x=x,
             y=y,
-            hp=int(12 * scale),
+            hp=int(14 * scale),
             attack=int(5 * scale),
             defense=int(1 * scale),
-            xp_reward=15,
-            gold_reward=15,
+            xp_reward=16,
+            gold_reward=18,
             loot_drop="potion_health",
+        )
+    elif monster_type == "spider":
+        return Monster(
+            name="Venomous Brood-Spider",
+            monster_type="spider",
+            x=x,
+            y=y,
+            hp=int(12 * scale),
+            attack=int(6 * scale),
+            defense=int(1 * scale),
+            xp_reward=18,
+            gold_reward=12,
+            loot_drop="dagger_poison",
         )
     elif monster_type == "necromancer":
         return Monster(
@@ -205,11 +319,11 @@ def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
             monster_type="necromancer",
             x=x,
             y=y,
-            hp=int(28 * scale),
+            hp=int(30 * scale),
             attack=int(9 * scale),
             defense=int(3 * scale),
             xp_reward=45,
-            gold_reward=35,
+            gold_reward=40,
             loot_drop="scroll_fireball",
         )
     else:  # default minion
@@ -218,24 +332,24 @@ def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
             monster_type="bat",
             x=x,
             y=y,
-            hp=int(8 * scale),
+            hp=int(9 * scale),
             attack=int(4 * scale),
             defense=0,
             xp_reward=10,
-            gold_reward=5,
+            gold_reward=6,
             loot_drop=None,
         )
 
 
 class Player(Entity):
-    def __init__(self, name: str = "Adventurer", x: int = 0, y: int = 0):
+    def __init__(self, name: str = "Valerius", x: int = 0, y: int = 0):
         super().__init__(name, x, y, hp=60, max_hp=60, attack=8, defense=3)
         self.mana = 30
         self.max_mana = 30
         self.level = 1
         self.xp = 0
         self.next_xp = 50
-        self.gold = 20
+        self.gold = 25
         self.max_slots = 12
         self.inventory: List[Item] = []
         self.equipped: Dict[str, Optional[Item]] = {
@@ -259,6 +373,8 @@ class Player(Entity):
             for eq in self.equipped.values()
             if eq is not None
         )
+        if self.status_effects.get("might", 0) > 0:
+            bonus += 4
         return self.attack + bonus
 
     @property
@@ -268,6 +384,8 @@ class Player(Entity):
             for eq in self.equipped.values()
             if eq is not None
         )
+        if self.status_effects.get("shield_wall", 0) > 0:
+            bonus += 6
         return self.defense + bonus
 
     @property
@@ -296,10 +414,10 @@ class Player(Entity):
             self.xp -= self.next_xp
             self.level += 1
             self.next_xp = int(self.next_xp * 1.5)
-            self.max_hp += 10
-            self.hp = min(self.hp + 10, self.effective_max_hp)
-            self.max_mana += 5
-            self.mana = min(self.mana + 5, self.effective_max_mana)
+            self.max_hp += 12
+            self.hp = min(self.hp + 12, self.effective_max_hp)
+            self.max_mana += 6
+            self.mana = min(self.mana + 6, self.effective_max_mana)
             self.attack += 2
             self.defense += 1
             leveled = True
@@ -309,10 +427,8 @@ class Player(Entity):
         slot = item.item_type
         if slot not in self.equipped:
             return False
-        # Remove from inventory
         if item in self.inventory:
             self.inventory.remove(item)
-        # If slot was occupied, return old item to inventory
         if self.equipped[slot] is not None:
             self.inventory.append(self.equipped[slot])  # type: ignore[arg-type]
         self.equipped[slot] = item
@@ -347,6 +463,11 @@ class Player(Entity):
             if mana_amount > 0:
                 self.mana = min(self.effective_max_mana, self.mana + mana_amount)
                 msg_parts.append(f"restored {mana_amount} Mana")
+            # If rejuvenation, cleanse negative statuses
+            if item.item_id == "potion_rejuvenation":
+                self.status_effects.pop("poison", None)
+                self.status_effects.pop("burn", None)
+                msg_parts.append("cleansed all afflictions")
             self.inventory.pop(item_index)
             return True, f"Drank {item.name}: {', '.join(msg_parts)}."
 
@@ -372,4 +493,5 @@ class Player(Entity):
                 k: (v.to_dict() if v is not None else None)
                 for k, v in self.equipped.items()
             },
+            "status_effects": dict(self.status_effects),
         }

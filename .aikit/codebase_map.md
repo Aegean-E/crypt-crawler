@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `12`
 - **Total Classes**: `14`
-- **Total Top-Level Functions**: `10`
-- **Total Class Methods**: `60`
-- **Total Source Lines**: `1474`
+- **Total Top-Level Functions**: `12`
+- **Total Class Methods**: `66`
+- **Total Source Lines**: `1772`
 
 ---
 
@@ -26,22 +26,24 @@
 ### [`crawler/combat.py`](crawler/combat.py)
 > *Turn-based tactical combat resolution for Crypt-Crawler.*
 
-**Size**: `163` lines (`5110` bytes)
+**Size**: `260` lines (`8788` bytes)
 
 **Classes:**
 - `class CombatResult`
 
 **Functions:**
 - `def resolve_melee_attack(attacker, defender, rng)` - *Resolve a turn-based melee attack between two entities.*
-- `def cast_fireball(player, target, rng)` - *Cast Fireball spell costing 10 Mana.*
-- `def cast_heal(player, rng)` - *Cast Divine Healing spell costing 8 Mana.*
+- `def shield_bash(player, target, rng)` - *Perform a crushing shield bash costing 4 Mana, dealing physical damage and stunning for 1 turn.*
+- `def shield_wall(player)` - *Raise defensive guard (+6 DEF for 4 turns), costing 6 Mana.*
+- `def cast_fireball(player, target, rng)` - *Cast Fireball spell costing 10 Mana, dealing direct damage and applying Burn.*
+- `def cast_heal(player, rng)` - *Cast Divine Healing spell costing 8 Mana, restoring HP and cleansing negative statuses.*
 
 ---
 
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `301` lines (`9872` bytes)
+**Size**: `342` lines (`11477` bytes)
 
 **Classes:**
 - `class TileType`
@@ -72,7 +74,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `375` lines (`11375` bytes)
+**Size**: `497` lines (`15552` bytes)
 
 **Classes:**
 - `class Item`
@@ -80,10 +82,13 @@
 - `class Entity`
   - Method `.__init__(name, x, y, hp, max_hp, attack, defense)`
   - Property `.is_alive`
+  - Property `.is_stunned`
+  - Method `.apply_status(effect, duration)`
+  - Method `.tick_status_effects()`
   - Method `.take_damage(amount)`
   - Method `.heal(amount)`
 - `class Monster`
-  - Method `.__init__(name, monster_type, x, y, hp, attack, defense, xp_reward, gold_reward, loot_drop)`
+  - Method `.__init__(name, monster_type, x, y, hp, attack, defense, xp_reward, gold_reward, loot_drop, is_boss)`
   - Method `.to_dict()`
 - `class Player`
   - Method `.__init__(name, x, y)`
@@ -106,7 +111,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `107` lines (`4115` bytes)
+**Size**: `118` lines (`4733` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -142,7 +147,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `81` lines (`2888` bytes)
+**Size**: `102` lines (`3815` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -153,7 +158,10 @@
   - Method `.test_level_up()`
   - Method `.test_potion_healing()`
   - Method `.test_fireball_spell_consumes_mana()`
-  - Method `.test_heal_spell()`
+  - Method `.test_heal_spell_and_cleansing()`
+  - Method `.test_shield_bash_stuns_target()`
+  - Method `.test_shield_wall_buff()`
+  - Method `.test_status_effects_tick()`
 
 ---
 
@@ -202,7 +210,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `226` lines (`8791` bytes)
+**Size**: `232` lines (`9087` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

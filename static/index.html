@@ -17,10 +17,11 @@
       </div>
       <div class="header-metrics">
         <span class="metric-pill" id="turnCounterPill">Turn: <strong id="turnCount">1</strong></span>
-        <span class="metric-pill" id="goldCounterPill">🪙 <strong id="goldCount">20</strong> Gold</span>
+        <span class="metric-pill" id="goldCounterPill">🪙 <strong id="goldCount">25</strong> Gold</span>
       </div>
       <div class="header-actions">
-        <button id="btnAudioToggle" class="btn btn-icon" title="Toggle Sound">🔊</button>
+        <button id="btnMusicToggle" class="btn btn-icon" title="Toggle Ambient Music">🎵</button>
+        <button id="btnAudioToggle" class="btn btn-icon" title="Toggle Sound FX">🔊</button>
         <button id="btnHelp" class="btn btn-secondary" title="How to Play">❓ Guide</button>
         <button id="btnRestart" class="btn btn-danger" title="Restart with New Seed">🔄 New Game</button>
       </div>
@@ -39,6 +40,9 @@
               <span class="hero-class" id="heroClass">Crypt Paladin</span>
             </div>
           </div>
+
+          <!-- Active Status Tray -->
+          <div class="status-tray" id="heroStatusTray"></div>
 
           <!-- Gauges -->
           <div class="gauge-group">
@@ -112,41 +116,51 @@
       <!-- Center Panel: Canvas Viewport & Action Deck -->
       <section class="panel panel-viewport" id="viewportPanel">
         <div class="canvas-wrapper">
-          <canvas id="gameCanvas" width="720" height="520"></canvas>
+          <canvas id="gameCanvas" width="760" height="540"></canvas>
           <div id="targetCrosshair" class="target-crosshair hidden"></div>
           <div id="combatBanner" class="combat-banner hidden"></div>
         </div>
 
         <!-- Tactical Command Deck -->
         <div class="tactical-deck" id="tacticalDeck">
-          <button class="deck-btn" id="btnActionMelee" title="Melee Attack adjacent enemy (Hotkey: 1 or Bump)">
+          <button class="deck-btn" id="btnActionMelee" title="Melee Attack adjacent enemy [1]">
             <span class="deck-icon">🗡️</span>
             <span class="deck-label">Strike</span>
             <span class="deck-hotkey">[1]</span>
           </button>
-          <button class="deck-btn" id="btnActionFireball" title="Cast Fireball spell (10 MP) (Hotkey: 2)">
+          <button class="deck-btn" id="btnActionFireball" title="Cast Fireball (10 MP, Burn) [2]">
             <span class="deck-icon">🔥</span>
             <span class="deck-label">Fireball</span>
             <span class="deck-hotkey">[2]</span>
           </button>
-          <button class="deck-btn" id="btnActionHeal" title="Cast Divine Healing (8 MP) (Hotkey: 3)">
-            <span class="deck-icon">✨</span>
-            <span class="deck-label">Heal</span>
+          <button class="deck-btn" id="btnActionBash" title="Shield Bash target (4 MP, 1 Turn Stun) [3]">
+            <span class="deck-icon">💥</span>
+            <span class="deck-label">Bash</span>
             <span class="deck-hotkey">[3]</span>
           </button>
-          <button class="deck-btn" id="btnActionPotion" title="Drink Health Potion (Hotkey: 4)">
-            <span class="deck-icon">🧪</span>
-            <span class="deck-label">Potion</span>
+          <button class="deck-btn" id="btnActionHeal" title="Divine Healing (8 MP, Cleanses statuses) [4]">
+            <span class="deck-icon">✨</span>
+            <span class="deck-label">Heal</span>
             <span class="deck-hotkey">[4]</span>
           </button>
-          <button class="deck-btn" id="btnActionWait" title="Wait / Pass Turn (Hotkey: Space / 5)">
+          <button class="deck-btn" id="btnActionShieldWall" title="Raise Shield Wall (6 MP, +6 DEF for 4 turns) [5]">
+            <span class="deck-icon">🛡️</span>
+            <span class="deck-label">Barrier</span>
+            <span class="deck-hotkey">[5]</span>
+          </button>
+          <button class="deck-btn" id="btnActionPotion" title="Drink Potion [6]">
+            <span class="deck-icon">🧪</span>
+            <span class="deck-label">Potion</span>
+            <span class="deck-hotkey">[6]</span>
+          </button>
+          <button class="deck-btn" id="btnActionWait" title="Wait / Pass Turn (+1 MP) [Space]">
             <span class="deck-icon">⏳</span>
             <span class="deck-label">Wait</span>
             <span class="deck-hotkey">[Space]</span>
           </button>
         </div>
 
-        <!-- Mobile Touch Virtual D-Pad (visible on small screens) -->
+        <!-- Mobile Touch Virtual D-Pad -->
         <div class="virtual-dpad" id="virtualDpad">
           <button class="dpad-btn dpad-up" id="btnDpadUp">▲</button>
           <div class="dpad-middle-row">

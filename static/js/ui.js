@@ -1,5 +1,5 @@
 /**
- * UI controller for Crypt-Crawler: hero gauges, paperdoll, backpack, and combat log.
+ * UI controller for Crypt-Crawler: hero gauges, paperdoll, backpack, status tray, and combat log.
  */
 
 export class UIController {
@@ -17,6 +17,9 @@ export class UIController {
     this.xpBar = document.getElementById("xpBar");
     this.xpText = document.getElementById("xpText");
     this.levelVal = document.getElementById("levelVal");
+
+    // Status Tray
+    this.heroStatusTray = document.getElementById("heroStatusTray");
 
     // Attributes
     this.statAttack = document.getElementById("statAttack");
@@ -110,6 +113,9 @@ export class UIController {
     this.statDefense.textContent = player.defense;
     this.statKills.textContent = kills;
 
+    // Status Tray
+    this.renderStatusTray(player.status_effects || {});
+
     // Equipment
     const eq = player.equipped || {};
     this.slotWeaponContent.textContent = eq.weapon ? `⚔️ ${eq.weapon.name}` : "Empty";
@@ -118,6 +124,27 @@ export class UIController {
 
     // Inventory
     this.renderInventory(player.inventory);
+  }
+
+  renderStatusTray(effects) {
+    if (!this.heroStatusTray) return;
+    this.heroStatusTray.innerHTML = "";
+
+    const labels = {
+      poison: "🧪 Poison",
+      burn: "🔥 Burning",
+      shield_wall: "🛡️ Barrier",
+      might: "⚔️ Might",
+      stun: "💫 Stunned",
+    };
+
+    for (const [key, turns] of Object.entries(effects)) {
+      if (turns <= 0) continue;
+      const badge = document.createElement("span");
+      badge.className = `status-badge badge-${key}`;
+      badge.textContent = `${labels[key] || key} (${turns})`;
+      this.heroStatusTray.appendChild(badge);
+    }
   }
 
   renderInventory(items = []) {
@@ -133,8 +160,11 @@ export class UIController {
 
       if (i < items.length) {
         const item = items[i];
+        if (item.rarity && item.rarity !== "common") {
+          slotDiv.classList.add(`rarity-${item.rarity}`);
+        }
         slotDiv.textContent = this._getItemIcon(item);
-        slotDiv.title = `${item.name} (${item.type})`;
+        slotDiv.title = `${item.name} (${item.rarity ? item.rarity.toUpperCase() : "COMMON"} ${item.type})`;
         slotDiv.addEventListener("click", () => this.selectItem(i, item));
       } else {
         slotDiv.textContent = "";
@@ -146,14 +176,14 @@ export class UIController {
 
   selectItem(index, item) {
     this.selectedItemIndex = index;
-    // Re-highlight slot
     const slots = this.inventoryGrid.querySelectorAll(".inv-slot");
     slots.forEach((s, idx) => {
       s.classList.toggle("selected", idx === index);
     });
 
     if (item) {
-      this.itemCardName.textContent = item.name;
+      const rarity = item.rarity || "common";
+      this.itemCardName.innerHTML = `${item.name} <span class="rarity-pill pill-${rarity}">${rarity}</span>`;
       this.itemCardDesc.textContent = item.description;
       this.btnItemUse.classList.remove("hidden");
       this.btnItemDrop.classList.remove("hidden");
@@ -182,10 +212,10 @@ export class UIController {
   _getItemIcon(item) {
     if (!item) return "";
     switch (item.type) {
-      case "weapon": return "⚔️";
-      case "armor": return "🛡️";
-      case "ring": return "💍";
-      case "potion": return item.id.includes("mana") ? "🧪" : "🍷";
+      case "weapon": return item.id === "dagger_poison" ? "🗡️" : "⚔️";
+      case "armor": return item.id === "shield_tower" ? "🛡️" : "🦺";
+      case "ring": return item.id === "crown_eternity" ? "👑" : "💍";
+      case "potion": return item.id.includes("mana") ? "🧪" : (item.id.includes("rejuvenation") ? "✨" : "🍷");
       case "scroll": return "📜";
       default: return "📦";
     }
