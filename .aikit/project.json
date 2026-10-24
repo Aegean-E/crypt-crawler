@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "name": "crypt-crawler",
+  "test_command": null,
+  "topics": [
+    "aikit"
+  ],
+  "gates": {},
+  "ui_required": false,
+  "created": "2026-10-24"
+}
