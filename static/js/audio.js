@@ -548,6 +548,92 @@ class SoundSystem {
     osc1.stop(now + 0.42);
     osc2.stop(now + 0.42);
   }
+
+  playCombo(streak = 2) {
+    if (this.sfxMuted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    let freqs = [329.63, 440.0, 554.37]; // E4, A4, C#5
+    if (streak === 3) freqs = [440.0, 554.37, 659.25, 880.0];
+    else if (streak >= 5) freqs = [554.37, 659.25, 880.0, 1108.73, 1318.51];
+
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const start = now + idx * 0.055;
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, start);
+
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.linearRampToValueAtTime(0.12, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.28);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(start);
+      osc.stop(start + 0.3);
+    });
+  }
+
+  playChampionSlay() {
+    if (this.sfxMuted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const chords = [
+      [261.63, 329.63, 392.0, 523.25], // C Major
+      [329.63, 415.30, 493.88, 659.25], // E Major triumphant
+    ];
+
+    chords.forEach((chord, cIdx) => {
+      chord.forEach((freq) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const start = now + cIdx * 0.14;
+
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.06, start + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.38);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
+    });
+  }
+
+  playThud() {
+    if (this.sfxMuted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.exponentialRampToValueAtTime(32, now + 0.16);
+
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.18);
+  }
 }
 
 export const sounds = new SoundSystem();

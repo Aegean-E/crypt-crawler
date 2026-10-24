@@ -9,6 +9,8 @@ export class UIController {
     this.turnCount = document.getElementById("turnCount");
     this.goldCount = document.getElementById("goldCount");
     this.saveIndicator = document.getElementById("saveIndicator");
+    this.streakPill = document.getElementById("streakPill");
+    this.streakCount = document.getElementById("streakCount");
 
     // Hero identity
     this.heroName = document.getElementById("heroName");
@@ -302,6 +304,92 @@ export class UIController {
         if (onBuy) onBuy(itemId);
       });
     });
+  }
+
+  updateStreak(streak) {
+    if (!this.streakPill || !this.streakCount) return;
+    if (streak >= 2) {
+      this.streakCount.textContent = streak;
+      this.streakPill.classList.remove("hidden");
+    } else {
+      this.streakPill.classList.add("hidden");
+    }
+  }
+
+  showHallOfRecordsModal(records) {
+    const r = records || {
+      totalRuns: 0,
+      victories: 0,
+      bestDepth: 1,
+      totalKills: 0,
+      highestStreak: 0,
+      totalGold: 0,
+      bestiary: {},
+    };
+
+    const bestiaryDefs = [
+      { id: "skeleton", name: "Crypt Skeleton", icon: "💀", desc: "Reanimated legionnaire. Susceptible to holy bash and crushing blunt force.", weakness: "Blunt / Stun" },
+      { id: "goblin", name: "Sneaky Goblin", icon: "👺", desc: "Devious looter that pilfers coins upon strike. Low defense.", weakness: "Ranged / Piercing" },
+      { id: "spider", name: "Venomous Brood-Spider", icon: "🕷️", desc: "Spits debilitating neurotoxin. Cleansing prayers counteract poison.", weakness: "Fire / Cleanse" },
+      { id: "necromancer", name: "Dread Necromancer", icon: "🧙‍♂️", desc: "Chants dark spells from afar. High mana shields.", weakness: "Melee Rush" },
+      { id: "boss_lich", name: "Arch-Lich Malakor", icon: "👑", desc: "Lord of the Sunken Crypt. Drains mortal souls to regenerate essence.", weakness: "Crown of Eternity" },
+    ];
+
+    let bestiaryHtml = "";
+    for (const def of bestiaryDefs) {
+      const kills = r.bestiary?.[def.id]?.slain || 0;
+      const isKnown = kills > 0;
+      bestiaryHtml += `
+        <div class="bestiary-item ${isKnown ? "" : "locked"}">
+          <div class="bestiary-icon">${isKnown ? def.icon : "❓"}</div>
+          <div class="bestiary-info">
+            <h4>${isKnown ? def.name : "Unknown Entity"}</h4>
+            <p>${isKnown ? `${def.desc} (Weakness: ${def.weakness})` : "Encounter and defeat this creature in the catacombs to reveal its lore."}</p>
+          </div>
+          <div class="bestiary-count">${isKnown ? `Slayed: ${kills}` : "Locked"}</div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div class="records-container">
+        <h3 style="font-size: 0.9rem; color: #cbd5e0; margin-bottom: 8px;">Ancestral Career Records</h3>
+        <div class="records-stat-grid">
+          <div class="records-stat-box">
+            <div class="stat-val">${r.totalRuns || 0}</div>
+            <div class="stat-name">Runs Played</div>
+          </div>
+          <div class="records-stat-box">
+            <div class="stat-val">${r.victories || 0}</div>
+            <div class="stat-name">Crowns Claimed</div>
+          </div>
+          <div class="records-stat-box">
+            <div class="stat-val">B${r.bestDepth || 1}F</div>
+            <div class="stat-name">Deepest Floor</div>
+          </div>
+          <div class="records-stat-box">
+            <div class="stat-val">${r.totalKills || 0}</div>
+            <div class="stat-name">Monsters Slain</div>
+          </div>
+          <div class="records-stat-box">
+            <div class="stat-val">x${r.highestStreak || 0}</div>
+            <div class="stat-name">Best Streak</div>
+          </div>
+          <div class="records-stat-box">
+            <div class="stat-val">🪙 ${r.totalGold || 0}</div>
+            <div class="stat-name">Gold Amassed</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 0.9rem; color: #cbd5e0; margin: 12px 0 8px 0;">Codex of Monsters (Bestiary)</h3>
+        <div class="bestiary-list">
+          ${bestiaryHtml}
+        </div>
+      </div>
+    `;
+
+    this.showModal("🏆 Ancestral Hall of Records", html);
+    this.btnModalClose.textContent = "Close Chronicle";
   }
 
   renderStatusTray(effects) {

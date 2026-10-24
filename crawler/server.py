@@ -103,7 +103,22 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                     ):
                         continue
                     m_type = dungeon.rng.choice(monster_types)
-                    monsters.append(spawn_monster(m_type, mx, my, depth=depth))
+                    is_champ = dungeon.rng.random() < 0.16
+                    affix = (
+                        dungeon.rng.choice(["Molten", "Vampiric", "Swift", "Fortified"])
+                        if is_champ
+                        else None
+                    )
+                    monsters.append(
+                        spawn_monster(
+                            m_type,
+                            mx,
+                            my,
+                            depth=depth,
+                            is_champion=is_champ,
+                            champion_affix=affix,
+                        )
+                    )
 
             stock = []
             for entry in MERCHANT_STOCK:

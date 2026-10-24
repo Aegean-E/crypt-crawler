@@ -321,6 +321,8 @@ class Monster(Entity):
         gold_reward: int,
         loot_drop: Optional[str] = None,
         is_boss: bool = False,
+        is_champion: bool = False,
+        champion_affix: Optional[str] = None,
     ):
         super().__init__(name, x, y, hp, hp, attack, defense)
         self.monster_type = monster_type
@@ -328,6 +330,8 @@ class Monster(Entity):
         self.gold_reward = gold_reward
         self.loot_drop = loot_drop
         self.is_boss = is_boss
+        self.is_champion = is_champion
+        self.champion_affix = champion_affix
         self.ai_state = "idle"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -344,12 +348,21 @@ class Monster(Entity):
             "gold_reward": self.gold_reward,
             "loot_drop": self.loot_drop,
             "is_boss": self.is_boss,
+            "is_champion": self.is_champion,
+            "champion_affix": self.champion_affix,
             "ai_state": self.ai_state,
             "status_effects": dict(self.status_effects),
         }
 
 
-def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
+def spawn_monster(
+    monster_type: str,
+    x: int,
+    y: int,
+    depth: int = 1,
+    is_champion: bool = False,
+    champion_affix: Optional[str] = None,
+) -> Monster:
     scale = 1.0 + (depth - 1) * 0.25
     if monster_type == "boss_lich":
         return Monster(
@@ -365,71 +378,86 @@ def spawn_monster(monster_type: str, x: int, y: int, depth: int = 1) -> Monster:
             loot_drop="crown_eternity",
             is_boss=True,
         )
-    elif monster_type == "skeleton":
-        return Monster(
-            name="Crypt Skeleton",
-            monster_type="skeleton",
-            x=x,
-            y=y,
-            hp=int(20 * scale),
-            attack=int(6 * scale),
-            defense=int(2 * scale),
-            xp_reward=20,
-            gold_reward=10,
-            loot_drop="sword_iron" if depth >= 2 else "potion_health",
-        )
+
+    # Base templates
+    if monster_type == "skeleton":
+        base_name = "Crypt Skeleton"
+        base_hp = int(20 * scale)
+        base_atk = int(6 * scale)
+        base_def = int(2 * scale)
+        xp = 20
+        gold = 10
+        drop = "sword_iron" if depth >= 2 else "potion_health"
     elif monster_type == "goblin":
-        return Monster(
-            name="Sneaky Goblin",
-            monster_type="goblin",
-            x=x,
-            y=y,
-            hp=int(14 * scale),
-            attack=int(5 * scale),
-            defense=int(1 * scale),
-            xp_reward=16,
-            gold_reward=18,
-            loot_drop="potion_health",
-        )
+        base_name = "Sneaky Goblin"
+        base_hp = int(14 * scale)
+        base_atk = int(5 * scale)
+        base_def = int(1 * scale)
+        xp = 16
+        gold = 18
+        drop = "potion_health"
     elif monster_type == "spider":
-        return Monster(
-            name="Venomous Brood-Spider",
-            monster_type="spider",
-            x=x,
-            y=y,
-            hp=int(12 * scale),
-            attack=int(6 * scale),
-            defense=int(1 * scale),
-            xp_reward=18,
-            gold_reward=12,
-            loot_drop="dagger_poison",
-        )
+        base_name = "Venomous Brood-Spider"
+        base_hp = int(12 * scale)
+        base_atk = int(6 * scale)
+        base_def = int(1 * scale)
+        xp = 18
+        gold = 12
+        drop = "dagger_poison"
     elif monster_type == "necromancer":
-        return Monster(
-            name="Dread Necromancer",
-            monster_type="necromancer",
-            x=x,
-            y=y,
-            hp=int(30 * scale),
-            attack=int(9 * scale),
-            defense=int(3 * scale),
-            xp_reward=45,
-            gold_reward=40,
-            loot_drop="scroll_fireball",
-        )
+        base_name = "Dread Necromancer"
+        base_hp = int(30 * scale)
+        base_atk = int(9 * scale)
+        base_def = int(3 * scale)
+        xp = 45
+        gold = 40
+        drop = "scroll_fireball"
     else:  # default minion
+        base_name = "Cave Bat"
+        base_hp = int(9 * scale)
+        base_atk = int(4 * scale)
+        base_def = 0
+        xp = 10
+        gold = 6
+        drop = None
+
+    if is_champion:
+        affix = champion_affix or "Molten"
+        name = f"{affix} {base_name}"
+        hp = int(base_hp * 1.4)
+        atk = base_atk + (2 if affix == "Swift" else 0)
+        defense = base_def + (3 if affix == "Fortified" else 0)
+        xp = int(xp * 2.0)
+        gold = int(gold * 2.5)
+        # Champion drops are elevated
+        champion_drop = drop or "potion_rejuvenation"
         return Monster(
-            name="Cave Bat",
-            monster_type="bat",
+            name=name,
+            monster_type=monster_type,
             x=x,
             y=y,
-            hp=int(9 * scale),
-            attack=int(4 * scale),
-            defense=0,
-            xp_reward=10,
-            gold_reward=6,
-            loot_drop=None,
+            hp=hp,
+            attack=atk,
+            defense=defense,
+            xp_reward=xp,
+            gold_reward=gold,
+            loot_drop=champion_drop,
+            is_champion=True,
+            champion_affix=affix,
         )
+
+    return Monster(
+        name=base_name,
+        monster_type=monster_type,
+        x=x,
+        y=y,
+        hp=base_hp,
+        attack=base_atk,
+        defense=base_def,
+        xp_reward=xp,
+        gold_reward=gold,
+        loot_drop=drop,
+    )
 
 
 class Player(Entity):

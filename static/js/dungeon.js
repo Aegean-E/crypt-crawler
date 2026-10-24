@@ -98,4 +98,46 @@ export class ClientDungeon {
   isExplored(x, y) {
     return this.inBounds(x, y) && this.explored[y][x];
   }
+
+  findPath(start, goal) {
+    const [sx, sy] = start;
+    const [gx, gy] = goal;
+    if (sx === gx && sy === gy) return [[sx, sy]];
+
+    const queue = [[sx, sy]];
+    const cameFrom = new Map();
+    cameFrom.set(`${sx},${sy}`, null);
+
+    const dirs = [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ];
+
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      if (cx === gx && cy === gy) {
+        const path = [];
+        let curr = `${gx},${gy}`;
+        while (curr) {
+          const [px, py] = curr.split(",").map(Number);
+          path.unshift([px, py]);
+          curr = cameFrom.get(curr);
+        }
+        return path;
+      }
+
+      for (const [dx, dy] of dirs) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        const key = `${nx},${ny}`;
+        if (!cameFrom.has(key) && this.inBounds(nx, ny) && (this.isWalkable(nx, ny) || (nx === gx && ny === gy))) {
+          cameFrom.set(key, `${cx},${cy}`);
+          queue.push([nx, ny]);
+        }
+      }
+    }
+    return null;
+  }
 }

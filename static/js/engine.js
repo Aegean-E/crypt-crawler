@@ -21,6 +21,8 @@ export class GameEngine {
     this.turn = 1;
     this.depth = 1;
     this.kills = 0;
+    this.killStreak = 0;
+    this.turnsSinceKill = 0;
     this.heroClass = "paladin";
     this.gameOver = false;
     this.victory = false;
@@ -34,6 +36,8 @@ export class GameEngine {
   async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true) {
     this.depth = depth;
     this.turn = 1;
+    this.killStreak = 0;
+    this.turnsSinceKill = 0;
     this.gameOver = false;
     this.victory = false;
     this.heroClass = heroClass || "paladin";
@@ -236,9 +240,43 @@ export class GameEngine {
         { name: "Crypt Skeleton", type: "skeleton", x: stairs[0] - 1, y: stairs[1], hp: 20, max_hp: 20, attack: 6, defense: 2, xp_reward: 20, gold_reward: 10, loot_drop: null, is_boss: false, status_effects: {} },
       ];
     } else {
+      const isChamp = Math.random() < 0.2;
+      const affix = isChamp ? "Molten" : null;
       this.monsters = [
-        { name: "Crypt Skeleton", type: "skeleton", x: rooms[1].center[0] + 1, y: rooms[1].center[1], hp: 18, max_hp: 18, attack: 6, defense: 2, xp_reward: 20, gold_reward: 10, loot_drop: "potion_health", is_boss: false, status_effects: {} },
-        { name: "Venomous Brood-Spider", type: "spider", x: rooms[2].center[0], y: rooms[2].center[1], hp: 12, max_hp: 12, attack: 6, defense: 1, xp_reward: 18, gold_reward: 12, loot_drop: "dagger_poison", is_boss: false, status_effects: {} },
+        {
+          name: isChamp ? "Molten Crypt Skeleton" : "Crypt Skeleton",
+          type: "skeleton",
+          x: rooms[1].center[0] + 1,
+          y: rooms[1].center[1],
+          hp: isChamp ? 28 : 18,
+          max_hp: isChamp ? 28 : 18,
+          attack: 6,
+          defense: 2,
+          xp_reward: isChamp ? 40 : 20,
+          gold_reward: isChamp ? 25 : 10,
+          loot_drop: "potion_health",
+          is_boss: false,
+          is_champion: isChamp,
+          champion_affix: affix,
+          status_effects: {},
+        },
+        {
+          name: "Venomous Brood-Spider",
+          type: "spider",
+          x: rooms[2].center[0],
+          y: rooms[2].center[1],
+          hp: 12,
+          max_hp: 12,
+          attack: 6,
+          defense: 1,
+          xp_reward: 18,
+          gold_reward: 12,
+          loot_drop: "dagger_poison",
+          is_boss: false,
+          is_champion: false,
+          champion_affix: null,
+          status_effects: {},
+        },
       ];
     }
   }
@@ -397,6 +435,31 @@ export class GameEngine {
       e.target.textContent = isMuted ? "🔇" : "🔊";
     });
 
+    const btnRec = document.getElementById("btnRecords");
+    if (btnRec) {
+      btnRec.addEventListener("click", () => {
+        this.ui.showHallOfRecordsModal(this.loadRecords());
+      });
+    }
+
+    // Canvas Interactive Hover & Click-to-Move
+    this.canvas.addEventListener("mousemove", (e) => {
+      const tile = this._getTileAtPointer(e);
+      if (tile) {
+        this.renderer.setHoverTile(tile.x, tile.y);
+      } else {
+        this.renderer.setHoverTile(null, null);
+      }
+    });
+
+    this.canvas.addEventListener("mouseleave", () => {
+      this.renderer.setHoverTile(null, null);
+    });
+
+    this.canvas.addEventListener("click", (e) => {
+      this._handleCanvasClick(e);
+    });
+
     document.getElementById("btnRestart").addEventListener("click", () => {
       this.ui.showClassSelectModal((chosenClass) => {
         this.clearSavedRun();
@@ -431,6 +494,93 @@ export class GameEngine {
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>`
       );
     });
+  }
+
+  _getTileAtPointer(e) {
+    if (!this.player || !this.dungeon) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    const ts = this.renderer.tileSize;
+    const camX = Math.floor(this.canvas.width / 2 - this.player.x * ts - ts / 2);
+    const camY = Math.floor(this.canvas.height / 2 - this.player.y * ts - ts / 2);
+
+    const tx = Math.floor((mouseX - camX) / ts);
+    const ty = Math.floor((mouseY - camY) / ts);
+
+    if (tx >= 0 && tx < this.dungeon.width && ty >= 0 && ty < this.dungeon.height) {
+      return { x: tx, y: ty };
+    }
+    return null;
+  }
+
+  _handleCanvasClick(e) {
+    if (this.gameOver || this.victory) return;
+    const tile = this._getTileAtPointer(e);
+    if (!tile) return;
+
+    const dx = tile.x - this.player.x;
+    const dy = tile.y - this.player.y;
+
+    // Adjacent direct move or attack
+    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && !(dx === 0 && dy === 0)) {
+      this.stepPlayer(dx, dy);
+      return;
+    }
+
+    // Distant step via BFS pathfinding
+    if (this.dungeon.isExplored(tile.x, tile.y)) {
+      const path = this.dungeon.findPath([this.player.x, this.player.y], [tile.x, tile.y]);
+      if (path && path.length > 1) {
+        const next = path[1];
+        this.stepPlayer(next[0] - this.player.x, next[1] - this.player.y);
+      }
+    }
+  }
+
+  loadRecords() {
+    try {
+      const raw = localStorage.getItem("crypt_crawler_records_v1");
+      if (raw) return JSON.parse(raw);
+    } catch (_) {}
+    return {
+      totalRuns: 0,
+      victories: 0,
+      bestDepth: 1,
+      totalKills: 0,
+      highestStreak: 0,
+      totalGold: 0,
+      bestiary: {},
+    };
+  }
+
+  saveRecords(records) {
+    try {
+      localStorage.setItem("crypt_crawler_records_v1", JSON.stringify(records));
+    } catch (_) {}
+  }
+
+  recordMonsterDefeat(monsterType) {
+    const rec = this.loadRecords();
+    rec.totalKills = (rec.totalKills || 0) + 1;
+    rec.highestStreak = Math.max(rec.highestStreak || 0, this.killStreak);
+    rec.bestiary = rec.bestiary || {};
+    rec.bestiary[monsterType] = rec.bestiary[monsterType] || { slain: 0 };
+    rec.bestiary[monsterType].slain += 1;
+    this.saveRecords(rec);
+  }
+
+  recordRunEnd(isVictory) {
+    const rec = this.loadRecords();
+    rec.totalRuns = (rec.totalRuns || 0) + 1;
+    if (isVictory) rec.victories = (rec.victories || 0) + 1;
+    rec.bestDepth = Math.max(rec.bestDepth || 1, this.depth);
+    rec.totalGold = (rec.totalGold || 0) + (this.player?.gold || 0);
+    rec.highestStreak = Math.max(rec.highestStreak || 0, this.killStreak || 0);
+    this.saveRecords(rec);
   }
 
   async descendFloor() {
@@ -604,12 +754,24 @@ export class GameEngine {
     monster.hp = Math.max(0, monster.hp - dmg);
     sounds.playHit(isCrit);
 
+    if (isCrit) {
+      this.renderer.shake(7, 180);
+    }
+
     this.renderer.addSlash(monster.x, monster.y);
     this.renderer.addFloatingText(isCrit ? `CRIT! -${dmg}` : `-${dmg}`, monster.x, monster.y, isCrit ? "#f6ad55" : "#ff4444");
     this.renderer.addParticles(monster.x, monster.y, isCrit ? "#f6ad55" : "#e53e3e", isCrit ? 12 : 6);
 
     const critPrefix = isCrit ? "CRITICAL HIT! " : "";
     this.ui.logMessage(`You strike ${monster.name} for ${critPrefix}${dmg} damage.`, isCrit ? "crit" : "hit");
+
+    // Molten Champion Counter-Burn
+    if (monster.champion_affix === "Molten" && monster.hp > 0) {
+      this.player.hp = Math.max(0, this.player.hp - 2);
+      this.renderer.addFloatingText("-2 BURN", this.player.x, this.player.y, "#dd6b20");
+      this.ui.logMessage(`🔥 Molten armor singed you for 2 burn damage!`, "hit");
+      this.renderer.shake(5, 140);
+    }
 
     // Weapon poison effect
     const weapon = this.player.equipped.weapon;
@@ -629,6 +791,51 @@ export class GameEngine {
     this.kills += 1;
     this.player.gold += monster.gold_reward;
     this.ui.logMessage(`Defeated ${monster.name}! Gained ${monster.xp_reward} XP, ${monster.gold_reward} Gold.`, "loot");
+
+    // Bestiary recording
+    this.recordMonsterDefeat(monster.type);
+
+    // Champion Elite Defeat
+    if (monster.is_champion) {
+      sounds.playChampionSlay();
+      this.renderer.shake(8, 220);
+      this.renderer.addFloatingText("CHAMPION SLAIN!", monster.x, monster.y, "#f6ad55");
+      this.ui.logMessage(`🏆 ELITE CHAMPION FALLEN! Slew ${monster.name}!`, "crit");
+      if (this.player.inventory.length < 12 && Math.random() < 0.8) {
+        const dropPool = [
+          { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 MP, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
+          { id: "ring_shadow", name: "Band of the Shadowstalker", type: "ring", rarity: "rare", description: "+15% Crit Rate, +3 ATK.", stats: { attack: 3, crit_bonus: 15 } },
+          { id: "potion_elixir_str", name: "Elixir of the Titan", type: "potion", rarity: "rare", description: "Permanently increases base Attack by +2.", stats: { perm_attack: 2 } },
+        ];
+        const bonusItem = dropPool[Math.floor(Math.random() * dropPool.length)];
+        this.player.inventory.push(bonusItem);
+        this.ui.logMessage(`Found rare champion relic: ${bonusItem.name}!`, "loot");
+      }
+    }
+
+    // Combo Kill Streak & Momentum
+    this.killStreak += 1;
+    this.turnsSinceKill = 0;
+    this.ui.updateStreak(this.killStreak);
+
+    if (this.killStreak === 2) {
+      sounds.playCombo(2);
+      this.player.xp += 10;
+      this.renderer.addFloatingText("DOUBLE SLAY! +10 XP", this.player.x, this.player.y, "#f6ad55");
+      this.ui.logMessage("🔥 DOUBLE SLAY! Momentum surging (+10 Bonus XP)!", "loot");
+    } else if (this.killStreak === 3) {
+      sounds.playCombo(3);
+      this.player.mana = Math.min(this.player.max_mana, this.player.mana + 1);
+      this.renderer.addFloatingText("TRIPLE SLAY! +1 MP", this.player.x, this.player.y, "#63b3ed");
+      this.ui.logMessage("⚡ TRIPLE SLAY! Battle adrenaline restored 1 Mana!", "loot");
+    } else if (this.killStreak >= 5) {
+      sounds.playCombo(5);
+      this.player.xp += 25;
+      this.player.gold += 5;
+      this.renderer.shake(10, 250);
+      this.renderer.addFloatingText("RAMPAGE! +25 XP +5🪙", this.player.x, this.player.y, "#ecc94b");
+      this.ui.logMessage("💀 RAMPAGE! Slicing through foes like wheat in the scythe (+25 XP, +5 Gold)!", "level");
+    }
 
     // Boss victory check
     if (monster.is_boss) {
@@ -1197,6 +1404,14 @@ export class GameEngine {
     // 4. Check player death
     if (this.player.hp <= 0) {
       this.handlePlayerDeath("in mortal combat");
+      return;
+    }
+
+    // 5. Streak cool-down
+    this.turnsSinceKill += 1;
+    if (this.turnsSinceKill > 4 && this.killStreak > 0) {
+      this.killStreak = 0;
+      this.ui.updateStreak(0);
     }
 
     this._recalculatePlayerStats();
@@ -1293,9 +1508,20 @@ export class GameEngine {
         this.player.hp = Math.max(0, this.player.hp - dmg);
         sounds.playHit(false);
 
+        if (dmg >= 8) {
+          this.renderer.shake(6, 160);
+        }
+
         this.renderer.addSlash(this.player.x, this.player.y);
         this.renderer.addFloatingText(`-${dmg}`, this.player.x, this.player.y, "#ff3333");
         this.ui.logMessage(`${monster.name} attacks you for ${dmg} damage!`, "hit");
+
+        // Vampiric champion leech
+        if (monster.champion_affix === "Vampiric" && monster.hp < monster.max_hp) {
+          monster.hp = Math.min(monster.max_hp, monster.hp + 3);
+          this.renderer.addFloatingText("+3 HP", monster.x, monster.y, "#9f7aea");
+          this.ui.logMessage(`🩸 ${monster.name} leeched your blood to restore 3 HP!`, "hit");
+        }
 
         // Spider poison chance
         if (monster.type === "spider" && Math.random() < 0.45) {
@@ -1338,6 +1564,7 @@ export class GameEngine {
     this.gameOver = true;
     sounds.stopMusic();
     this.clearSavedRun();
+    this.recordRunEnd(false);
     this.ui.showModal(
       "💀 YOU PERISHED IN THE CRYPT",
       `<p>Your torch flickers and dies... You fell to ${cause}.</p>
@@ -1357,6 +1584,7 @@ export class GameEngine {
     this.victory = true;
     sounds.stopMusic();
     this.clearSavedRun();
+    this.recordRunEnd(true);
     this.ui.showModal(
       "🏆 TRIUMPH OF THE DUNGEON",
       `<p>You conquered the deepest vault, defeated Arch-Lich Malakor, and recovered the legendary <strong>Crown of Eternity</strong>!</p>

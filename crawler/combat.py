@@ -62,6 +62,16 @@ def resolve_melee_attack(
             defender.apply_status("poison", 3)
             msgs.append(f"⚠️ Venom coursed into {defender.name}! Afflicted with Poison!")
 
+    # Champion monster traits
+    if isinstance(attacker, Monster) and attacker.champion_affix == "Vampiric":
+        healed = attacker.heal(3)
+        if healed > 0:
+            msgs.append(f"🩸 {attacker.name} drained vital essence (+{healed} HP)!")
+
+    if not killed and isinstance(defender, Monster) and defender.champion_affix == "Molten" and is_player_atk:
+        recoil = attacker.take_damage(2)
+        msgs.append(f"🔥 Molten aura scorched {attacker.name} for {recoil} burn damage!")
+
     if not killed and is_player_atk:
         player: Player = attacker  # type: ignore[assignment]
         eq_weapon = player.equipped.get("weapon")
@@ -75,6 +85,8 @@ def resolve_melee_attack(
     loot: Optional[Item] = None
 
     if killed:
+        if isinstance(defender, Monster) and defender.is_champion:
+            msgs.append(f"🏆 CHAMPION SLAIN! Slew {defender.name}!")
         msgs.append(f"{defender.name} has fallen!")
         if isinstance(defender, Monster) and is_player_atk:
             xp = defender.xp_reward

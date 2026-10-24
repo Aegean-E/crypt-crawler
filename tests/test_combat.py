@@ -175,6 +175,27 @@ class TestCombat(unittest.TestCase):
         self.assertLess(m1.hp, 20)
         self.assertLess(m2.hp, 20)
 
+    def test_champion_monsters_and_affixes(self):
+        champ = spawn_monster("skeleton", 3, 3, depth=1, is_champion=True, champion_affix="Molten")
+        self.assertTrue(champ.is_champion)
+        self.assertEqual(champ.champion_affix, "Molten")
+        self.assertIn("Molten", champ.name)
+        self.assertGreater(champ.max_hp, 20)
+        self.assertGreater(champ.gold_reward, 10)
+
+        # Molten recoil test
+        init_player_hp = self.player.hp
+        res = resolve_melee_attack(self.player, champ, self.rng)
+        self.assertGreater(res.damage_dealt, 0)
+        # Player took 2 burn damage from Molten aura
+        self.assertEqual(self.player.hp, init_player_hp - 2)
+
+        # Vampiric leech test
+        vamp = spawn_monster("goblin", 3, 3, depth=1, is_champion=True, champion_affix="Vampiric")
+        vamp.hp = 10
+        res_vamp = resolve_melee_attack(vamp, self.player, self.rng)
+        self.assertEqual(vamp.hp, 13)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -160,6 +160,19 @@ def run_inspection(
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 
+                    if "records" in scenarios or "all" in scenarios:
+                        print("      Driving Scenario: Records & Bestiary Modal...")
+                        page.click("#btnRecords")
+                        time.sleep(0.3)
+                        records_shot = out_dir / "records_bestiary_modal.png"
+                        page.screenshot(path=str(records_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "records", "file": str(records_shot)}
+                        )
+                        print(f"      Saved screenshot: {records_shot.name}")
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+
                     if "classes" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Class Selection Modal...")
                         page.click("#btnRestart")
@@ -191,6 +204,12 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "inferno", "file": str(inferno_shot)}
                         )
                         print(f"      Saved screenshot: {inferno_shot.name}")
+
+                        # Test canvas hover reticle & pathfinding click
+                        page.hover("#gameCanvas", position={"x": 380, "y": 270})
+                        time.sleep(0.1)
+                        page.click("#gameCanvas", position={"x": 418, "y": 270})
+                        time.sleep(0.2)
 
                     if "gameover" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Death Modal...")

@@ -14,6 +14,24 @@ export class DungeonRenderer {
     this.particles = [];
     this.slashes = [];
     this.projectiles = [];
+    this.shakeIntensity = 0;
+    this.shakeDuration = 0;
+    this.shakeStartTime = 0;
+    this.hoverTile = null;
+  }
+
+  shake(intensity = 6, duration = 200) {
+    this.shakeIntensity = intensity;
+    this.shakeDuration = duration;
+    this.shakeStartTime = performance.now();
+  }
+
+  setHoverTile(x, y) {
+    if (x === null || y === null || x === undefined || y === undefined) {
+      this.hoverTile = null;
+    } else {
+      this.hoverTile = { x, y };
+    }
   }
 
   addFloatingText(text, x, y, color = "#ff4444") {
@@ -80,9 +98,23 @@ export class DungeonRenderer {
 
     if (!dungeon || !player) return;
 
-    // Camera offset: Center player on screen
-    const camX = Math.floor(w / 2 - player.x * ts - ts / 2);
-    const camY = Math.floor(h / 2 - player.y * ts - ts / 2);
+    // Camera shake calculation
+    let shakeX = 0;
+    let shakeY = 0;
+    if (this.shakeDuration > 0) {
+      const elapsed = performance.now() - this.shakeStartTime;
+      if (elapsed < this.shakeDuration) {
+        const decay = 1.0 - elapsed / this.shakeDuration;
+        shakeX = (Math.random() - 0.5) * this.shakeIntensity * decay * 2;
+        shakeY = (Math.random() - 0.5) * this.shakeIntensity * decay * 2;
+      } else {
+        this.shakeDuration = 0;
+      }
+    }
+
+    // Camera offset: Center player on screen with dynamic shake
+    const camX = Math.floor(w / 2 - player.x * ts - ts / 2 + shakeX);
+    const camY = Math.floor(h / 2 - player.y * ts - ts / 2 + shakeY);
     const biome = dungeon.biome || (dungeon.depth <= 1 ? "crypt" : (dungeon.depth === 2 ? "cavern" : "inferno"));
 
     // Spawn floating embers in inferno biome
@@ -161,6 +193,11 @@ export class DungeonRenderer {
       }
     }
 
+    // 2.5 Draw Hover Reticle (underneath characters)
+    if (this.hoverTile && dungeon.isExplored(this.hoverTile.x, this.hoverTile.y)) {
+      this._drawHoverReticle(ctx, this.hoverTile.x, this.hoverTile.y, ts, timestamp);
+    }
+
     // 3. Draw Monsters (only if in active FOV)
     for (const monster of monsters) {
       if (monster.hp > 0 && dungeon.isVisible(monster.x, monster.y)) {
@@ -179,6 +216,11 @@ export class DungeonRenderer {
     this._renderProjectiles(ctx);
     this._renderParticles(ctx);
     this._renderFloatingTexts(ctx);
+
+    // 6.5 Draw Hover Tooltip for Monster or Interactive Prop
+    if (this.hoverTile && dungeon.isVisible(this.hoverTile.x, this.hoverTile.y)) {
+      this._drawHoverTooltip(ctx, this.hoverTile.x, this.hoverTile.y, ts, monsters, dungeon);
+    }
 
     ctx.restore();
 
@@ -483,6 +525,36 @@ export class DungeonRenderer {
 
     ctx.save();
     ctx.translate(0, bob);
+
+    // Champion Elite Glowing Aura & Crown
+    if (monster.is_champion) {
+      const affix = monster.champion_affix || "Molten";
+      let auraColor = "rgba(229, 62, 62, 0.45)";
+      let starColor = "#feb2b2";
+      if (affix === "Vampiric") {
+        auraColor = "rgba(159, 122, 234, 0.45)";
+        starColor = "#d6bcfa";
+      } else if (affix === "Swift") {
+        auraColor = "rgba(72, 187, 120, 0.45)";
+        starColor = "#9ae6b4";
+      } else if (affix === "Fortified") {
+        auraColor = "rgba(214, 158, 46, 0.45)";
+        starColor = "#faf089";
+      }
+
+      const pulse = Math.sin(timestamp * 0.007) * 3;
+      ctx.fillStyle = auraColor;
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2, ts / 2 + 2 + pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Crown / Star badge above head
+      ctx.fillStyle = starColor;
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("★", px + ts / 2, py - 3);
+      ctx.textAlign = "start";
+    }
 
     if (monster.type === "boss_lich") {
       // Arch-Lich Boss: Majestic dark royal sorcerer
@@ -928,5 +1000,103 @@ export class DungeonRenderer {
     ctx.fillRect(mx + player.x * scaleX - 1, my + player.y * scaleY - 1, 3, 3);
 
     ctx.restore();
+  }
+
+  _drawHoverReticle(ctx, tx, ty, ts, timestamp) {
+    const px = tx * ts;
+    const py = ty * ts;
+    const pulse = (Math.sin(timestamp * 0.007) + 1) * 0.5;
+
+    ctx.save();
+    ctx.strokeStyle = `rgba(236, 201, 75, ${0.45 + pulse * 0.45})`;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px + 1.5, py + 1.5, ts - 3, ts - 3);
+
+    // Corner brackets
+    const cLen = 6;
+    ctx.strokeStyle = "#ecc94b";
+    ctx.lineWidth = 2;
+
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(px, py + cLen);
+    ctx.lineTo(px, py);
+    ctx.lineTo(px + cLen, py);
+    ctx.stroke();
+
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(px + ts - cLen, py);
+    ctx.lineTo(px + ts, py);
+    ctx.lineTo(px + ts, py + cLen);
+    ctx.stroke();
+
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(px, py + ts - cLen);
+    ctx.lineTo(px, py + ts);
+    ctx.lineTo(px + cLen, py + ts);
+    ctx.stroke();
+
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(px + ts - cLen, py + ts);
+    ctx.lineTo(px + ts, py + ts);
+    ctx.lineTo(px + ts, py + ts - cLen);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  _drawHoverTooltip(ctx, tx, ty, ts, monsters, dungeon) {
+    const monster = monsters.find((m) => m.x === tx && m.y === ty && m.hp > 0);
+    const px = tx * ts;
+    const py = ty * ts;
+
+    if (monster) {
+      ctx.save();
+      const cardW = 148;
+      const cardH = 50;
+      const cardX = px + ts / 2 - cardW / 2;
+      const cardY = py - cardH - 10;
+
+      ctx.fillStyle = "rgba(10, 14, 22, 0.94)";
+      ctx.strokeStyle = monster.is_champion ? "#d69e2e" : (monster.is_boss ? "#9f7aea" : "#4a5568");
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      // Title
+      ctx.fillStyle = monster.is_champion ? "#f6ad55" : (monster.is_boss ? "#b794f4" : "#e2e8f0");
+      ctx.font = "bold 11px sans-serif";
+      const title = monster.is_champion ? `★ ${monster.name}` : monster.name;
+      ctx.fillText(title, cardX + 6, cardY + 14);
+
+      // HP Bar inside tooltip
+      const barX = cardX + 6;
+      const barY = cardY + 20;
+      const barW = cardW - 12;
+      const barH = 7;
+      const hpPct = Math.max(0, monster.hp / monster.max_hp);
+
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = hpPct > 0.4 ? "#e53e3e" : "#fc8181";
+      ctx.fillRect(barX, barY, Math.floor(barW * hpPct), barH);
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`${monster.hp}/${monster.max_hp} HP`, barX + barW / 2, barY + 6.5);
+      ctx.textAlign = "start";
+
+      // Stats
+      ctx.fillStyle = "#a0aec0";
+      ctx.font = "10px sans-serif";
+      const statTxt = `ATK: ${monster.attack}   DEF: ${monster.defense}`;
+      ctx.fillText(statTxt, cardX + 6, cardY + 41);
+
+      ctx.restore();
+    }
   }
 }

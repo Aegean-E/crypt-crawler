@@ -9,8 +9,8 @@
 - **Total Python Modules**: `12`
 - **Total Classes**: `14`
 - **Total Top-Level Functions**: `16`
-- **Total Class Methods**: `75`
-- **Total Source Lines**: `2338`
+- **Total Class Methods**: `76`
+- **Total Source Lines**: `2433`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`crawler/combat.py`](crawler/combat.py)
 > *Turn-based tactical combat resolution for Crypt-Crawler.*
 
-**Size**: `473` lines (`16127` bytes)
+**Size**: `485` lines (`16765` bytes)
 
 **Classes:**
 - `class CombatResult`
@@ -79,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `632` lines (`20387` bytes)
+**Size**: `660` lines (`21124` bytes)
 
 **Classes:**
 - `class Item`
@@ -93,7 +93,7 @@
   - Method `.take_damage(amount)`
   - Method `.heal(amount)`
 - `class Monster`
-  - Method `.__init__(name, monster_type, x, y, hp, attack, defense, xp_reward, gold_reward, loot_drop, is_boss)`
+  - Method `.__init__(name, monster_type, x, y, hp, attack, defense, xp_reward, gold_reward, loot_drop, is_boss, is_champion, champion_affix)`
   - Method `.to_dict()`
 - `class Player`
   - Method `.__init__(name, x, y, hero_class)`
@@ -110,14 +110,14 @@
 
 **Functions:**
 - `def create_item(item_id)`
-- `def spawn_monster(monster_type, x, y, depth)`
+- `def spawn_monster(monster_type, x, y, depth, is_champion, champion_affix)`
 
 ---
 
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `145` lines (`5848` bytes)
+**Size**: `160` lines (`6403` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -153,7 +153,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `180` lines (`6799` bytes)
+**Size**: `201` lines (`7744` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -172,6 +172,7 @@
   - Method `.test_permanent_stat_elixirs()`
   - Method `.test_shadow_strike_and_smoke_bomb()`
   - Method `.test_arcane_nova_and_frost_nova()`
+  - Method `.test_champion_monsters_and_affixes()`
 
 ---
 
@@ -223,7 +224,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `277` lines (`11806` bytes)
+**Size**: `296` lines (`12875` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`
