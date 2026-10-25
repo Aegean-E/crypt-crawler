@@ -20,6 +20,9 @@ class TileType:
     SHRINE = 7
     URN = 8
     MERCHANT = 9
+    SOUL = 10
+    SIGIL = 11
+    VAULT = 12
 
 
 @dataclass
@@ -72,6 +75,9 @@ class Dungeon:
         self.traps: List[Tuple[int, int]] = []
         self.shrines: List[Tuple[int, int]] = []
         self.urns: List[Tuple[int, int]] = []
+        self.souls: List[Tuple[int, int]] = []
+        self.sigils: List[Tuple[int, int]] = []
+        self.vault: Optional[Tuple[int, int]] = None
         self.sconces: List[Tuple[int, int]] = []
         self.merchants: List[Tuple[int, int]] = []
         self.depth: int = 1
@@ -101,6 +107,9 @@ class Dungeon:
             TileType.SHRINE,
             TileType.URN,
             TileType.MERCHANT,
+            TileType.SOUL,
+            TileType.SIGIL,
+            TileType.VAULT,
         )
 
     def is_transparent(self, x: int, y: int) -> bool:
@@ -116,6 +125,9 @@ class Dungeon:
             TileType.SHRINE,
             TileType.URN,
             TileType.MERCHANT,
+            TileType.SOUL,
+            TileType.SIGIL,
+            TileType.VAULT,
         )
 
     def compute_fov(self, px: int, py: int, radius: int = 8) -> Set[Tuple[int, int]]:
@@ -200,6 +212,9 @@ class Dungeon:
             "traps": [list(t) for t in self.traps],
             "shrines": [list(s) for s in self.shrines],
             "urns": [list(u) for u in self.urns],
+            "souls": [list(s) for s in self.souls],
+            "sigils": [list(s) for s in self.sigils],
+            "vault": list(self.vault) if self.vault else None,
             "sconces": [list(sc) for sc in self.sconces],
             "merchants": [list(m) for m in self.merchants],
             "rooms": [
@@ -334,6 +349,36 @@ class DungeonGenerator:
                     ):
                         dungeon.tiles[uy][ux] = TileType.URN
                         dungeon.urns.append((ux, uy))
+
+            # One Lost Soul per floor: an optional choice, never on a shrine
+            for room in dungeon.rooms[1:]:
+                if room == farthest_room:
+                    continue
+                if any(room.center == m for m in dungeon.merchants):
+                    continue
+                sx, sy = room.center
+                if dungeon.tiles[sy][sx] == TileType.FLOOR:
+                    dungeon.tiles[sy][sx] = TileType.SOUL
+                    dungeon.souls.append((sx, sy))
+                    break
+
+            # Three sigils and one sealed vault: the floor's optional objective
+            free_tiles = [
+                (x, y)
+                for room in dungeon.rooms
+                for y in range(room.y1 + 1, room.y2 - 1)
+                for x in range(room.x1 + 1, room.x2 - 1)
+                if dungeon.tiles[y][x] == TileType.FLOOR
+                and (x, y) not in (dungeon.player_spawn, dungeon.stairs_pos)
+            ]
+            rng.shuffle(free_tiles)
+            for sx, sy in free_tiles[:3]:
+                dungeon.tiles[sy][sx] = TileType.SIGIL
+                dungeon.sigils.append((sx, sy))
+            for vx, vy in free_tiles[3:]:
+                dungeon.tiles[vy][vx] = TileType.VAULT
+                dungeon.vault = (vx, vy)
+                break
 
             # Wall sconces (torches on walls directly above floors)
             for room in dungeon.rooms:

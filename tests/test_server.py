@@ -66,6 +66,39 @@ class TestServer(unittest.TestCase):
         finally:
             server.server_close()
 
+    def test_floor_objective_and_soul_are_clear_of_monsters(self):
+        url = f"{self.base_url}/api/new-game?seed=55&depth=2"
+        with urlopen(url, timeout=3) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        dungeon = data["dungeon"]
+        self.assertEqual(len(dungeon["sigils"]), 3)
+        self.assertIsNotNone(dungeon["vault"])
+        self.assertEqual(len(dungeon["souls"]), 1)
+
+        monster_coords = {(m["x"], m["y"]) for m in data["monsters"]}
+        for x, y in dungeon["sigils"] + [dungeon["vault"]] + dungeon["souls"]:
+            self.assertNotIn((x, y), monster_coords)
+
+    def test_monsters_never_cover_an_interactive_prop(self):
+        for seed in (1, 42, 777, 999):
+            for depth in (1, 3):
+                with self.subTest(seed=seed, depth=depth):
+                    url = f"{self.base_url}/api/new-game?seed={seed}&depth={depth}"
+                    with urlopen(url, timeout=3) as response:
+                        data = json.loads(response.read().decode("utf-8"))
+                    dungeon = data["dungeon"]
+                    props = set()
+                    for key in ("merchants", "chests", "shrines", "urns", "souls", "sigils"):
+                        props.update(tuple(entry) for entry in dungeon[key])
+                    if dungeon.get("vault"):
+                        props.add(tuple(dungeon["vault"]))
+                    occupied = {(m["x"], m["y"]) for m in data["monsters"]}
+                    self.assertFalse(
+                        occupied & props,
+                        f"monsters spawned on interactive props: {sorted(occupied & props)}",
+                    )
+
     def test_api_new_game_with_class_and_merchant(self):
         url = f"{self.base_url}/api/new-game?seed=101&depth=2&class=rogue"
         with urlopen(url, timeout=3) as response:

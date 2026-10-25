@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from crawler.dungeon import DungeonGenerator
 from crawler.entities import HERO_CLASSES, MERCHANT_STOCK, Player, create_item, spawn_monster
+from crawler.lore import LORE_EVENTS, public_entries, starting_lore
 from crawler.rewards import generate_dungeon_bounties
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -48,6 +49,14 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                     "version": "1.0.0",
                 }
             )
+        elif parsed.path == "/api/lore":
+            self._send_json(
+                {
+                    "entries": public_entries(),
+                    "starting": starting_lore(),
+                    "events": dict(LORE_EVENTS),
+                }
+            )
         elif parsed.path == "/api/new-game":
             params = parse_qs(parsed.query)
             try:
@@ -79,14 +88,30 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             if depth >= 2:
                 monster_types.append("necromancer")
 
+            # Every interactive prop stays clear of monsters, including the boss escorts.
+            reserved = (
+                set(dungeon.merchants)
+                | set(dungeon.chests)
+                | set(dungeon.shrines)
+                | set(dungeon.urns)
+                | set(dungeon.souls)
+                | set(dungeon.sigils)
+                | {dungeon.player_spawn, dungeon.stairs_pos}
+            )
+            if dungeon.vault:
+                reserved.add(dungeon.vault)
+
             # Boss Chamber on Depth 3
             farthest_room = dungeon.rooms[-1] if dungeon.rooms else None
             if depth >= 3 and farthest_room:
                 bx, by = farthest_room.center
                 monsters.append(spawn_monster("boss_lich", bx, by, depth=depth))
                 if farthest_room.w >= 4 and farthest_room.h >= 4:
-                    monsters.append(spawn_monster("skeleton", bx - 1, by, depth=depth))
-                    monsters.append(spawn_monster("skeleton", bx + 1, by, depth=depth))
+                    for ex, ey in ((bx - 1, by), (bx + 1, by)):
+                        if (ex, ey) not in reserved and dungeon.is_walkable(ex, ey):
+                            monsters.append(
+                                spawn_monster("skeleton", ex, ey, depth=depth)
+                            )
 
             for room in dungeon.rooms[1:]:
                 if depth >= 3 and room == farthest_room:
@@ -98,10 +123,7 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                 for _ in range(m_count):
                     mx = dungeon.rng.randint(room.x1 + 1, room.x2 - 2)
                     my = dungeon.rng.randint(room.y1 + 1, room.y2 - 2)
-                    if (
-                        (mx, my) in dungeon.merchants
-                        or (mx, my) in (dungeon.player_spawn, dungeon.stairs_pos)
-                    ):
+                    if (mx, my) in reserved:
                         continue
                     m_type = dungeon.rng.choice(monster_types)
                     is_champ = dungeon.rng.random() < 0.16

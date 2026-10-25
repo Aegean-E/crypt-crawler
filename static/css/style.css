@@ -1369,3 +1369,137 @@ body.crt-active {
 .bounty-card.completed .bounty-progress-fill {
   background: #48bb78;
 }
+
+/* Lore Journal */
+.journal-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(214, 188, 250, 0.18);
+  color: #d6bcfa;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  vertical-align: middle;
+}
+
+.journal-badge.complete {
+  background: rgba(72, 187, 120, 0.22);
+  color: #68d391;
+}
+
+#modalBody {
+  max-height: min(62vh, 520px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.lore-progress {
+  margin: 0 0 8px 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.lore-progress strong {
+  color: #d6bcfa;
+}
+
+.lore-category {
+  margin: 12px 0 4px 0;
+}
+
+.lore-category h3 {
+  margin: 0 0 4px 0;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border-muted);
+  color: #d6bcfa;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lore-card {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-muted);
+  border-left: 2px solid #9f7aea;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.lore-card h4 {
+  margin: 0 0 4px 0;
+  color: #e9d8fd;
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+}
+
+.lore-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.lore-card.locked {
+  border-left-color: #4a5568;
+  opacity: 0.65;
+}
+
+.lore-card.locked h4 {
+  color: #718096;
+}
+
+.lore-empty {
+  margin: 10px 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Lost Soul Dialogue */
+.soul-whisper {
+  margin: 0 0 6px 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.soul-text {
+  margin: 0 0 12px 0;
+  color: #e9d8fd;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.soul-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.soul-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+}
+
+.soul-choice-note {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-family: var(--font-sans);
+}
+
+.metric-pill.ready {
+  border-color: #d69e2e;
+  color: #fbd38d;
+  box-shadow: 0 0 8px rgba(214, 158, 46, 0.35);
+}
+
+/* Sealed vault and sigils are drawn on canvas; the HUD only needs the pill. */

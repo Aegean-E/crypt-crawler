@@ -8,6 +8,8 @@ export class UIController {
     this.depthBadge = document.getElementById("depthBadge");
     this.turnCount = document.getElementById("turnCount");
     this.goldCount = document.getElementById("goldCount");
+    this.sigilPill = document.getElementById("sigilPill");
+    this.sigilCount = document.getElementById("sigilCount");
     this.saveIndicator = document.getElementById("saveIndicator");
     this.streakPill = document.getElementById("streakPill");
     this.streakCount = document.getElementById("streakCount");
@@ -64,6 +66,10 @@ export class UIController {
     this.bountyBadge = document.getElementById("bountyBadge");
     this.bountiesList = document.getElementById("bountiesList");
 
+    // Journal
+    this.btnJournal = document.getElementById("btnJournal");
+    this.journalBadge = document.getElementById("journalBadge");
+
     // Atmospheric & Juicing FX
     this.jackpotBanner = document.getElementById("jackpotBanner");
     this.adrenalineVignette = document.getElementById("adrenalineVignette");
@@ -85,6 +91,7 @@ export class UIController {
     this.onDropItem = null;
     this.onUnequip = null;
     this.onModalClose = null;
+    this.onJournal = null;
 
     this._bindEvents();
   }
@@ -130,6 +137,10 @@ export class UIController {
     });
     document.getElementById("slotBoots")?.addEventListener("click", () => {
       if (this.onUnequip) this.onUnequip("boots");
+    });
+
+    this.btnJournal?.addEventListener("click", () => {
+      if (this.onJournal) this.onJournal();
     });
 
     this.btnModalClose.addEventListener("click", () => {
@@ -360,6 +371,36 @@ export class UIController {
     });
   }
 
+  showSoulDialogueModal(soul, onChoice) {
+    const html = `
+      <p class="soul-whisper">The air thickens. A shape kneels in the dust, held together by embers and regret.</p>
+      <p class="soul-text">"I kept the door," it says. "No one told me it was over."</p>
+      <div class="soul-choices">
+        <button class="btn btn-secondary soul-choice" data-choice="ember" type="button">
+          🕯️ Offer the ember
+          <span class="soul-choice-note">Mend your wounds and raise a brief barrier</span>
+        </button>
+        <button class="btn btn-secondary soul-choice" data-choice="toll" type="button">
+          🪙 Demand the penitent's toll
+          <span class="soul-choice-note">Take gold, and perhaps a relic</span>
+        </button>
+        <button class="btn btn-secondary soul-choice" data-choice="lore" type="button">
+          🗣️ Ask what happened here
+          <span class="soul-choice-note">Record its story; gain insight</span>
+        </button>
+      </div>
+    `;
+    this.showModal("🕯️ A Soul Without a Grave", html);
+    this.btnModalClose.textContent = "Leave it to its rest";
+    this.modalBody.querySelectorAll(".soul-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const choice = btn.dataset.choice;
+        this.closeModal();
+        if (onChoice) onChoice(choice);
+      });
+    });
+  }
+
   updateStreak(streak) {
     if (!this.streakPill || !this.streakCount) return;
     if (streak >= 2) {
@@ -367,6 +408,16 @@ export class UIController {
       this.streakPill.classList.remove("hidden");
     } else {
       this.streakPill.classList.add("hidden");
+    }
+  }
+
+  updateSigils(count = 0, need = 3) {
+    if (this.sigilCount) this.sigilCount.textContent = count;
+    if (this.sigilPill) {
+      this.sigilPill.classList.toggle("ready", count >= need);
+      this.sigilPill.title = count >= need
+        ? "Three sigils gathered: the sealed vault can be opened"
+        : `Sigils: ${count} of ${need} for the sealed vault`;
     }
   }
 
@@ -758,6 +809,48 @@ export class UIController {
     entry.textContent = text;
     this.chronicleLog.appendChild(entry);
     this.chronicleLog.scrollTop = this.chronicleLog.scrollHeight;
+  }
+
+  updateJournal(unlockedCount = 0, total = 0) {
+    if (!this.journalBadge) return;
+    this.journalBadge.textContent = total > 0 ? `${unlockedCount}/${total}` : `${unlockedCount}`;
+    if (this.btnJournal) {
+      this.btnJournal.title = total > 0
+        ? `Lore journal: ${unlockedCount} of ${total} entries discovered`
+        : "Read your discovered lore";
+    }
+    this.journalBadge.classList.toggle("complete", total > 0 && unlockedCount >= total);
+  }
+
+  showJournalModal(entries = [], unlocked = []) {
+    const found = new Set(unlocked);
+    const categoryOrder = ["Places", "The Fallen", "Relics", "Whispers"];
+    let html = `<p class="lore-progress">Discovered <strong>${found.size}</strong> of <strong>${entries.length}</strong> entries.</p>`;
+
+    if (entries.length === 0) {
+      html += `<p class="lore-empty">The archive is silent. The crypt's records could not be read while the server is offline.</p>`;
+    } else {
+      for (const category of categoryOrder) {
+        const group = entries.filter((entry) => entry.category === category);
+        if (group.length === 0) continue;
+        html += `<section class="lore-category"><h3>${category}</h3>`;
+        for (const entry of group) {
+          if (found.has(entry.id)) {
+            html += `<article class="lore-card"><h4>${entry.title}</h4><p>${entry.text}</p></article>`;
+          } else {
+            html += `<article class="lore-card locked"><h4>???</h4><p>Undiscovered. Explore the depths, listen to the dead, and the crypt will tell you.</p></article>`;
+          }
+        }
+        html += `</section>`;
+      }
+    }
+
+    this.showModal("📖 The Chronicle of the Crypt", html);
+    this.btnModalClose.textContent = "Close Tome";
+  }
+
+  isModalOpen() {
+    return !this.modalOverlay.classList.contains("hidden");
   }
 
   showModal(title, contentHtml) {

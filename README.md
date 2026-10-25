@@ -1,8 +1,8 @@
 # crypt-crawler
 
-[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
+[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
-Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, low-health warnings, combat feedback, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, sigil-sealed vaults, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -53,6 +53,7 @@ crypt-crawler/
 │   ├── dungeon.py            <- procedural dungeon generator
 │   ├── entities.py           <- player and monster simulation
 │   ├── combat.py             <- combat calculations and status effects
+│   ├── lore.py               <- codex entries, categories and discovery events
 │   ├── rewards.py            <- variable-ratio jackpots, near-miss & bounties
 │   └── server.py             <- HTTP request handler & REST endpoints
 ├── static/                   <- Web UI assets (zero build step)
@@ -72,6 +73,7 @@ crypt-crawler/
 │   ├── test_combat.py        <- combat rules tests
 │   ├── test_dungeon.py       <- procedural generation tests
 │   ├── test_inspect.py       <- inspection configuration tests
+│   ├── test_lore.py          <- codex data and /api/lore endpoint tests
 │   ├── test_rewards.py       <- reward jackpots, near-miss & bounty tests
 │   └── test_server.py        <- web server endpoints tests
 └── .aikit/                   <- project memory: record, ledger, decisions

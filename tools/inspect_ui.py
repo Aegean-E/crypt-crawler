@@ -284,6 +284,274 @@ def run_inspection(
                             }
                         )
 
+                        # Journal: entries load, undiscovered ones stay hidden,
+                        # and a discovery updates the header badge.
+                        page.click("#btnJournal")
+                        time.sleep(0.3)
+                        lore_cards = page.eval_on_selector_all(
+                            ".lore-card", "els => els.length"
+                        )
+                        lore_locked = page.eval_on_selector_all(
+                            ".lore-card.locked", "els => els.length"
+                        )
+                        journal_open = page.is_visible("#modalOverlay")
+                        page.screenshot(
+                            path=str(out_dir / f"journal_{vp_name}.png"), full_page=True
+                        )
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+                        journal_unlock = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const locked = e.loreEntries.find(
+                                    (entry) => !e.loreUnlocked.includes(entry.id)
+                                );
+                                if (!locked) return { title: null, archive: [] };
+                                e.unlockLore(locked.id);
+                                let archive = [];
+                                try {
+                                    archive = JSON.parse(
+                                        localStorage.getItem("crypt_crawler_lore_v1") || "[]"
+                                    );
+                                } catch (_) {}
+                                return { title: locked.title, archive };
+                            }"""
+                        )
+                        unlocked_title = journal_unlock["title"]
+                        archived_lore = journal_unlock["archive"]
+                        journal_badge = page.text_content("#journalBadge") or ""
+                        journal_title = page.get_attribute("#btnJournal", "title") or ""
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "journal_opens_with_entries": journal_open
+                                and lore_cards > 5,
+                                "journal_hides_undiscovered": lore_locked > 0,
+                                "journal_unlock_updates_badge": bool(unlocked_title)
+                                and "/" in journal_badge
+                                and "discovered" in journal_title
+                                and bool(archived_lore),
+                            }
+                        )
+
+                        # Lost Soul dialogue: three real choices, and one applies an effect.
+                        soul_state = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const soul = { x: e.player.x, y: e.player.y, resolved: false };
+                                e.ui.showSoulDialogueModal(soul, (choice) => e.resolveSoul(soul, choice));
+                                const choices = Array.from(document.querySelectorAll(".soul-choice"))
+                                    .map((btn) => btn.dataset.choice);
+                                const opened = e.ui.isModalOpen();
+                                const probe = { x: e.player.x, y: e.player.y, resolved: false };
+                                e.resolveSoul(probe, "bogus");
+                                const ignored = probe.resolved === false;
+                                const before = e.player.hp;
+                                e.player.hp = Math.max(1, e.player.hp - 5);
+                                e.resolveSoul(soul, "ember");
+                                return {
+                                    choices,
+                                    opened,
+                                    ignored,
+                                    resolved: soul.resolved,
+                                    healed: e.player.hp > Math.max(1, before - 5),
+                                };
+                            }"""
+                        )
+                        page.screenshot(
+                            path=str(out_dir / f"soul_dialogue_{vp_name}.png"), full_page=True
+                        )
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+
+                        # A resumed run must remember which props are already spent.
+                        save_state = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.dungeon.chests.forEach((chest) => { chest.opened = true; });
+                                e.dungeon.traps.forEach((trap) => { trap.triggered = true; });
+                                e.dungeon.urns.forEach((urn) => { urn.broken = true; });
+                                e.dungeon.shrines.forEach((shrine) => { shrine.activated = true; });
+                                (e.dungeon.souls || []).forEach((soul) => { soul.resolved = true; });
+                                e.saveGameState();
+                                const saved = e.loadSavedRun();
+                                if (!saved) return { ok: false };
+                                return {
+                                    ok: true,
+                                    chests: saved.dungeon.chests.every((c) => c.opened === true),
+                                    traps: saved.dungeon.traps.every((t) => t.triggered === true),
+                                    urns: saved.dungeon.urns.every((u) => u.broken === true),
+                                    shrines: saved.dungeon.shrines.every((s) => s.activated === true),
+                                    souls: saved.dungeon.souls.every((s) => s.resolved === true),
+                                    lore: Array.isArray(saved.loreUnlocked)
+                                        && saved.loreUnlocked.length > 0,
+                                };
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "soul_dialogue_has_three_choices": soul_state["choices"]
+                                == ["ember", "toll", "lore"],
+                                "soul_choice_applies_effect": soul_state["opened"]
+                                and soul_state["resolved"]
+                                and soul_state["healed"],
+                                "soul_invalid_choice_ignored": soul_state["ignored"] is True,
+                                "save_preserves_prop_and_lore_state": save_state.get("ok")
+                                and save_state.get("chests")
+                                and save_state.get("traps")
+                                and save_state.get("urns")
+                                and save_state.get("shrines")
+                                and save_state.get("souls")
+                                and save_state.get("lore"),
+                            }
+                        )
+
+                        # Sigil objective: three sigils light the vault and it pays out.
+                        objective = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                if (!e.dungeon.vault) return { skip: true };
+                                e.sigilCount = 3;
+                                e.updateSigils();
+                                const heldThree = e.dungeon.sigilsHeld === 3
+                                    && document.getElementById("sigilCount").textContent === "3";
+                                while (e.player.inventory.length >= 12) e.player.inventory.pop();
+                                e.sigilCount = 0;
+                                e.openSigilVault(e.dungeon.vault);
+                                e.updateSigils();
+                                return {
+                                    skip: false,
+                                    heldThree,
+                                    opened: e.dungeon.vault.opened === true,
+                                    relic: e.player.inventory.some(
+                                        (item) => String(item.id || "").startsWith("vault_relic")
+                                    ),
+                                    lore: e.loreUnlocked.includes("lore_vault"),
+                                    pillReset: e.dungeon.sigilsHeld === 0,
+                                };
+                            }"""
+                        )
+
+                        # Boss phases: at half health it raises skeletons, at a quarter it enrages.
+                        boss = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const hpBefore = e.player.hp;
+                                const test = {
+                                    name: "Phase Test Lich", type: "boss_lich",
+                                    x: e.player.x + 3, y: e.player.y,
+                                    hp: 40, max_hp: 100, attack: 10, defense: 2,
+                                    xp_reward: 0, gold_reward: 0, loot_drop: null,
+                                    is_boss: true, is_champion: false, champion_affix: null,
+                                    ai_state: "idle", status_effects: {},
+                                };
+                                e.monsters.push(test);
+                                const beforeCount = e.monsters.length;
+                                e.processEnemyTurns();
+                                const phaseTwo = test.phase_two === true;
+                                const summoned = e.monsters.length > beforeCount;
+                                test.hp = 20;
+                                e.processEnemyTurns();
+                                const phaseThree = test.phase_three === true;
+                                const enraged = test.attack > 12;
+                                e.monsters = e.monsters.filter(
+                                    (m) => m !== test && m.name !== "Risen Skeleton"
+                                );
+                                e.player.hp = hpBefore;
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                                return { phaseTwo, summoned, phaseThree, enraged };
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "sigil_vault_objective": not objective.get("skip")
+                                and objective.get("heldThree")
+                                and objective.get("opened")
+                                and objective.get("relic")
+                                and objective.get("lore")
+                                and objective.get("pillReset"),
+                                "boss_phase_two_summons": boss.get("phaseTwo")
+                                and boss.get("summoned"),
+                                "boss_phase_three_enrages": boss.get("phaseThree")
+                                and boss.get("enraged"),
+                            }
+                        )
+
+                        # The offline fallback must carry the floor objective too.
+                        offline = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const saved = {
+                                    dungeon: e.dungeon,
+                                    monsters: e.monsters,
+                                    player: e.player,
+                                    turn: e.turn,
+                                };
+                                e._generateOfflineState(7, 2, "rogue");
+                                const props = [
+                                    ...e.dungeon.chests,
+                                    ...e.dungeon.shrines,
+                                    ...e.dungeon.urns,
+                                    ...e.dungeon.souls,
+                                    ...e.dungeon.sigils,
+                                ];
+                                const result = {
+                                    souls: e.dungeon.souls.length,
+                                    sigils: e.dungeon.sigils.length,
+                                    vault: Boolean(e.dungeon.vault),
+                                    blockedSigil: e._isOccupied(
+                                        e.dungeon.sigils[0].x, e.dungeon.sigils[0].y
+                                    ),
+                                    monstersOnProps: e.monsters.some((monster) =>
+                                        props.some(
+                                            (prop) => prop.x === monster.x && prop.y === monster.y
+                                        )
+                                    ),
+                                };
+                                e.dungeon = saved.dungeon;
+                                e.monsters = saved.monsters;
+                                e.player = saved.player;
+                                e.turn = saved.turn;
+                                e.dungeon.updateFOV(e.player.x, e.player.y, 7);
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                                return result;
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "offline_fallback_has_objective": offline["souls"] == 1
+                                and offline["sigils"] == 3
+                                and offline["vault"],
+                                "monsters_never_cover_props": offline["blockedSigil"]
+                                and not offline["monstersOnProps"],
+                            }
+                        )
+
+                        # Bounty XP must resolve level-ups immediately.
+                        bounty_xp = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const bounty = e.bounties[0];
+                                if (!bounty) return { skip: true };
+                                const before = e.player.level;
+                                bounty.progress = bounty.target - 1;
+                                bounty.completed = false;
+                                e.player.xp = Math.max(0, e.player.next_xp - 1);
+                                e.updateBountyProgress(bounty.id, 1);
+                                return { skip: false, leveled: e.player.level > before };
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "bounty_xp_levels_immediately": not bounty_xp.get("skip")
+                                and bounty_xp.get("leveled") is True,
+                            }
+                        )
+
                     if "combat" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Combat & Magic...")
                         # Test music toggle

@@ -150,6 +150,16 @@ def generate_dungeon_bounties(depth: int = 1, seed: Optional[int] = None) -> Lis
             "reward_gold": 20 + depth * 5,
             "reward_xp": 20 + depth * 5,
         },
+        {
+            "id": "bounty_vault",
+            "title": "Seal Keeper",
+            "desc": "Gather 3 sigils and open a sealed vault",
+            "target": 1,
+            "progress": 0,
+            "completed": False,
+            "reward_gold": 60 + depth * 20,
+            "reward_xp": 50 + depth * 10,
+        },
     ]
 
     selected = rng.sample(all_bounties, 3)

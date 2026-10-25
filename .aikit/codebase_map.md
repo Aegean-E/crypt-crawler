@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `14`
-- **Total Classes**: `16`
-- **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `89`
-- **Total Source Lines**: `3124`
+- **Total Python Modules**: `16`
+- **Total Classes**: `18`
+- **Total Top-Level Functions**: `24`
+- **Total Class Methods**: `100`
+- **Total Source Lines**: `3795`
 
 ---
 
@@ -47,7 +47,7 @@
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `373` lines (`12774` bytes)
+**Size**: `418` lines (`14599` bytes)
 
 **Classes:**
 - `class TileType`
@@ -116,10 +116,23 @@
 
 ---
 
+### [`crawler/lore.py`](crawler/lore.py)
+> *Lore codex: the readable history of the crypt, its relics and its dead.*
+
+**Size**: `186` lines (`6842` bytes)
+
+**Functions:**
+- `def public_entries()` - *Every entry as a fresh dict, safe to serialise to the client.*
+- `def entry_for_event(event)` - *The lore id tied to a discovery event, or an empty string.*
+- `def starting_lore()` - *The entries a brand-new run begins with.*
+- `def is_valid_entry(entry_id)` - *Whether an id names a real entry (guards saves against drift).*
+
+---
+
 ### [`crawler/rewards.py`](crawler/rewards.py)
 > *Variable-ratio reward engine, dopamine loot schedules, and near-miss mechanics for Crypt-Crawler.*
 
-**Size**: `156` lines (`5320` bytes)
+**Size**: `166` lines (`5644` bytes)
 
 **Classes:**
 - `class RewardType`
@@ -135,7 +148,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `162` lines (`6540` bytes)
+**Size**: `184` lines (`7355` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -203,7 +216,7 @@
 ### [`tests/test_dungeon.py`](tests/test_dungeon.py)
 > *Unit tests for procedural dungeon generation and pathfinding.*
 
-**Size**: `89` lines (`3230` bytes)
+**Size**: `123` lines (`5193` bytes)
 
 **Classes:**
 - `class TestDungeon`
@@ -212,6 +225,8 @@
   - Method `.test_seed_reproducibility()`
   - Method `.test_fov_computation()`
   - Method `.test_biomes_and_depth_scaling()`
+  - Method `.test_one_lost_soul_per_floor_in_a_walkable_spot()`
+  - Method `.test_sigils_and_vault_form_a_floor_objective()`
   - Method `.test_merchant_spawns_on_depth_2()`
 
 ---
@@ -224,6 +239,24 @@
 **Classes:**
 - `class TestInspectConfig`
   - Method `.test_viewports_declared()`
+
+---
+
+### [`tests/test_lore.py`](tests/test_lore.py)
+> *Unit tests for the lore codex data and its HTTP endpoint.*
+
+**Size**: `73` lines (`2612` bytes)
+
+**Classes:**
+- `class TestLoreData`
+  - Method `.test_entries_are_unique_and_well_formed()`
+  - Method `.test_starting_entries_exist()`
+  - Method `.test_every_event_points_at_a_real_entry()`
+  - Method `.test_public_entries_are_copies()`
+- `class TestLoreEndpoint`
+  - Method `.setUpClass()`
+  - Method `.tearDownClass()`
+  - Method `.test_api_lore_returns_entries_and_starting_set()`
 
 ---
 
@@ -245,7 +278,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `87` lines (`3392` bytes)
+**Size**: `120` lines (`5064` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -256,6 +289,8 @@
   - Method `.test_api_new_game_invalid_params_fallback()`
   - Method `.test_favicon_no_content()`
   - Method `.test_find_available_server()`
+  - Method `.test_floor_objective_and_soul_are_clear_of_monsters()`
+  - Method `.test_monsters_never_cover_an_interactive_prop()`
   - Method `.test_api_new_game_with_class_and_merchant()`
 
 ---
@@ -263,7 +298,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `553` lines (`27427` bytes)
+**Size**: `821` lines (`43126` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

@@ -19,6 +19,11 @@ export class GameEngine {
     this.monsters = [];
     this.merchantStock = [];
     this.bounties = [];
+    this.loreEntries = [];
+    this.loreEvents = {};
+    this.loreStart = [];
+    this.loreUnlocked = [];
+    this.sigilCount = 0;
     this.turn = 1;
     this.depth = 1;
     this.kills = 0;
@@ -42,6 +47,8 @@ export class GameEngine {
     this.gameOver = false;
     this.victory = false;
     this.heroClass = heroClass || "paladin";
+    await this._loadLore();
+    const loreArchive = this.loadLoreArchive();
 
     // Attempt to resume saved run if starting fresh at depth 1 without explicit seed
     if (allowResume && depth === 1 && !seed) {
@@ -56,10 +63,18 @@ export class GameEngine {
         this.kills = saved.kills;
         this.heroClass = saved.heroClass || this.player.hero_class || "paladin";
         this.bounties = saved.bounties || this._generateOfflineBounties(this.depth);
+        this.loreUnlocked = Array.from(new Set([
+          ...(this.loreStart || []),
+          ...loreArchive,
+          ...(Array.isArray(saved.loreUnlocked) ? saved.loreUnlocked : []),
+        ]));
+        this.sigilCount = Number.isFinite(saved.sigilCount) ? saved.sigilCount : 0;
         sounds.setBiome(this.dungeon.biome);
         this.dungeon.updateFOV(this.player.x, this.player.y, 7);
         this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
         this.ui.renderBounties(this.bounties);
+        this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
+        this.updateSigils();
         this.ui.logMessage("⚔️ Resumed your ongoing dungeon run from crystal memory.", "system");
         this._startRenderLoop();
         return;
@@ -83,6 +98,12 @@ export class GameEngine {
       this.bounties = this._generateOfflineBounties(this.depth);
     }
 
+    this.loreUnlocked = Array.from(new Set([
+      ...(this.loreStart || []),
+      ...loreArchive,
+      "lore_verge",
+    ]));
+    this.sigilCount = 0;
     sounds.setBiome(this.dungeon.biome);
 
     // Initialize FOV
@@ -91,7 +112,11 @@ export class GameEngine {
     // Initial UI update
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
     this.ui.renderBounties(this.bounties);
+    this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
+    this.updateSigils();
     this.ui.logMessage(`Entered Depth B${this.depth}F of the ancient catacombs as ${this.player.class_title || "Champion"}.`, "system");
+    this.ui.logMessage("Prologue — Your father came down these stairs with this same lantern. He never came back up.", "system");
+    this.ui.logMessage("📖 Your journal has begun. The Journal button records every truth the crypt lets slip.", "system");
 
     this._startRenderLoop();
     this.saveGameState();
@@ -143,6 +168,17 @@ export class GameEngine {
       merchants.push([mx, my]);
     }
 
+    const sigils = [
+      [rooms[0].center[0] + 1, rooms[0].center[1]],
+      [rooms[2].center[0] - 1, rooms[2].center[1]],
+      [rooms[3].center[0], rooms[3].center[1] - 1],
+    ];
+    sigils.forEach(([sx, sy]) => { tiles[sy][sx] = TileType.SIGIL; });
+    const vault = [rooms[4].center[0], rooms[4].center[1] - 1];
+    tiles[vault[1]][vault[0]] = TileType.VAULT;
+    const souls = [[rooms[4].center[0] + 1, rooms[4].center[1]]];
+    souls.forEach(([sx, sy]) => { tiles[sy][sx] = TileType.SOUL; });
+
     this.dungeon = new ClientDungeon({
       width: w,
       height: h,
@@ -156,6 +192,9 @@ export class GameEngine {
       traps: [],
       shrines: [[rooms[2].center[0], rooms[2].center[1]]],
       urns: [[rooms[3].center[0], rooms[3].center[1]]],
+      souls: souls,
+      sigils: sigils,
+      vault: vault,
       sconces: [[rooms[0].center[0], rooms[0].y - 1]],
       merchants: merchants,
     });
@@ -270,7 +309,7 @@ export class GameEngine {
         {
           name: "Venomous Brood-Spider",
           type: "spider",
-          x: rooms[2].center[0],
+          x: rooms[2].center[0] + 1,
           y: rooms[2].center[1],
           hp: 12,
           max_hp: 12,
@@ -292,6 +331,7 @@ export class GameEngine {
     this.ui.onUseItem = (idx) => this.useInventoryItem(idx);
     this.ui.onDropItem = (idx) => this.dropInventoryItem(idx);
     this.ui.onUnequip = (slot) => this.unequipSlot(slot);
+    this.ui.onJournal = () => this.ui.showJournalModal(this.loreEntries, this.loreUnlocked);
     this.ui.onModalClose = () => {
       if (this.gameOver || this.victory) {
         this.clearSavedRun();
@@ -311,6 +351,7 @@ export class GameEngine {
     window.addEventListener("keydown", (e) => {
       this._triggerMusicStart();
       if (this.gameOver || this.victory) return;
+      if (this.ui.isModalOpen()) return;
 
       let dx = 0;
       let dy = 0;
@@ -535,7 +576,7 @@ export class GameEngine {
   }
 
   _handleCanvasClick(e) {
-    if (this.gameOver || this.victory) return;
+    if (this.gameOver || this.victory || this.ui.isModalOpen()) return;
     const tile = this._getTileAtPointer(e);
     if (!tile) return;
 
@@ -578,6 +619,64 @@ export class GameEngine {
     try {
       localStorage.setItem("crypt_crawler_records_v1", JSON.stringify(records));
     } catch (_) {}
+  }
+
+  async _loadLore() {
+    try {
+      const res = await fetch("/api/lore");
+      if (!res.ok) throw new Error("lore archive unavailable");
+      const data = await res.json();
+      this.loreEntries = Array.isArray(data.entries) ? data.entries : [];
+      this.loreEvents = data.events || {};
+      this.loreStart = Array.isArray(data.starting) ? data.starting : [];
+    } catch (err) {
+      console.warn("Lore archive unavailable; the journal will show an offline notice:", err);
+      this.loreEntries = [];
+      this.loreEvents = {};
+      this.loreStart = [];
+    }
+  }
+
+  loadLoreArchive() {
+    try {
+      const raw = localStorage.getItem("crypt_crawler_lore_v1");
+      const ids = raw ? JSON.parse(raw) : [];
+      return Array.isArray(ids) ? ids.filter((id) => typeof id === "string") : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  saveLoreArchive() {
+    try {
+      localStorage.setItem("crypt_crawler_lore_v1", JSON.stringify(this.loreUnlocked));
+    } catch (_) {}
+  }
+
+  unlockLore(entryId, quiet = false) {
+    if (!entryId || this.loreUnlocked.includes(entryId)) return false;
+    if (this.loreEntries.length > 0 && !this.loreEntries.some((entry) => entry.id === entryId)) {
+      return false;
+    }
+    this.loreUnlocked.push(entryId);
+    this.saveLoreArchive();
+    this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
+    if (!quiet) {
+      const entry = this.loreEntries.find((item) => item.id === entryId);
+      const title = entry ? entry.title : "New entry";
+      this.renderer.addFloatingText("📖 NEW LORE", this.player.x, this.player.y, "#d6bcfa");
+      this.ui.logMessage(`📖 Journal entry recorded: ${title} (open the Journal to read it)`, "level");
+    }
+    this.saveGameState();
+    return true;
+  }
+
+  unlockRandomLore(quiet = false) {
+    if (this.loreEntries.length === 0) return false;
+    const locked = this.loreEntries.filter((entry) => !this.loreUnlocked.includes(entry.id));
+    if (locked.length === 0) return false;
+    const pick = locked[Math.floor(Math.random() * locked.length)];
+    return this.unlockLore(pick.id, quiet);
   }
 
   recordMonsterDefeat(monsterType) {
@@ -630,6 +729,9 @@ export class GameEngine {
     this.dungeon.updateFOV(this.player.x, this.player.y, 7);
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
     this.ui.renderBounties(this.bounties);
+    this.sigilCount = 0;
+    this.updateSigils();
+    this.unlockLore(this.loreEvents?.[`depth${this.depth}`]);
     this.saveGameState();
   }
 
@@ -641,7 +743,7 @@ export class GameEngine {
         if (b.progress >= b.target) {
           b.completed = true;
           this.player.gold += b.reward_gold;
-          this.player.xp += b.reward_xp;
+          this._grantXp(b.reward_xp);
           sounds.playBountyComplete();
           this.renderer.addFloatingText(`BOUNTY DONE! +${b.reward_gold}🪙`, this.player.x, this.player.y, "#48bb78");
           this.ui.logMessage(`📜 BOUNTY COMPLETED: ${b.title}! Claimed +${b.reward_gold} Gold & +${b.reward_xp} XP!`, "level");
@@ -658,6 +760,7 @@ export class GameEngine {
       { id: "bounty_urns", title: "Catacomb Purifier", desc: "Shatter 3 Burial Urns in the depths", target: 3, progress: 0, completed: false, reward_gold: 25 + depth * 10, reward_xp: 20 + depth * 5 },
       { id: "bounty_streak", title: "Frenzy of Blades", desc: "Achieve a x3 Kill Streak in rapid combat", target: 3, progress: 0, completed: false, reward_gold: 35 + depth * 10, reward_xp: 30 + depth * 5 },
       { id: "bounty_chests", title: "Vault Plunderer", desc: "Unlock 2 Hidden Treasure Chests", target: 2, progress: 0, completed: false, reward_gold: 30 + depth * 10, reward_xp: 25 + depth * 5 },
+      { id: "bounty_vault", title: "Seal Keeper", desc: "Gather 3 sigils and open a sealed vault", target: 1, progress: 0, completed: false, reward_gold: 60 + depth * 20, reward_xp: 50 + depth * 10 },
     ];
   }
 
@@ -670,6 +773,119 @@ export class GameEngine {
     this._recalculatePlayerStats();
     this.renderer.addFloatingText("⚡ ADRENALINE SURGE!", this.player.x, this.player.y, "#e53e3e");
     this.ui.logMessage("⚡ NEAR-MISS ADRENALINE SURGE! Stared death in the face and rallied (+2 MP, +4 DEF Barrier)!", "crit");
+  }
+
+  _grantXp(amount) {
+    if (!amount) return;
+    this.player.xp += amount;
+    while (this.player.xp >= this.player.next_xp) {
+      this.player.xp -= this.player.next_xp;
+      this.player.level += 1;
+      this.player.next_xp = Math.floor(this.player.next_xp * 1.5);
+      this.player.max_hp += 12;
+      this.player.hp = Math.min(this.player.hp + 12, this.player.max_hp);
+      this.player.max_mana += 6;
+      this.player.mana = Math.min(this.player.mana + 6, this.player.max_mana);
+      this.player.attack += 2;
+      this.player.defense += 1;
+      sounds.playLevelUp();
+      this.renderer.addLevelUpCelebration(this.player.x, this.player.y, this.player.level);
+      this.ui.logMessage(`⭐ LEVEL UP! You reached Level ${this.player.level}! (+12 HP, +6 MP, +2 ATK, +1 DEF)`, "level");
+    }
+  }
+
+  updateSigils() {
+    if (this.dungeon) this.dungeon.sigilsHeld = this.sigilCount;
+    this.ui.updateSigils(this.sigilCount, 3);
+  }
+
+  openSigilVault(vault) {
+    vault.opened = true;
+    sounds.playJackpot();
+    this.renderer.shake(9, 260);
+    this.renderer.addJackpotExplosion(vault.x, vault.y);
+    this.renderer.addShockwave(vault.x, vault.y, "#ecc94b", 120);
+
+    const names = { 1: "Gate-Warden's Seal", 2: "Tidewrought Signet" };
+    const relic = {
+      id: `vault_relic_b${this.depth}`,
+      name: names[this.depth] || "Emberheart Sigil-Crown",
+      type: "ring",
+      rarity: "legendary",
+      description: `Legendary vault relic (+${4 + this.depth} ATK, +${2 + this.depth} DEF, +${10 + this.depth * 5} Max HP).`,
+      stats: {
+        attack: 4 + this.depth,
+        defense: 2 + this.depth,
+        max_hp: 10 + this.depth * 5,
+      },
+    };
+
+    if (this.player.inventory.length < 12) {
+      this.player.inventory.push(relic);
+      this.renderer.addFloatingItemBadge(relic.name, relic.rarity, vault.x, vault.y);
+      this.ui.logMessage(`🏆 THE VAULT OPENS: ${relic.name} (LEGENDARY) is yours!`, "level");
+    } else {
+      const payout = 80 + this.depth * 25;
+      this.player.gold += payout;
+      this.ui.logMessage(`🏆 The vault opens, but your pack is full; it pays ${payout} gold instead.`, "loot");
+    }
+
+    const gold = 40 + this.depth * 20;
+    this.player.gold += gold;
+    this._grantXp(30 + this.depth * 10);
+    this.unlockLore(this.loreEvents?.vault);
+    this.updateBountyProgress("bounty_vault", 1);
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
+  }
+
+  resolveSoul(soul, choice) {
+    if (!soul || soul.resolved) return;
+    if (!["ember", "toll", "lore"].includes(choice)) return;
+    soul.resolved = true;
+
+    if (choice === "ember") {
+      const before = this.player.hp;
+      const heal = Math.max(10, Math.floor(this.player.max_hp * 0.3));
+      this.player.hp = Math.min(this.player.max_hp, this.player.hp + heal);
+      this.player.status_effects = this.player.status_effects || {};
+      this.player.status_effects.shield_wall = Math.max(
+        this.player.status_effects.shield_wall || 0, 3
+      );
+      this._recalculatePlayerStats();
+      sounds.playShrine();
+      this.renderer.addParticles(soul.x, soul.y, "#f6ad55", 18);
+      this.renderer.addFloatingText(`+${this.player.hp - before} EMBER`, this.player.x, this.player.y, "#f6ad55");
+      this.ui.logMessage(`🕯️ The soul's ember seeps into your wounds (+${this.player.hp - before} HP) and hardens your guard (+6 DEF for 3 turns).`, "loot");
+    } else if (choice === "toll") {
+      const gold = 45 + this.depth * 15;
+      this.player.gold += gold;
+      sounds.playJackpot();
+      this.renderer.addParticles(soul.x, soul.y, "#ecc94b", 16);
+      this.renderer.addFloatingText(`+${gold} 🪙`, this.player.x, this.player.y, "#ecc94b");
+      this.ui.logMessage(`🪙 The soul pays a debt it no longer remembers (+${gold} Gold).`, "loot");
+      if (this.player.inventory.length < 12 && Math.random() < 0.5) {
+        const relics = [
+          { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 MP, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
+          { id: "ring_shadow", name: "Band of the Shadowstalker", type: "ring", rarity: "rare", description: "+15% Crit Rate, +3 ATK.", stats: { attack: 3, crit_bonus: 15 } },
+          { id: "boots_shadowstep", name: "Shadowstep Treads", type: "boots", rarity: "rare", description: "+2 DEF, +10% Crit Rate.", stats: { defense: 2, crit_bonus: 10 } },
+          { id: "amulet_bloodstone", name: "Bloodstone Talisman", type: "amulet", rarity: "rare", description: "+18 Max HP, +2 ATK.", stats: { max_hp: 18, attack: 2 } },
+        ];
+        const relic = relics[Math.floor(Math.random() * relics.length)];
+        this.player.inventory.push(relic);
+        this.renderer.addFloatingItemBadge(relic.name, relic.rarity, soul.x, soul.y);
+        this.ui.logMessage(`The soul's burden includes a relic: ${relic.name}.`, "loot");
+      }
+    } else if (choice === "lore") {
+      this.unlockLore(this.loreEvents?.soul);
+      this._grantXp(15);
+      this.renderer.addParticles(soul.x, soul.y, "#d6bcfa", 14);
+      this.renderer.addFloatingText("+15 XP", this.player.x, this.player.y, "#d6bcfa");
+      this.ui.logMessage("🗣️ The soul speaks of the door it kept and the war it never heard end (+15 XP, journal updated).", "level");
+    }
+
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
   }
 
   stepPlayer(dx, dy) {
@@ -708,6 +924,7 @@ export class GameEngine {
       shrine.activated = true;
       sounds.playShrine();
       this.renderer.addParticles(nx, ny, "#38b2ac", 16);
+      this.unlockLore(this.loreEvents?.shrine);
 
       const roll = Math.random();
       if (roll < 0.35) {
@@ -754,6 +971,48 @@ export class GameEngine {
         this.ui.logMessage(`Shattered burial urn! Found ${goldDrop} gold coins.`, "loot");
       }
       this.updateBountyProgress("bounty_urns", 1);
+      if (Math.random() < 0.22) {
+        const found = this.unlockLore(this.loreEvents?.watchers);
+        if (!found) this.unlockRandomLore();
+      }
+    }
+
+    // Check floor sigil
+    const sigil = (this.dungeon.sigils || []).find(
+      (s) => s.x === nx && s.y === ny && !s.collected
+    );
+    if (sigil) {
+      sigil.collected = true;
+      this.sigilCount += 1;
+      sounds.playShrine();
+      this.renderer.addShockwave(nx, ny, "#63b3ed", 55);
+      this.renderer.addParticles(nx, ny, "#63b3ed", 16);
+      this.renderer.addFloatingText(`SIGIL ${this.sigilCount}/3`, nx, ny, "#90cdf4");
+      this.ui.logMessage(`🔑 Sigil recovered (${this.sigilCount}/3). Somewhere, a sealed vault answers.`, "loot");
+      this.unlockLore(this.loreEvents?.sigil);
+      this.updateSigils();
+    }
+
+    // Sealed vault
+    const vault = this.dungeon.vault;
+    if (vault && vault.x === nx && vault.y === ny) {
+      if (vault.opened) {
+        this.ui.logMessage("The sealed vault stands open and empty.", "system");
+      } else if (this.sigilCount >= 3) {
+        this.sigilCount -= 3;
+        this.openSigilVault(vault);
+      } else {
+        this.ui.logMessage(`🔒 Three sockets wait on the vault door; you carry ${this.sigilCount} sigils.`, "system");
+      }
+      this.updateSigils();
+    }
+
+    // Check Lost Soul: a dialogue, not a fight
+    const soul = (this.dungeon.souls || []).find((s) => s.x === nx && s.y === ny && !s.resolved);
+    if (soul) {
+      this.ui.showSoulDialogueModal(soul, (choice) => this.resolveSoul(soul, choice));
+      this.finishPlayerTurn();
+      return;
     }
 
     // Check chest
@@ -936,7 +1195,7 @@ export class GameEngine {
 
     if (this.killStreak === 2) {
       sounds.playCombo(2);
-      this.player.xp += 10;
+      this._grantXp(10);
       this.renderer.addFloatingText("DOUBLE SLAY! +10 XP", this.player.x, this.player.y, "#f6ad55");
       this.ui.logMessage("🔥 DOUBLE SLAY! Momentum surging (+10 Bonus XP)!", "loot");
     } else if (this.killStreak === 3) {
@@ -946,7 +1205,7 @@ export class GameEngine {
       this.ui.logMessage("⚡ TRIPLE SLAY! Battle adrenaline restored 1 Mana!", "loot");
     } else if (this.killStreak >= 5) {
       sounds.playCombo(5);
-      this.player.xp += 25;
+      this._grantXp(25);
       this.player.gold += 5;
       this.renderer.shake(10, 250);
       this.renderer.addFloatingText("RAMPAGE! +25 XP +5🪙", this.player.x, this.player.y, "#ecc94b");
@@ -958,6 +1217,8 @@ export class GameEngine {
       sounds.playLevelUp();
       this.renderer.addFloatingText("ARCH-LICH SLAIN!", monster.x, monster.y, "#d69e2e");
       this.ui.logMessage("🏆 ARCH-LICH MALAKOR HAS FALLEN! The realm is redeemed!", "level");
+      this.unlockLore(this.loreEvents?.boss);
+      this.unlockLore(this.loreEvents?.crown);
       // Add legendary drop
       const crown = {
         id: "crown_eternity",
@@ -976,21 +1237,7 @@ export class GameEngine {
     }
 
     // XP & Level up
-    this.player.xp += monster.xp_reward;
-    while (this.player.xp >= this.player.next_xp) {
-      this.player.xp -= this.player.next_xp;
-      this.player.level += 1;
-      this.player.next_xp = Math.floor(this.player.next_xp * 1.5);
-      this.player.max_hp += 12;
-      this.player.hp = Math.min(this.player.hp + 12, this.player.max_hp);
-      this.player.max_mana += 6;
-      this.player.mana = Math.min(this.player.mana + 6, this.player.max_mana);
-      this.player.attack += 2;
-      this.player.defense += 1;
-      sounds.playLevelUp();
-      this.renderer.addLevelUpCelebration(this.player.x, this.player.y, this.player.level);
-      this.ui.logMessage(`⭐ LEVEL UP! You reached Level ${this.player.level}! (+12 HP, +6 MP, +2 ATK, +1 DEF)`, "level");
-    }
+    this._grantXp(monster.xp_reward);
   }
 
   triggerSlotAction(slotNum) {
@@ -1181,6 +1428,7 @@ export class GameEngine {
         { item: { id: "potion_elixir_def", name: "Elixir of Ironhide", type: "potion", rarity: "rare", description: "Permanently increases base Defense by +2.", stats: { perm_defense: 2 } }, price: 70 },
       ];
     }
+    this.unlockLore(this.loreEvents?.merchant);
     sounds.playShopBuy();
     this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (itemId) => this.buyMerchantItem(itemId));
   }
@@ -1609,6 +1857,7 @@ export class GameEngine {
   }
 
   processEnemyTurns() {
+    const newMonsters = [];
     for (const monster of this.monsters) {
       if (monster.hp <= 0) continue;
 
@@ -1622,6 +1871,39 @@ export class GameEngine {
 
       const dist = Math.hypot(monster.x - this.player.x, monster.y - this.player.y);
       const isVisible = this.dungeon.isVisible(monster.x, monster.y);
+
+      // Boss phases: the fight changes shape as Malakor weakens.
+      if (monster.is_boss && !monster.phase_two && monster.hp <= monster.max_hp * 0.5) {
+        monster.phase_two = true;
+        monster.attack = Math.ceil(monster.attack * 1.2);
+        const spots = [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, 1]];
+        let summoned = 0;
+        for (const [sx, sy] of spots) {
+          if (summoned >= 2) break;
+          const tx = monster.x + sx;
+          const ty = monster.y + sy;
+          if (this.dungeon.isWalkable(tx, ty) && !this._isOccupied(tx, ty)) {
+            newMonsters.push(this._summonSkeleton(tx, ty));
+            this.renderer.addParticles(tx, ty, "#9f7aea", 16);
+            summoned += 1;
+          }
+        }
+        sounds.playNova();
+        this.renderer.shake(8, 240);
+        this.renderer.addShockwave(monster.x, monster.y, "#9f7aea", 110);
+        this.renderer.addFloatingText("THE CROWN STIRS!", monster.x, monster.y, "#d6bcfa");
+        this.ui.logMessage(`💀 Malakor tears open the vault floor and raises ${summoned} risen skeletons! His blows grow heavier.`, "crit");
+      }
+
+      if (monster.is_boss && !monster.phase_three && monster.hp <= monster.max_hp * 0.25) {
+        monster.phase_three = true;
+        monster.attack = Math.ceil(monster.attack * 1.3);
+        sounds.playNova();
+        this.renderer.shake(10, 300);
+        this.renderer.addShockwave(monster.x, monster.y, "#e53e3e", 150);
+        this.renderer.addFloatingText("MALAKOR ENRAGES!", monster.x, monster.y, "#fc8181");
+        this.ui.logMessage("🔥 The Crown of Eternity flares crimson. Malakor fights like a cornered god!", "crit");
+      }
 
       // Boss special ability: Soul Drain
       if (monster.is_boss && isVisible && dist <= 5 && Math.random() < 0.35) {
@@ -1692,16 +1974,54 @@ export class GameEngine {
         }
       }
     }
+    if (newMonsters.length) this.monsters.push(...newMonsters);
+  }
+
+  _summonSkeleton(x, y) {
+    const scale = 1 + (this.depth - 1) * 0.25;
+    const hp = Math.max(1, Math.floor(20 * scale));
+    return {
+      name: "Risen Skeleton",
+      type: "skeleton",
+      x,
+      y,
+      hp,
+      max_hp: hp,
+      attack: Math.max(1, Math.floor(6 * scale)),
+      defense: Math.max(0, Math.floor(2 * scale)),
+      xp_reward: 20,
+      gold_reward: 10,
+      loot_drop: null,
+      is_boss: false,
+      is_champion: false,
+      champion_affix: null,
+      ai_state: "idle",
+      status_effects: {},
+    };
   }
 
   _isOccupied(x, y) {
     if (this.player.x === x && this.player.y === y) return true;
-    if (this.dungeon?.merchants?.some((m) => m.x === x && m.y === y)) return true;
-    return this.monsters.some((m) => m.x === x && m.y === y && m.hp > 0);
+    if (this.monsters.some((m) => m.x === x && m.y === y && m.hp > 0)) return true;
+
+    // Interactive props are never covered by a moving or summoned monster.
+    const dungeon = this.dungeon;
+    if (!dungeon) return false;
+    const props = [
+      ...(dungeon.merchants || []),
+      ...(dungeon.chests || []),
+      ...(dungeon.shrines || []),
+      ...(dungeon.urns || []),
+      ...(dungeon.souls || []),
+      ...(dungeon.sigils || []),
+    ];
+    if (dungeon.vault) props.push(dungeon.vault);
+    return props.some((prop) => prop.x === x && prop.y === y);
   }
 
   handlePlayerDeath(cause = "unknown") {
     this.gameOver = true;
+    this.unlockLore(this.loreEvents?.death, true);
     sounds.stopMusic();
     this.clearSavedRun();
     this.recordRunEnd(false);
@@ -1750,11 +2070,13 @@ export class GameEngine {
         turn: this.turn,
         depth: this.depth,
         kills: this.kills,
+        sigilCount: this.sigilCount,
         heroClass: this.heroClass,
         player: this.player,
         monsters: this.monsters,
         merchantStock: this.merchantStock,
         bounties: this.bounties,
+        loreUnlocked: this.loreUnlocked,
         dungeon: {
           width: this.dungeon.width,
           height: this.dungeon.height,
@@ -1765,10 +2087,15 @@ export class GameEngine {
           player_spawn: this.dungeon.playerSpawn,
           stairs_pos: this.dungeon.stairsPos,
           rooms: this.dungeon.rooms,
-          chests: this.dungeon.chests.map((c) => [c.x, c.y]),
-          traps: this.dungeon.traps.map((t) => [t.x, t.y]),
-          shrines: this.dungeon.shrines.map((s) => [s.x, s.y]),
-          urns: this.dungeon.urns.map((u) => [u.x, u.y]),
+          chests: this.dungeon.chests.map((c) => ({ x: c.x, y: c.y, opened: c.opened })),
+          traps: this.dungeon.traps.map((t) => ({ x: t.x, y: t.y, triggered: t.triggered })),
+          shrines: this.dungeon.shrines.map((s) => ({ x: s.x, y: s.y, activated: s.activated })),
+          urns: this.dungeon.urns.map((u) => ({ x: u.x, y: u.y, broken: u.broken })),
+          souls: (this.dungeon.souls || []).map((s) => ({ x: s.x, y: s.y, resolved: s.resolved })),
+          sigils: (this.dungeon.sigils || []).map((s) => ({ x: s.x, y: s.y, collected: s.collected })),
+          vault: this.dungeon.vault
+            ? { x: this.dungeon.vault.x, y: this.dungeon.vault.y, opened: this.dungeon.vault.opened }
+            : null,
           sconces: this.dungeon.sconces.map((sc) => [sc.x, sc.y]),
           merchants: (this.dungeon.merchants || []).map((m) => [m.x, m.y]),
         },

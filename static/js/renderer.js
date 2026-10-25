@@ -248,6 +248,23 @@ export class DungeonRenderer {
         this._drawUrn(ctx, urn, ts, dungeon.isVisible(urn.x, urn.y));
       }
     }
+    for (const soul of (dungeon.souls || [])) {
+      if (dungeon.isExplored(soul.x, soul.y)) {
+        this._drawSoul(ctx, soul, ts, timestamp, dungeon.isVisible(soul.x, soul.y));
+      }
+    }
+    for (const sigil of (dungeon.sigils || [])) {
+      if (!sigil.collected && dungeon.isExplored(sigil.x, sigil.y)) {
+        this._drawSigil(ctx, sigil, ts, timestamp, dungeon.isVisible(sigil.x, sigil.y));
+      }
+    }
+    if (dungeon.vault && dungeon.isExplored(dungeon.vault.x, dungeon.vault.y)) {
+      this._drawVault(
+        ctx, dungeon.vault, ts, timestamp,
+        dungeon.isVisible(dungeon.vault.x, dungeon.vault.y),
+        dungeon.sigilsHeld || 0
+      );
+    }
     for (const sconce of (dungeon.sconces || [])) {
       if (dungeon.isVisible(sconce.x, sconce.y)) {
         this._drawSconce(ctx, sconce, ts, timestamp, biome);
@@ -345,6 +362,9 @@ export class DungeonRenderer {
       tile === TileType.TRAP ||
       tile === TileType.SHRINE ||
       tile === TileType.URN ||
+      tile === TileType.SOUL ||
+      tile === TileType.SIGIL ||
+      tile === TileType.VAULT ||
       tile === TileType.MERCHANT
     ) {
       const altColor = (x + y) % 2 === 0;
@@ -584,6 +604,200 @@ export class DungeonRenderer {
     // Gilded lip rim
     ctx.fillStyle = isVis ? "#ecc94b" : "#744210";
     ctx.fillRect(cx - 5.5, cy - 8, 11, 2);
+  }
+
+  _drawInteractMarker(ctx, cx, topY, color, timestamp) {
+    const pulse = 0.55 + Math.sin(timestamp * 0.007) * 0.35;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0.45, pulse);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, topY - 5.5);
+    ctx.lineTo(cx + 4.2, topY - 1.2);
+    ctx.lineTo(cx, topY + 3);
+    ctx.lineTo(cx - 4.2, topY - 1.2);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  _drawSoul(ctx, soul, ts, timestamp, isVis) {
+    const cx = soul.x * ts + ts / 2;
+    const cy = soul.y * ts + ts / 2;
+
+    if (soul.resolved) {
+      ctx.fillStyle = isVis ? "#3b2f4a" : "#1e1826";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 5, 6, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    const bob = Math.sin(timestamp * 0.004 + soul.x) * 2;
+    const pulse = 0.65 + Math.sin(timestamp * 0.006 + soul.y) * 0.2;
+
+    // Wide violet aura so the ghost reads at a glance
+    const glow = ctx.createRadialGradient(cx, cy + bob, 1, cx, cy + bob, 22);
+    glow.addColorStop(0, `rgba(183, 148, 244, ${pulse * 0.55})`);
+    glow.addColorStop(0.6, `rgba(159, 122, 234, ${pulse * 0.28})`);
+    glow.addColorStop(1, "rgba(139, 92, 246, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wispy tail below the robe
+    ctx.fillStyle = `rgba(167, 139, 250, ${0.3 + pulse * 0.2})`;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy + 8);
+    ctx.quadraticCurveTo(cx - 2, cy + 15, cx, cy + 12);
+    ctx.quadraticCurveTo(cx + 2, cy + 15, cx + 5, cy + 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Kneeling shroud, larger and lighter than the floor
+    ctx.fillStyle = isVis ? "#7c5cbf" : "#3a2b5c";
+    ctx.beginPath();
+    ctx.moveTo(cx - 9, cy + 10);
+    ctx.quadraticCurveTo(cx - 11, cy - 6 + bob, cx, cy - 11 + bob);
+    ctx.quadraticCurveTo(cx + 11, cy - 6 + bob, cx + 9, cy + 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Shroud highlight
+    ctx.fillStyle = "rgba(233, 216, 253, 0.22)";
+    ctx.beginPath();
+    ctx.ellipse(cx - 1, cy - 2 + bob, 4, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ember heart with a halo
+    ctx.fillStyle = "rgba(246, 173, 85, 0.45)";
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = isVis ? "#fbd38d" : "#7b4a1d";
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = isVis ? "#fefcbf" : "#5b5340";
+    ctx.fillRect(cx - 5, cy - 6 + bob, 2.6, 2.6);
+    ctx.fillRect(cx + 2.4, cy - 6 + bob, 2.6, 2.6);
+
+    // Interactable pip
+    this._drawInteractMarker(ctx, cx, cy - 14 + bob, "#d6bcfa", timestamp);
+  }
+
+  _drawSigil(ctx, sigil, ts, timestamp, isVis) {
+    const cx = sigil.x * ts + ts / 2;
+    const cy = sigil.y * ts + ts / 2;
+    const bob = Math.sin(timestamp * 0.005 + sigil.x) * 2;
+    const pulse = 0.6 + Math.sin(timestamp * 0.007 + sigil.y) * 0.25;
+
+    const glow = ctx.createRadialGradient(cx, cy + bob, 1, cx, cy + bob, 13);
+    glow.addColorStop(0, `rgba(99, 179, 237, ${pulse * 0.55})`);
+    glow.addColorStop(1, "rgba(99, 179, 237, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, 13, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = isVis ? "#63b3ed" : "#2c5282";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy + bob, 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = isVis ? "#e6f6ff" : "#3b6a8f";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 4 + bob);
+    ctx.lineTo(cx + 3, cy + bob);
+    ctx.lineTo(cx, cy + 4 + bob);
+    ctx.lineTo(cx - 3, cy + bob);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  _drawVault(ctx, vault, ts, timestamp, isVis, sigilsHeld) {
+    const px = vault.x * ts + 2;
+    const py = vault.y * ts + 2;
+    const w = ts - 4;
+    const h = ts - 4;
+
+    // Recessed shadow so the door sits below the floor line
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(px - 1, py - 1, w + 2, h + 2);
+
+    // Stone body with warm gold trim
+    ctx.fillStyle = isVis ? "#3b4252" : "#1b202a";
+    ctx.fillRect(px, py, w, h);
+    ctx.strokeStyle = isVis ? "#b7791f" : "#4a3410";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + 1, py + 1, w - 2, h - 2);
+
+    // Inner panel
+    ctx.fillStyle = isVis ? "#242b38" : "#12161d";
+    ctx.fillRect(px + 4, py + 4, w - 8, h - 8);
+
+    if (vault.opened) {
+      const light = ctx.createLinearGradient(px, py, px, py + h);
+      light.addColorStop(0, "rgba(236, 201, 75, 0.8)");
+      light.addColorStop(1, "rgba(236, 201, 75, 0.12)");
+      ctx.fillStyle = light;
+      ctx.fillRect(px + 4, py + 4, w - 8, h - 8);
+      ctx.fillStyle = "#fefcbf";
+      ctx.fillRect(px + w / 2 - 1, py + 5, 2, h - 10);
+      return;
+    }
+
+    // Three sockets on the right edge, lit by carried sigils
+    const lit = Math.max(0, Math.min(3, sigilsHeld));
+    const pulse = 0.55 + Math.sin(timestamp * 0.006) * 0.25;
+    const socketX = px + w - 9;
+    for (let i = 0; i < 3; i++) {
+      const sy = py + 9 + i * 7;
+      ctx.strokeStyle = "#0a0d12";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(socketX, sy, 4.2, 0, Math.PI * 2);
+      ctx.stroke();
+      if (i < lit) {
+        ctx.fillStyle = `rgba(99, 179, 237, ${pulse * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(socketX, sy, 7.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = i < lit ? "#e6f6ff" : "#151a22";
+      ctx.beginPath();
+      ctx.arc(socketX, sy, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Gold lock diamond and two short seams
+    const lockX = px + 10;
+    const lockY = py + h / 2;
+    ctx.fillStyle = isVis ? "#ecc94b" : "#5c4a14";
+    ctx.beginPath();
+    ctx.moveTo(lockX, lockY - 5);
+    ctx.lineTo(lockX + 4, lockY);
+    ctx.lineTo(lockX, lockY + 5);
+    ctx.lineTo(lockX - 4, lockY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = isVis ? "#11151c" : "#07090d";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px + 5, py + 7);
+    ctx.lineTo(px + w - 15, py + 7);
+    ctx.moveTo(px + 5, py + h - 7);
+    ctx.lineTo(px + w - 15, py + h - 7);
+    ctx.stroke();
+
+    this._drawInteractMarker(ctx, px + w / 2, py - 4, "#ecc94b", timestamp);
   }
 
   _drawSconce(ctx, sconce, ts, timestamp, biome = "crypt") {
@@ -1565,8 +1779,16 @@ export class DungeonRenderer {
 
     if (monster) {
       ctx.save();
+      const effects = [];
+      if (monster.status_effects) {
+        for (const key of ["poison", "burn", "stun"]) {
+          const turns = monster.status_effects[key];
+          if (turns) effects.push(`${key} ${turns}`);
+        }
+      }
+      const affix = monster.champion_affix || (monster.is_boss ? "Boss" : "");
       const cardW = 148;
-      const cardH = 50;
+      const cardH = effects.length ? 62 : 50;
       const cardX = px + ts / 2 - cardW / 2;
       const cardY = py - cardH - 10;
 
@@ -1581,6 +1803,13 @@ export class DungeonRenderer {
       ctx.font = "bold 11px sans-serif";
       const title = monster.is_champion ? `★ ${monster.name}` : monster.name;
       ctx.fillText(title, cardX + 6, cardY + 14);
+      if (affix) {
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#f6ad55";
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillText(affix.toUpperCase(), cardX + cardW - 6, cardY + 13);
+        ctx.textAlign = "start";
+      }
 
       // HP Bar inside tooltip
       const barX = cardX + 6;
@@ -1605,6 +1834,11 @@ export class DungeonRenderer {
       ctx.font = "10px sans-serif";
       const statTxt = `ATK: ${monster.attack}   DEF: ${monster.defense}`;
       ctx.fillText(statTxt, cardX + 6, cardY + 41);
+      if (effects.length) {
+        ctx.fillStyle = "#68d391";
+        ctx.font = "9px sans-serif";
+        ctx.fillText(effects.join("   "), cardX + 6, cardY + 56);
+      }
 
       ctx.restore();
     }

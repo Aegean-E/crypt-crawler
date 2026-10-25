@@ -13,6 +13,9 @@ export const TileType = {
   SHRINE: 7,
   URN: 8,
   MERCHANT: 9,
+  SOUL: 10,
+  SIGIL: 11,
+  VAULT: 12,
 };
 
 export class ClientDungeon {
@@ -26,12 +29,39 @@ export class ClientDungeon {
     this.playerSpawn = data.player_spawn;
     this.stairsPos = data.stairs_pos;
     this.rooms = data.rooms || [];
-    this.chests = (data.chests || []).map((c) => ({ x: c[0], y: c[1], opened: false }));
-    this.traps = (data.traps || []).map((t) => ({ x: t[0], y: t[1], triggered: false }));
-    this.shrines = (data.shrines || []).map((s) => ({ x: s[0], y: s[1], activated: false }));
-    this.urns = (data.urns || []).map((u) => ({ x: u[0], y: u[1], broken: false }));
-    this.sconces = (data.sconces || []).map((sc) => ({ x: sc[0], y: sc[1] }));
-    this.merchants = (data.merchants || []).map((m) => ({ x: m[0], y: m[1] }));
+    const point = (entry) => (Array.isArray(entry)
+      ? { x: entry[0], y: entry[1] }
+      : { x: entry.x, y: entry.y });
+    this.chests = (data.chests || []).map((c) => ({
+      ...point(c),
+      opened: Array.isArray(c) ? false : Boolean(c.opened),
+    }));
+    this.traps = (data.traps || []).map((t) => ({
+      ...point(t),
+      triggered: Array.isArray(t) ? false : Boolean(t.triggered),
+    }));
+    this.shrines = (data.shrines || []).map((s) => ({
+      ...point(s),
+      activated: Array.isArray(s) ? false : Boolean(s.activated),
+    }));
+    this.urns = (data.urns || []).map((u) => ({
+      ...point(u),
+      broken: Array.isArray(u) ? false : Boolean(u.broken),
+    }));
+    this.souls = (data.souls || []).map((s) => ({
+      ...point(s),
+      resolved: Array.isArray(s) ? false : Boolean(s.resolved),
+    }));
+    this.sigils = (data.sigils || []).map((s) => ({
+      ...point(s),
+      collected: Array.isArray(s) ? false : Boolean(s.collected),
+    }));
+    this.vault = data.vault
+      ? { ...point(data.vault), opened: Array.isArray(data.vault) ? false : Boolean(data.vault.opened) }
+      : null;
+    this.sigilsHeld = 0;
+    this.sconces = (data.sconces || []).map(point);
+    this.merchants = (data.merchants || []).map(point);
 
     // Fog of War: explored (2D boolean array) and visible (Set of "x,y" keys)
     this.explored = Array.from({ length: this.height }, () =>

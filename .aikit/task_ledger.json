@@ -1,118 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-008",
+    "task_id": "CC-010",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792932862.7609024,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792961213.389987,
     "owner": "kilo:review",
     "started_by": "kilo:review",
-    "continuations": [],
-    "completed_at": 1792932867.0413811
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "CC-005",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-005' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792919074.2918353,
-      "timestamp_str": "2026-10-25 12:04:34",
-      "agent": "unidentified"
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Expanded item catalog, equipment diffs, procedural sprites, and level-up FX",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792926356.8781662,
-      "timestamp_str": "2026-10-25 14:05:56",
-      "agent": "unidentified",
-      "impact_assessment": {
-        "why": "Deepen inventory, equipment comparison, procedural entity models, visual effects, and UI feedback",
-        "benefits": "Substantially enriches RPG strategic depth, visual fidelity, tactile feedback, and player satisfaction",
-        "risks": "contract: none; dependency: none, standard library and vanilla canvas/web audio only; concurrency: none; state: equipment slots and item catalog backwards compatibility",
-        "mitigation": "Preserve existing item IDs and equipped dictionary keys; provide unit test coverage for new items and unequip logic"
-      }
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 1/5] Expanded item catalog, equipment comparison diffs, procedural sprites, level-up FX (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792927510.0690331,
-      "timestamp_str": "2026-10-25 14:25:10",
-      "agent": "kilo:continue",
-      "continued_from": "unidentified"
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[2/5] Make weapon stun and poison stats real in both engines; show proc stats in comparison card",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792927793.1709526,
-      "timestamp_str": "2026-10-25 14:29:53",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "crawler/combat.py weapon procs, tests/test_combat.py, static/js/engine.js attackMonster, static/js/ui.js stat labels"
-      }
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/5] Weapon stun/poison procs now honor item stats in Python and JS; comparison card shows proc stats (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792928148.6944983,
-      "timestamp_str": "2026-10-25 14:35:48",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[3/5] Inventory capacity meter, gear/item filters, rarity sorting that preserves original item indices",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792928506.1724362,
-      "timestamp_str": "2026-10-25 14:41:46",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "static/index.html toolbar, static/js/ui.js renderInventory and selectItem, static/css/style.css",
-        "evidence": "inspect_ui inventory scenario"
-      }
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 3/5] Inventory capacity meter, gear/item filters and rarity sorting preserve original item indices; headless inventory audit green (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792928786.683654,
-      "timestamp_str": "2026-10-25 14:46:26",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 4/5] Low-HP pulse vignette, damage impact flash and status tooltips; headless feedback audit green (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792929262.7158144,
-      "timestamp_str": "2026-10-25 14:54:22",
-      "agent": "kilo:continue"
-    },
     {
       "task_id": "CC-006",
       "phase": "phase 2",
@@ -271,6 +169,124 @@
       "timestamp": 1792932867.0413823,
       "timestamp_str": "2026-10-25 15:54:27",
       "agent": "kilo:review"
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Lore codex, prologue and Journal panel; then Lost Soul dialogue, sigil-vault objective, boss phases and polish",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792954783.4733825,
+      "timestamp_str": "2026-10-25 21:59:43",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "The game has solid combat and loot but almost no narrative payoff or non-combat interaction: the only story is one-line log text, there is nothing to discover or read, and every floor plays the same way. The user asked for more mechanics, fun, lore, story and interaction.",
+        "benefits": "A persistent, unlockable codex gives discoveries meaning and rewards exploration; a branching NPC choice adds role-play and risk/reward; a per-floor sigil-and-vault objective gives each floor a goal beyond the stairs; boss phases make the finale readable and dramatic.",
+        "risks": "contract: new /api/lore endpoint and extra save fields, both additive; dependency: none, standard library and canvas only; concurrency: unchanged, client-driven; state: save schema grows (loreUnlocked, prop states, sigils) and must stay readable for old saves",
+        "mitigation": "Additive defaults on load, Python unit tests for lore and generation, headless audit checks for journal/dialogue/vault and save round-trip, multi-viewport inspection, full gates"
+      }
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[2/4] Lost Soul dialogue with three branching choices, plus persistent prop states so a resumed run cannot re-loot the same floor",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792955909.5753467,
+      "timestamp_str": "2026-10-25 22:18:29",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "crawler/dungeon.py soul tile, server spawn guard, static/js/dungeon.js prop parsing, engine resolveSoul, ui modal, renderer ghost"
+      }
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[3/4] Sigil-and-vault floor objective with HUD tracker, legendary reward and lore; boss phases at 50% and 25% HP",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792956585.2431073,
+      "timestamp_str": "2026-10-25 22:29:45",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "dungeon sigils/vault tiles, server spawn guard, rewards bounty, engine collect/open, renderer vault, boss summons"
+      }
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[4/4] Persistent codex archive across runs, informative enemy tooltips, prop legibility polish, README and ADR-009",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792959400.4943197,
+      "timestamp_str": "2026-10-25 23:16:40",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "full suite, gates, three-viewport inspection, free-model visual review"
+      }
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 4/4] Lore archive persists across reloads (12 entries, 1/12 -> 2/12 after reload); enemy tooltip shows affix/status; soul and vault props redrawn after VL review; README and ADR-009; 47 tests, 4/4 gates, 45/45 audit checks, 14 screenshots, 0 console errors (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792959429.053889,
+      "timestamp_str": "2026-10-25 23:17:09",
+      "agent": "kilo:review",
+      "handoff": {
+        "state": "work complete and uncommitted",
+        "next": "review the diff and commit on authorization",
+        "evidence": "aikit fix 4/4, inspect 45/45"
+      }
+    },
+    {
+      "task_id": "CC-009",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-009' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792959439.87027,
+      "timestamp_str": "2026-10-25 23:17:19",
+      "agent": "kilo:review"
+    },
+    {
+      "task_id": "CC-010",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Review pass: keep every prop reachable (spawn and movement), make the offline fallback carry the new objective, and validate soul choices",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792960184.041252,
+      "timestamp_str": "2026-10-25 23:29:44",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "Reviewing the CC-009 diff found props can be covered by monsters: random spawns still ignore chests, shrines and urns, and the depth-3 boss escorts ignore every prop (seed 999 places a skeleton on a sigil). The offline fallback has no Lost Soul, sigils or vault, so the new objective disappears when the API is down, and resolveSoul accepts an unknown choice while still consuming the soul.",
+        "benefits": "Props stay visible and collectable on every floor, the feature set survives an offline start, and the soul interaction cannot be consumed by an invalid action.",
+        "risks": "contract: server spawn placement changes, save schema unchanged; dependency: none; concurrency: none; state: offline dungeon gains props, and older saves already default them safely",
+        "mitigation": "Failing-first spawn/overlap test across seeds and depths, offline fallback audit check in the headless inspector, full suite, gates and three-viewport inspection"
+      }
+    },
+    {
+      "task_id": "CC-010",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/2] Spawn and movement now reserve every interactive prop; depth-3 escorts fixed (seed 999 sigil overlap); offline fallback carries soul/sigils/vault; soul choices validated; bounty and streak XP level up immediately; 48 tests, 4/4 gates, 49/49 audit checks, 14 screenshots, 0 console errors (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792961213.389987,
+      "timestamp_str": "2026-10-25 23:46:53",
+      "agent": "kilo:review",
+      "handoff": {
+        "state": "verified and ready to commit",
+        "next": "stage, commit, complete CC-010 and push",
+        "evidence": "aikit fix 4/4, inspect 49/49"
+      }
     }
   ]
 }

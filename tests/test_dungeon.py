@@ -76,6 +76,40 @@ class TestDungeon(unittest.TestCase):
         d3.depth = 3
         self.assertEqual(d3.biome, "inferno")
 
+    def test_one_lost_soul_per_floor_in_a_walkable_spot(self):
+        for seed in (42, 777, 12345):
+            dungeon = DungeonGenerator(width=45, height=30).generate(seed=seed)
+            with self.subTest(seed=seed):
+                self.assertEqual(len(dungeon.souls), 1)
+                sx, sy = dungeon.souls[0]
+                self.assertEqual(dungeon.tiles[sy][sx], TileType.SOUL)
+                self.assertTrue(dungeon.is_walkable(sx, sy))
+                self.assertTrue(dungeon.is_transparent(sx, sy))
+                self.assertNotEqual((sx, sy), dungeon.stairs_pos)
+                self.assertNotEqual((sx, sy), dungeon.player_spawn)
+                self.assertNotIn((sx, sy), dungeon.merchants)
+                self.assertIn((sx, sy), [tuple(s) for s in dungeon.to_dict()["souls"]])
+
+    def test_sigils_and_vault_form_a_floor_objective(self):
+        for seed in (42, 777, 12345):
+            dungeon = DungeonGenerator(width=45, height=30).generate(seed=seed)
+            with self.subTest(seed=seed):
+                self.assertGreaterEqual(len(dungeon.sigils), 3)
+                for sx, sy in dungeon.sigils[:3]:
+                    self.assertEqual(dungeon.tiles[sy][sx], TileType.SIGIL)
+                    self.assertTrue(dungeon.is_walkable(sx, sy))
+                    self.assertTrue(dungeon.is_transparent(sx, sy))
+                self.assertIsNotNone(dungeon.vault)
+                vx, vy = dungeon.vault
+                self.assertEqual(dungeon.tiles[vy][vx], TileType.VAULT)
+                self.assertTrue(dungeon.is_walkable(vx, vy))
+                self.assertNotIn(dungeon.vault, dungeon.sigils)
+                self.assertNotEqual(dungeon.vault, dungeon.stairs_pos)
+                self.assertNotEqual(dungeon.vault, dungeon.player_spawn)
+                data = dungeon.to_dict()
+                self.assertEqual(len(data["sigils"]), len(dungeon.sigils))
+                self.assertEqual(data["vault"], list(dungeon.vault))
+
     def test_merchant_spawns_on_depth_2(self):
         gen = DungeonGenerator(width=45, height=30, depth=2)
         dungeon = gen.generate(seed=777)
