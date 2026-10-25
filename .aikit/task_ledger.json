@@ -3,12 +3,13 @@
   "active_task": {
     "task_id": "CC-005",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1792919029.7467663,
     "owner": "unidentified",
     "started_by": "unidentified",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1792919074.2918344
   },
   "checkpoints": [
     {
@@ -194,6 +195,16 @@
       "status": "in_progress",
       "timestamp": 1792919029.7467663,
       "timestamp_str": "2026-10-25 12:03:49",
+      "agent": "unidentified"
+    },
+    {
+      "task_id": "CC-005",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-005' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792919074.2918353,
+      "timestamp_str": "2026-10-25 12:04:34",
       "agent": "unidentified"
     }
   ]
