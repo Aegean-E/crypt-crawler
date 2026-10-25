@@ -9,8 +9,8 @@
 - **Total Python Modules**: `14`
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `81`
-- **Total Source Lines**: `2696`
+- **Total Class Methods**: `83`
+- **Total Source Lines**: `2808`
 
 ---
 
@@ -79,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `660` lines (`21124` bytes)
+**Size**: `720` lines (`23471` bytes)
 
 **Classes:**
 - `class Item`
@@ -169,7 +169,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `201` lines (`7744` bytes)
+**Size**: `253` lines (`10062` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -189,6 +189,8 @@
   - Method `.test_shadow_strike_and_smoke_bomb()`
   - Method `.test_arcane_nova_and_frost_nova()`
   - Method `.test_champion_monsters_and_affixes()`
+  - Method `.test_expanded_equipment_slots_and_unequip()`
+  - Method `.test_divine_aegis_draught_potion()`
 
 ---
 

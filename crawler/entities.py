@@ -181,6 +181,54 @@ ITEM_CATALOG: Dict[str, Dict[str, Any]] = {
         "stats": {"max_hp": 25, "max_mana": 15, "attack": 5, "defense": 3},
         "rarity": "legendary",
     },
+    "amulet_bloodstone": {
+        "name": "Bloodstone Talisman",
+        "type": "amulet",
+        "value": 65,
+        "description": "Crimson gem pulsing with sanguine vitality (+18 Max HP, +2 ATK).",
+        "stats": {"max_hp": 18, "attack": 2},
+        "rarity": "rare",
+    },
+    "boots_shadowstep": {
+        "name": "Shadowstep Treads",
+        "type": "boots",
+        "value": 55,
+        "description": "Whisper-quiet spider-silk boots (+2 DEF, +10% Crit Rate).",
+        "stats": {"defense": 2, "crit_bonus": 10},
+        "rarity": "rare",
+    },
+    "tome_pyromancy": {
+        "name": "Tome of Blazing Embers",
+        "type": "amulet",
+        "value": 95,
+        "description": "Grimoire radiating primeval heat (+4 ATK, +20 Max MP).",
+        "stats": {"attack": 4, "max_mana": 20},
+        "rarity": "epic",
+    },
+    "hammer_thunder": {
+        "name": "Stormforged Warhammer",
+        "type": "weapon",
+        "value": 115,
+        "description": "Dwarven warhammer humming with arcs of thunder (+13 ATK, stun chance).",
+        "stats": {"attack": 13, "stun_chance": 25},
+        "rarity": "epic",
+    },
+    "cloak_ethereal": {
+        "name": "Spectral Shroud",
+        "type": "armor",
+        "value": 105,
+        "description": "Gossamer cloak partially phased into the astral realm (+7 DEF, +15 Max MP).",
+        "stats": {"defense": 7, "max_mana": 15},
+        "rarity": "epic",
+    },
+    "potion_invulnerability": {
+        "name": "Divine Aegis Draught",
+        "type": "potion",
+        "value": 50,
+        "description": "Blessed liquid bestowing an impervious energy barrier (+6 DEF for 4 turns).",
+        "stats": {"shield_wall_turns": 4},
+        "rarity": "rare",
+    },
 }
 
 
@@ -239,12 +287,18 @@ MERCHANT_STOCK: List[Dict[str, Any]] = [
     {"item_id": "potion_health", "price": 18},
     {"item_id": "potion_mana", "price": 18},
     {"item_id": "potion_rejuvenation", "price": 40},
+    {"item_id": "potion_invulnerability", "price": 45},
     {"item_id": "scroll_fireball", "price": 35},
     {"item_id": "scroll_nova", "price": 55},
     {"item_id": "sword_runic", "price": 85},
+    {"item_id": "hammer_thunder", "price": 130},
     {"item_id": "armor_plate", "price": 75},
+    {"item_id": "cloak_ethereal", "price": 120},
     {"item_id": "shield_tower", "price": 90},
     {"item_id": "ring_shadow", "price": 95},
+    {"item_id": "amulet_bloodstone", "price": 75},
+    {"item_id": "boots_shadowstep", "price": 65},
+    {"item_id": "tome_pyromancy", "price": 105},
     {"item_id": "potion_elixir_str", "price": 70},
     {"item_id": "potion_elixir_def", "price": 70},
 ]
@@ -497,6 +551,8 @@ class Player(Entity):
             "weapon": None,
             "armor": None,
             "ring": None,
+            "amulet": None,
+            "boots": None,
         }
 
         # Starter kit in inventory
@@ -597,7 +653,7 @@ class Player(Entity):
             return False, "Invalid item index."
         item = self.inventory[item_index]
 
-        if item.item_type in ("weapon", "armor", "ring"):
+        if item.item_type in ("weapon", "armor", "ring", "amulet", "boots"):
             self.equip(item)
             return True, f"Equipped {item.name}."
 
@@ -606,6 +662,7 @@ class Player(Entity):
             mana_amount = item.stats.get("restore_mana", 0)
             perm_atk = item.stats.get("perm_attack", 0)
             perm_def = item.stats.get("perm_defense", 0)
+            barrier_turns = item.stats.get("shield_wall_turns", 0)
             msg_parts = []
             if heal_amount > 0:
                 restored = self.heal(heal_amount)
@@ -621,6 +678,9 @@ class Player(Entity):
                 self.defense += perm_def
                 self.perm_defense += perm_def
                 msg_parts.append(f"permanently gained +{perm_def} Defense")
+            if barrier_turns > 0:
+                self.apply_status("shield_wall", barrier_turns)
+                msg_parts.append(f"gained Barrier (+6 DEF for {barrier_turns} turns)")
             # If rejuvenation, cleanse negative statuses
             if item.item_id == "potion_rejuvenation":
                 self.status_effects.pop("poison", None)

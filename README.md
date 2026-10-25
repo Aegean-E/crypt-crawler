@@ -2,7 +2,7 @@
 
 [![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
 
-Tactical turn-based web dungeon crawler with procedural levels, inventory, combat, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, combat, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 

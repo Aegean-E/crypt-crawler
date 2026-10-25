@@ -42,6 +42,39 @@ export class DungeonRenderer {
     }
   }
 
+  addLevelUpCelebration(x, y, level) {
+    const cx = x * this.tileSize + this.tileSize / 2;
+    const cy = y * this.tileSize + this.tileSize / 2;
+    const colors = ["#ecc94b", "#f6ad55", "#63b3ed", "#b794f4", "#ffffff"];
+    for (let i = 0; i < 40; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 5.0;
+      this.particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2.5,
+        color: colors[i % colors.length],
+        size: 3 + Math.random() * 3,
+        alpha: 1.0,
+        decay: 0.018 + Math.random() * 0.012,
+        gravity: 0.09,
+      });
+    }
+    this.addShockwave(x, y, "#ecc94b", 120);
+    this.addShockwave(x, y, "#63b3ed", 85);
+    this.addFloatingText(`⭐ LEVEL UP! (Lvl ${level}) ⭐`, x, y - 0.7, "#ecc94b");
+    this.shake(5, 250);
+  }
+
+  addFloatingItemBadge(name, rarity, x, y) {
+    let color = "#cbd5e0";
+    if (rarity === "rare") color = "#63b3ed";
+    else if (rarity === "epic") color = "#b794f4";
+    else if (rarity === "legendary") color = "#f6e05e";
+    this.addFloatingText(`📦 ${name}`, x, y - 0.5, color);
+  }
+
   addShockwave(x, y, color = "#9f7aea", maxRadius = 90) {
     this.shockwaves.push({
       x: x * this.tileSize + this.tileSize / 2,
@@ -386,24 +419,85 @@ export class DungeonRenderer {
   }
 
   _drawChest(ctx, chest, ts, isVis) {
-    const px = chest.x * ts + 6;
+    const px = chest.x * ts + 5;
     const py = chest.y * ts + 8;
-    ctx.fillStyle = chest.opened ? "#4a3b2c" : "#8c5b29";
-    ctx.fillRect(px, py, ts - 12, ts - 14);
+    const w = ts - 10;
+    const h = ts - 14;
 
-    ctx.fillStyle = isVis ? "#ecc94b" : "#975a16";
-    ctx.fillRect(px + 2, py + (ts - 14) / 2 - 2, ts - 16, 4);
-    ctx.fillStyle = "#1a202c";
-    ctx.fillRect(px + (ts - 12) / 2 - 1, py + (ts - 14) / 2 - 1, 2, 3);
+    if (chest.opened) {
+      // Opened chest base
+      ctx.fillStyle = isVis ? "#3a2d21" : "#1f1811";
+      ctx.fillRect(px, py + 4, w, h - 4);
+      // Tilted open lid
+      ctx.fillStyle = isVis ? "#5c432d" : "#2f2216";
+      ctx.fillRect(px - 1, py - 2, w + 2, 5);
+      // Interior gold glitter
+      ctx.fillStyle = isVis ? "#d69e2e" : "#593c10";
+      ctx.fillRect(px + 3, py + 5, w - 6, 2);
+    } else {
+      // Closed ornate chest
+      ctx.fillStyle = isVis ? "#7b4f2c" : "#382312";
+      ctx.fillRect(px, py, w, h);
+
+      // Iron band reinforcements
+      ctx.fillStyle = isVis ? "#4a5568" : "#212733";
+      ctx.fillRect(px + 3, py, 2.5, h);
+      ctx.fillRect(px + w - 5.5, py, 2.5, h);
+
+      // Gold lock latch
+      ctx.fillStyle = isVis ? "#ecc94b" : "#744210";
+      ctx.fillRect(px + w / 2 - 2, py + h / 2 - 2, 4, 5);
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + w / 2 - 0.5, py + h / 2, 1, 2);
+
+      // Treasure glint sparkle
+      if (isVis && Math.random() < 0.08) {
+        this.particles.push({
+          x: px + w / 2 + (Math.random() - 0.5) * 8,
+          y: py + h / 2 + (Math.random() - 0.5) * 6,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -0.4 - Math.random() * 0.4,
+          color: "#ecc94b",
+          size: 1.5,
+          alpha: 0.9,
+          decay: 0.03,
+        });
+      }
+    }
   }
 
   _drawTrap(ctx, trap, ts) {
-    const cx = trap.x * ts + ts / 2;
-    const cy = trap.y * ts + ts / 2;
-    ctx.fillStyle = "#e53e3e";
+    const px = trap.x * ts + 4;
+    const py = trap.y * ts + 4;
+    const size = ts - 8;
+
+    // Iron floor grille
+    ctx.strokeStyle = "#4a5568";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px, py, size, size);
+
+    // Grille bars
     ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(px, py + size / 2);
+    ctx.lineTo(px + size, py + size / 2);
+    ctx.moveTo(px + size / 2, py);
+    ctx.lineTo(px + size / 2, py + size);
+    ctx.stroke();
+
+    // Retractable razor spikes
+    ctx.fillStyle = "#e53e3e";
+    const spikes = [
+      [px + 4, py + 4],
+      [px + size - 4, py + 4],
+      [px + 4, py + size - 4],
+      [px + size - 4, py + size - 4],
+      [px + size / 2, py + size / 2],
+    ];
+    spikes.forEach(([sx, sy]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
   }
 
   _drawShrine(ctx, shrine, ts, timestamp, isVis) {
@@ -411,17 +505,42 @@ export class DungeonRenderer {
     const py = shrine.y * ts + 4;
     const size = ts - 8;
 
-    // Altar stone pedestal
+    // Granite stone altar pedestal with runic carving
     ctx.fillStyle = isVis ? "#2d3748" : "#1a202c";
-    ctx.fillRect(px + 2, py + size - 6, size - 4, 6);
-    ctx.fillRect(px + 4, py + 6, size - 8, size - 12);
+    ctx.fillRect(px + 2, py + size - 5, size - 4, 5);
+    ctx.fillRect(px + 4, py + 7, size - 8, size - 12);
+    ctx.strokeStyle = isVis ? "#4a5568" : "#2d3748";
+    ctx.strokeRect(px + 4, py + 7, size - 8, size - 12);
 
-    // Glowing mystical glyph on top
+    // Hovering rotating magical crystal
     if (!shrine.activated && isVis) {
-      const pulse = Math.sin(timestamp * 0.006) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(56, 178, 172, ${pulse})`;
+      const pulse = Math.sin(timestamp * 0.006) * 0.25 + 0.75;
+      const bob = Math.sin(timestamp * 0.004) * 2;
+      const crystalY = py + 6 + bob;
+
+      // Outer glow
+      ctx.fillStyle = `rgba(56, 178, 172, ${pulse * 0.35})`;
       ctx.beginPath();
-      ctx.arc(px + size / 2, py + 6, 4, 0, Math.PI * 2);
+      ctx.arc(px + size / 2, crystalY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Diamond crystal
+      ctx.fillStyle = "#38b2ac";
+      ctx.beginPath();
+      ctx.moveTo(px + size / 2, crystalY - 5);
+      ctx.lineTo(px + size / 2 + 4, crystalY);
+      ctx.lineTo(px + size / 2, crystalY + 5);
+      ctx.lineTo(px + size / 2 - 4, crystalY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Crystal facet highlight
+      ctx.fillStyle = "#e6fffa";
+      ctx.beginPath();
+      ctx.moveTo(px + size / 2, crystalY - 4);
+      ctx.lineTo(px + size / 2 + 2, crystalY);
+      ctx.lineTo(px + size / 2, crystalY);
+      ctx.closePath();
       ctx.fill();
     } else if (shrine.activated) {
       ctx.fillStyle = "#4a5568";
@@ -435,20 +554,36 @@ export class DungeonRenderer {
 
     if (urn.broken) {
       ctx.fillStyle = isVis ? "#744210" : "#3d2208";
-      ctx.fillRect(cx - 5, cy + 2, 4, 2);
-      ctx.fillRect(cx + 2, cy + 3, 3, 2);
+      ctx.fillRect(cx - 6, cy + 2, 5, 2);
+      ctx.fillRect(cx + 2, cy + 3, 4, 2);
+      ctx.fillRect(cx - 2, cy + 4, 3, 2);
       return;
     }
 
-    // Terra-cotta urn body
+    // Grecian double-handled terracotta urn
+    // Handles
+    ctx.strokeStyle = isVis ? "#7b341e" : "#3d190d";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx - 6, cy - 1, 4, Math.PI * 0.5, Math.PI * 1.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + 6, cy - 1, 4, Math.PI * 1.5, Math.PI * 0.5);
+    ctx.stroke();
+
+    // Body
     ctx.fillStyle = isVis ? "#9c4221" : "#4a1e0d";
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 2, 7, 9, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + 2, 7.5, 9, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Gold rim
+    // Ancient geometric band
+    ctx.fillStyle = isVis ? "#742a2a" : "#381313";
+    ctx.fillRect(cx - 6, cy, 12, 2);
+
+    // Gilded lip rim
     ctx.fillStyle = isVis ? "#ecc94b" : "#744210";
-    ctx.fillRect(cx - 5, cy - 8, 10, 2);
+    ctx.fillRect(cx - 5.5, cy - 8, 11, 2);
   }
 
   _drawSconce(ctx, sconce, ts, timestamp, biome = "crypt") {
@@ -605,8 +740,9 @@ export class DungeonRenderer {
     }
 
     if (monster.type === "boss_lich") {
-      // Arch-Lich Boss: Majestic dark royal sorcerer
-      ctx.fillStyle = "#44337a";
+      // Arch-Lich Boss: Majestic dark royal necromancer
+      // Royal burial robes
+      ctx.fillStyle = "#322659";
       ctx.beginPath();
       ctx.moveTo(px + ts / 2, py + 4);
       ctx.lineTo(px + ts - 4, py + ts - 2);
@@ -614,96 +750,255 @@ export class DungeonRenderer {
       ctx.closePath();
       ctx.fill();
 
-      // Jagged Golden Crown
-      ctx.fillStyle = "#d69e2e";
+      // Gold embroidered hem
+      ctx.strokeStyle = "#d69e2e";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2 - 8, py + 2);
-      ctx.lineTo(px + ts / 2 - 5, py - 4);
-      ctx.lineTo(px + ts / 2, py - 1);
-      ctx.lineTo(px + ts / 2 + 5, py - 4);
-      ctx.lineTo(px + ts / 2 + 8, py + 2);
+      ctx.moveTo(px + 4, py + ts - 2);
+      ctx.lineTo(px + ts - 4, py + ts - 2);
+      ctx.stroke();
+
+      // High spectral collar
+      ctx.fillStyle = "#44337a";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2 - 8, py + 12);
+      ctx.lineTo(px + ts / 2 - 11, py + 4);
+      ctx.lineTo(px + ts / 2 + 11, py + 4);
+      ctx.lineTo(px + ts / 2 + 8, py + 12);
+      ctx.closePath();
       ctx.fill();
 
-      // Floating skull face with glowing violet eyes
-      ctx.fillStyle = "#e2e8f0";
+      // Serrated 5-point Golden Crown with ruby jewel
+      ctx.fillStyle = "#d69e2e";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2 - 9, py + 3);
+      ctx.lineTo(px + ts / 2 - 7, py - 4);
+      ctx.lineTo(px + ts / 2 - 3, py);
+      ctx.lineTo(px + ts / 2, py - 6);
+      ctx.lineTo(px + ts / 2 + 3, py);
+      ctx.lineTo(px + ts / 2 + 7, py - 4);
+      ctx.lineTo(px + ts / 2 + 9, py + 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Crown central ruby
+      ctx.fillStyle = "#e53e3e";
+      ctx.fillRect(px + ts / 2 - 1.5, py - 2, 3, 3);
+
+      // Skull face with burning amethyst flame eyes
+      ctx.fillStyle = "#f7fafc";
       ctx.beginPath();
       ctx.arc(px + ts / 2, py + 10, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#b794f4";
-      ctx.fillRect(px + ts / 2 - 3, py + 8, 2, 2);
-      ctx.fillRect(px + ts / 2 + 1, py + 8, 2, 2);
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 4, py + 8, 3, 3);
+      ctx.fillRect(px + ts / 2 + 1, py + 8, 3, 3);
+      ctx.fillStyle = "#d6bcfa";
+      ctx.fillRect(px + ts / 2 - 3, py + 9, 2, 2);
+      ctx.fillRect(px + ts / 2 + 2, py + 9, 2, 2);
 
-      // Orbiting soul orb
-      const orbAngle = timestamp * 0.004;
-      const orbX = px + ts / 2 + Math.cos(orbAngle) * 16;
-      const orbY = py + ts / 2 + Math.sin(orbAngle) * 12;
+      // Two counter-rotating orbiting soul orbs
+      // 1. Violet soul-drain orb
+      const orb1Angle = timestamp * 0.004;
+      const orb1X = px + ts / 2 + Math.cos(orb1Angle) * 17;
+      const orb1Y = py + ts / 2 + Math.sin(orb1Angle) * 13;
       ctx.fillStyle = "#9f7aea";
       ctx.beginPath();
-      ctx.arc(orbX, orbY, 3, 0, Math.PI * 2);
+      ctx.arc(orb1X, orb1Y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Frost-cyan stasis orb
+      const orb2Angle = -timestamp * 0.0055;
+      const orb2X = px + ts / 2 + Math.cos(orb2Angle) * 13;
+      const orb2Y = py + ts / 2 + Math.sin(orb2Angle) * 17;
+      ctx.fillStyle = "#63b3ed";
+      ctx.beginPath();
+      ctx.arc(orb2X, orb2Y, 3, 0, Math.PI * 2);
       ctx.fill();
     } else if (monster.type === "skeleton") {
-      ctx.fillStyle = "#e2e8f0";
+      // Ivory skull with hollow black sockets and pinpoint red soul-fires
+      ctx.fillStyle = "#f7fafc";
       ctx.beginPath();
-      ctx.arc(px + ts / 2, py + ts / 2 - 3, 7, 0, Math.PI * 2);
+      ctx.arc(px + ts / 2, py + ts / 2 - 4, 7, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#ff2222";
-      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 5, 2, 2);
-      ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 5, 2, 2);
+
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 6, 3, 3);
+      ctx.fillRect(px + ts / 2 + 1, py + ts / 2 - 6, 3, 3);
+      ctx.fillStyle = "#e53e3e";
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 - 5, 1.5, 1.5);
+      ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 5, 1.5, 1.5);
+
+      // Ribcage & spine
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2, py + ts / 2 + 3);
+      ctx.lineTo(px + ts / 2, py + ts / 2 + 12);
+      // Rib pairs
+      ctx.moveTo(px + ts / 2 - 5, py + ts / 2 + 5);
+      ctx.lineTo(px + ts / 2 + 5, py + ts / 2 + 5);
+      ctx.moveTo(px + ts / 2 - 4, py + ts / 2 + 8);
+      ctx.lineTo(px + ts / 2 + 4, py + ts / 2 + 8);
+      ctx.stroke();
+
+      // Curved steel scimitar on right arm
       ctx.strokeStyle = "#cbd5e0";
       ctx.lineWidth = 2;
-      ctx.strokeRect(px + ts / 2 - 5, py + ts / 2 + 3, 10, 8);
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 5, py + ts / 2 + 10);
+      ctx.quadraticCurveTo(px + ts - 2, py + ts / 2, px + ts - 5, py + ts / 2 - 6);
+      ctx.stroke();
+
+      // Round studded wooden buckler on left arm
+      ctx.fillStyle = "#744210";
+      ctx.beginPath();
+      ctx.arc(px + 6, py + ts / 2 + 5, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#a0aec0";
+      ctx.beginPath();
+      ctx.arc(px + 6, py + ts / 2 + 5, 2, 0, Math.PI * 2);
+      ctx.fill();
     } else if (monster.type === "spider") {
-      // Venomous Brood Spider
+      // Venomous Brood-Spider with animated 8-leg crawling cycle
+      // Abdomen
+      ctx.fillStyle = "#1a202c";
+      ctx.beginPath();
+      ctx.ellipse(px + ts / 2, py + ts / 2 + 2, 7, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Toxic abdominal markings
+      ctx.fillStyle = "#68d391";
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2 + 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cephalothorax
       ctx.fillStyle = "#2d3748";
       ctx.beginPath();
-      ctx.ellipse(px + ts / 2, py + ts / 2, 7, 6, 0, 0, Math.PI * 2);
+      ctx.arc(px + ts / 2, py + ts / 2 - 3, 4.5, 0, Math.PI * 2);
       ctx.fill();
-      // Glowing green eyes
+
+      // 6 glowing emerald eyes
       ctx.fillStyle = "#48bb78";
-      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 - 4, 2, 2);
-      ctx.fillRect(px + ts / 2 + 1, py + ts / 2 - 4, 2, 2);
-      // Legs
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 - 5, 1.5, 1.5);
+      ctx.fillRect(px + ts / 2 + 1.5, py + ts / 2 - 5, 1.5, 1.5);
+      ctx.fillRect(px + ts / 2 - 2, py + ts / 2 - 3, 1.5, 1.5);
+      ctx.fillRect(px + ts / 2 + 0.5, py + ts / 2 - 3, 1.5, 1.5);
+
+      // Dripping venom fangs
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(px + ts / 2 - 2.5, py + ts / 2, 1.5, 2.5);
+      ctx.fillRect(px + ts / 2 + 1, py + ts / 2, 1.5, 2.5);
+      ctx.fillStyle = "#48bb78";
+      ctx.fillRect(px + ts / 2 - 2.5, py + ts / 2 + 2.5, 1.5, 1.5);
+      ctx.fillRect(px + ts / 2 + 1, py + ts / 2 + 2.5, 1.5, 1.5);
+
+      // 8 animated creeping legs
       ctx.strokeStyle = "#4a5568";
       ctx.lineWidth = 1.5;
-      [-5, -2, 2, 5].forEach((offset) => {
+      for (let leg = 0; leg < 4; leg++) {
+        const legSway = Math.sin(timestamp * 0.007 + leg * 0.8) * 2.5;
+        // Left legs
         ctx.beginPath();
-        ctx.moveTo(px + ts / 2 + offset, py + ts / 2);
-        ctx.lineTo(px + ts / 2 + offset * 2.2, py + ts / 2 - 5);
+        ctx.moveTo(px + ts / 2 - 3, py + ts / 2 - 3 + leg * 2.5);
+        ctx.lineTo(px + ts / 2 - 8, py + ts / 2 - 5 + leg * 3 + legSway);
+        ctx.lineTo(px + ts / 2 - 13, py + ts / 2 - 2 + leg * 3.5);
         ctx.stroke();
-      });
+        // Right legs
+        ctx.beginPath();
+        ctx.moveTo(px + ts / 2 + 3, py + ts / 2 - 3 + leg * 2.5);
+        ctx.lineTo(px + ts / 2 + 8, py + ts / 2 - 5 + leg * 3 - legSway);
+        ctx.lineTo(px + ts / 2 + 13, py + ts / 2 - 2 + leg * 3.5);
+        ctx.stroke();
+      }
     } else if (monster.type === "goblin") {
-      ctx.fillStyle = "#48bb78";
-      ctx.beginPath();
-      ctx.arc(px + ts / 2, py + ts / 2, 8, 0, Math.PI * 2);
-      ctx.fill();
+      // Sneaky Goblin with large pointed ears, fangs, and earring
+      // Body
+      ctx.fillStyle = "#276749";
+      ctx.fillRect(px + ts / 2 - 5, py + ts / 2 + 3, 10, 8);
+
+      // Head
       ctx.fillStyle = "#38a169";
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2 - 9, py + ts / 2);
-      ctx.lineTo(px + ts / 2 - 14, py + ts / 2 - 6);
-      ctx.lineTo(px + ts / 2 - 5, py + ts / 2 - 4);
+      ctx.arc(px + ts / 2, py + ts / 2 - 2, 7, 0, Math.PI * 2);
       ctx.fill();
+
+      // Pointed ears
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2 + 9, py + ts / 2);
-      ctx.lineTo(px + ts / 2 + 14, py + ts / 2 - 6);
-      ctx.lineTo(px + ts / 2 + 5, py + ts / 2 - 4);
+      ctx.moveTo(px + ts / 2 - 6, py + ts / 2 - 2);
+      ctx.lineTo(px + ts / 2 - 13, py + ts / 2 - 6);
+      ctx.lineTo(px + ts / 2 - 4, py + ts / 2 + 2);
       ctx.fill();
-    } else if (monster.type === "necromancer") {
-      ctx.fillStyle = "#6b46c1";
+
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2, py + 4);
-      ctx.lineTo(px + ts - 6, py + ts - 4);
-      ctx.lineTo(px + 6, py + ts - 4);
-      ctx.closePath();
+      ctx.moveTo(px + ts / 2 + 6, py + ts / 2 - 2);
+      ctx.lineTo(px + ts / 2 + 13, py + ts / 2 - 6);
+      ctx.lineTo(px + ts / 2 + 4, py + ts / 2 + 2);
       ctx.fill();
-      ctx.strokeStyle = "#9f7aea";
+
+      // Golden ring earring on left ear
+      ctx.strokeStyle = "#ecc94b";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(px + ts / 2 - 11, py + ts / 2 - 3, 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Cunning yellow eyes
+      ctx.fillStyle = "#faf089";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 2.5, 2);
+      ctx.fillRect(px + ts / 2 + 1.5, py + ts / 2 - 4, 2.5, 2);
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 - 4, 1, 2);
+      ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 4, 1, 2);
+
+      // Underbite fangs
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2, 1.5, 2);
+      ctx.fillRect(px + ts / 2 + 1.5, py + ts / 2, 1.5, 2);
+
+      // Jagged dagger
+      ctx.strokeStyle = "#cbd5e0";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(px + ts - 4, py + 4);
+      ctx.moveTo(px + ts - 5, py + ts / 2 + 7);
+      ctx.lineTo(px + ts - 3, py + ts / 2 - 3);
+      ctx.stroke();
+    } else if (monster.type === "necromancer") {
+      // Dread Necromancer with bone skull staff and hovering runes
+      // Shroud
+      ctx.fillStyle = "#2d1b4e";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2, py + 3);
+      ctx.lineTo(px + ts - 5, py + ts - 3);
+      ctx.lineTo(px + 5, py + ts - 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Hood
+      ctx.fillStyle = "#44337a";
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + 8, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glowing cyan eyes
+      ctx.fillStyle = "#00f0ff";
+      ctx.fillRect(px + ts / 2 - 3, py + 7, 2, 2);
+      ctx.fillRect(px + ts / 2 + 1, py + 7, 2, 2);
+
+      // Bone staff with soul flame
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 4, py + 3);
       ctx.lineTo(px + ts - 4, py + ts - 2);
       ctx.stroke();
+
+      // Staff skull & cyan flame
       ctx.fillStyle = "#00f0ff";
+      const flamePulse = Math.sin(timestamp * 0.01) * 1.5;
       ctx.beginPath();
-      ctx.arc(px + ts - 4, py + 4, 3, 0, Math.PI * 2);
+      ctx.arc(px + ts - 4, py + 2, 3.5 + flamePulse * 0.5, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.fillStyle = "#718096";
@@ -714,14 +1009,20 @@ export class DungeonRenderer {
 
     // Status effect visuals
     if (monster.status_effects && monster.status_effects.stun) {
+      const starAngle = timestamp * 0.008;
       ctx.fillStyle = "#ecc94b";
-      ctx.font = "bold 11px sans-serif";
-      ctx.fillText("💫", px + ts / 2 - 5, py - 2);
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText("💫", px + ts / 2 - 5, py - 4);
     }
     if (monster.status_effects && monster.status_effects.burn) {
       ctx.fillStyle = "#dd6b20";
       ctx.font = "bold 10px sans-serif";
-      ctx.fillText("🔥", px + 2, py + ts / 2);
+      ctx.fillText("🔥", px + 1, py + ts / 2);
+    }
+    if (monster.status_effects && monster.status_effects.poison) {
+      ctx.fillStyle = "#48bb78";
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText("🧪", px + ts - 8, py + ts / 2);
     }
 
     // Health bar above monster
@@ -749,129 +1050,250 @@ export class DungeonRenderer {
     ctx.save();
     ctx.translate(0, bob);
 
-    // Shield Wall Aura (Golden defensive barrier)
+    // Shield Wall Barrier (Shimmering golden translucent octagonal shield)
     if (player.status_effects && player.status_effects.shield_wall) {
-      ctx.strokeStyle = "rgba(236, 201, 75, 0.6)";
+      const barrierPulse = Math.sin(timestamp * 0.008) * 0.15 + 0.55;
+      ctx.fillStyle = `rgba(236, 201, 75, ${barrierPulse * 0.25})`;
+      ctx.strokeStyle = `rgba(236, 201, 75, ${barrierPulse})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(px + ts / 2, py + ts / 2, ts / 2 + 2, 0, Math.PI * 2);
+      const sides = 8;
+      const rad = ts / 2 + 3;
+      for (let i = 0; i < sides; i++) {
+        const a = (i * Math.PI * 2) / sides + timestamp * 0.002;
+        const bx = px + ts / 2 + Math.cos(a) * rad;
+        const by = py + ts / 2 + Math.sin(a) * rad;
+        if (i === 0) ctx.moveTo(bx, by);
+        else ctx.lineTo(bx, by);
+      }
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
     }
 
     if (heroClass === "rogue") {
-      // Shadow Rogue Sprite: Dark stealth cowl with emerald assassin eyes and dual daggers
+      // Shadow Rogue Sprite: Obsidian stealth cowl with emerald assassin eyes, dual daggers & shadow smoke
+      // Ambient shadow smoke at feet
+      if (Math.random() < 0.15) {
+        this.particles.push({
+          x: px + ts / 2 + (Math.random() - 0.5) * 6,
+          y: py + ts - 4,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: -0.35 - Math.random() * 0.3,
+          color: "#4a5568",
+          size: 2,
+          alpha: 0.6,
+          decay: 0.04,
+        });
+      }
+
+      // Trailing cowl scarf
       ctx.fillStyle = "#1a202c";
       ctx.beginPath();
-      ctx.arc(px + ts / 2, py + ts / 2 - 3, 7, 0, Math.PI * 2);
+      ctx.moveTo(px + ts / 2 - 5, py + ts / 2 + 2);
+      ctx.lineTo(px + 2, py + ts - 2);
+      ctx.lineTo(px + ts / 2 - 2, py + ts / 2 + 5);
       ctx.fill();
+
+      // Stealth Hood
+      ctx.fillStyle = "#2d3748";
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2 - 4, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mask
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 5, py + ts / 2 - 2, 10, 5);
 
       // Glowing venomous green slit eyes
       ctx.fillStyle = "#48bb78";
       ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 2, 2);
       ctx.fillRect(px + ts / 2 + 2, py + ts / 2 - 4, 2, 2);
 
-      // Dark leather tunic
-      ctx.fillStyle = "#2d3748";
+      // Studded leather brigandine
+      ctx.fillStyle = "#4a5568";
       ctx.fillRect(px + ts / 2 - 5, py + ts / 2 + 3, 10, 9);
-
-      // Left poison dagger
-      ctx.strokeStyle = "#cbd5e0";
-      ctx.lineWidth = 1.5;
+      // Crossed belts
+      ctx.strokeStyle = "#744210";
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(px + 6, py + ts / 2 + 7);
-      ctx.lineTo(px + 4, py + ts / 2 - 4);
+      ctx.moveTo(px + ts / 2 - 5, py + ts / 2 + 3);
+      ctx.lineTo(px + ts / 2 + 5, py + ts / 2 + 12);
       ctx.stroke();
-      ctx.fillStyle = "#48bb78"; // venom tip
-      ctx.fillRect(px + 3, py + ts / 2 - 5, 2, 2);
 
-      // Right poison dagger
+      // Left poison wavy Kris dagger
       ctx.strokeStyle = "#cbd5e0";
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(px + ts - 6, py + ts / 2 + 7);
-      ctx.lineTo(px + ts - 4, py + ts / 2 - 4);
+      ctx.moveTo(px + 5, py + ts / 2 + 8);
+      ctx.lineTo(px + 3, py + ts / 2 - 5);
       ctx.stroke();
       ctx.fillStyle = "#48bb78";
-      ctx.fillRect(px + ts - 5, py + ts / 2 - 5, 2, 2);
+      ctx.fillRect(px + 2, py + ts / 2 - 6, 2.5, 2.5);
+
+      // Right poison wavy Kris dagger
+      ctx.strokeStyle = "#cbd5e0";
+      ctx.beginPath();
+      ctx.moveTo(px + ts - 5, py + ts / 2 + 8);
+      ctx.lineTo(px + ts - 3, py + ts / 2 - 5);
+      ctx.stroke();
+      ctx.fillStyle = "#48bb78";
+      ctx.fillRect(px + ts - 4.5, py + ts / 2 - 6, 2.5, 2.5);
     } else if (heroClass === "mage") {
-      // Arcane Mage Sprite: Flowing purple robes, wizard hat, and glowing rune staff
+      // Arcane Mage Sprite: Royal purple robes, tall wizard hat with gold buckle & floating mana crystal
+      // Flowing robe with gold embroidery
       ctx.fillStyle = "#553c9a";
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2, py + 2);
+      ctx.moveTo(px + ts / 2, py + 3);
       ctx.lineTo(px + ts - 4, py + ts - 2);
       ctx.lineTo(px + 4, py + ts - 2);
       ctx.closePath();
       ctx.fill();
 
-      // Wizard Cowl / Hat
+      // Gold embroidery hem
+      ctx.strokeStyle = "#d69e2e";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px + 4, py + ts - 2);
+      ctx.lineTo(px + ts - 4, py + ts - 2);
+      ctx.stroke();
+
+      // Wizard Hat with wide curved brim
+      ctx.fillStyle = "#44337a";
+      ctx.beginPath();
+      ctx.ellipse(px + ts / 2, py + 8, 9, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pointed cone
       ctx.fillStyle = "#6b46c1";
       ctx.beginPath();
-      ctx.moveTo(px + ts / 2, py - 4);
+      ctx.moveTo(px + ts / 2 - 7, py + 8);
+      ctx.lineTo(px + ts / 2 + 2, py - 6);
       ctx.lineTo(px + ts / 2 + 7, py + 8);
-      ctx.lineTo(px + ts / 2 - 7, py + 8);
       ctx.closePath();
       ctx.fill();
 
-      // Glowing sapphire eyes / face
-      ctx.fillStyle = "#63b3ed";
-      ctx.fillRect(px + ts / 2 - 3, py + 6, 2, 2);
-      ctx.fillRect(px + ts / 2 + 1, py + 6, 2, 2);
+      // Golden star buckle on hat band
+      ctx.fillStyle = "#ecc94b";
+      ctx.fillRect(px + ts / 2 - 2, py + 5, 4, 3);
 
-      // Arcane Staff on right arm with glowing pulsing orb
-      ctx.strokeStyle = "#d69e2e";
+      // Glowing sapphire eyes in cowl shadow
+      ctx.fillStyle = "#63b3ed";
+      ctx.fillRect(px + ts / 2 - 3, py + 8, 2, 2);
+      ctx.fillRect(px + ts / 2 + 1, py + 8, 2, 2);
+
+      // Gnarled ash staff on right arm
+      ctx.strokeStyle = "#744210";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(px + ts - 5, py + ts - 4);
-      ctx.lineTo(px + ts - 5, py);
+      ctx.moveTo(px + ts - 5, py + ts - 3);
+      ctx.lineTo(px + ts - 5, py + 2);
       ctx.stroke();
 
-      const pulse = Math.sin(timestamp * 0.008) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(0, 240, 255, ${pulse})`;
+      // Floating illuminated mana crystal orbiting staff tip
+      const crystalPulse = Math.sin(timestamp * 0.008) * 0.25 + 0.75;
+      ctx.fillStyle = `rgba(0, 240, 255, ${crystalPulse})`;
       ctx.beginPath();
-      ctx.arc(px + ts - 5, py - 1, 3.5, 0, Math.PI * 2);
+      ctx.arc(px + ts - 5, py, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Swirling arcane spark in left hand
+      const sparkAngle = timestamp * 0.01;
+      const sparkX = px + 6 + Math.cos(sparkAngle) * 3;
+      const sparkY = py + ts / 2 + 2 + Math.sin(sparkAngle) * 3;
+      ctx.fillStyle = "#b794f4";
+      ctx.beginPath();
+      ctx.arc(sparkX, sparkY, 2, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Crusader Paladin Default Sprite: Knight Paladin Armor
+      // Crusader Paladin: Knight Greathelm with blue crest plume, cross breastplate, heater shield & broadsword
+      // Royal blue crest plume
+      const plumeWag = Math.sin(timestamp * 0.006) * 2;
+      ctx.fillStyle = "#3182ce";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2 - 2, py - 5);
+      ctx.lineTo(px + ts / 2 + 2, py - 5);
+      ctx.lineTo(px + ts / 2 + 4 + plumeWag, py + 2);
+      ctx.lineTo(px + ts / 2 - 3, py + 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Greathelm
       ctx.fillStyle = "#e2e8f0";
       ctx.beginPath();
       ctx.arc(px + ts / 2, py + ts / 2 - 3, 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Visor slit
-      ctx.fillStyle = "#1a202c";
-      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 4, 8, 2);
+      // Golden visor rim
+      ctx.fillStyle = "#d69e2e";
+      ctx.fillRect(px + ts / 2 - 5, py + ts / 2 - 5, 10, 1.5);
 
-      // Body armor
+      // Visor slit with piercing blue eyes
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 4, py + ts / 2 - 3, 8, 2);
+      ctx.fillStyle = "#63b3ed";
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 - 3, 2, 1.5);
+      ctx.fillRect(px + ts / 2 + 1, py + ts / 2 - 3, 2, 1.5);
+
+      // Silver breastplate
       ctx.fillStyle = "#4a5568";
       ctx.fillRect(px + ts / 2 - 6, py + ts / 2 + 4, 12, 10);
 
-      // Shield on left arm
+      // Embossed golden Crusader Cross on chest
+      ctx.fillStyle = "#ecc94b";
+      ctx.fillRect(px + ts / 2 - 1, py + ts / 2 + 5, 2, 6);
+      ctx.fillRect(px + ts / 2 - 3, py + ts / 2 + 7, 6, 2);
+
+      // Heraldic heater shield on left arm (gold border, white field, crimson cross)
       ctx.fillStyle = "#d69e2e";
       ctx.beginPath();
-      ctx.arc(px + 6, py + ts / 2 + 2, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#3182ce";
-      ctx.beginPath();
-      ctx.arc(px + 6, py + ts / 2 + 2, 4, 0, Math.PI * 2);
+      ctx.moveTo(px + 2, py + ts / 2 - 2);
+      ctx.lineTo(px + 11, py + ts / 2 - 2);
+      ctx.lineTo(px + 10, py + ts / 2 + 7);
+      ctx.lineTo(px + 6, py + ts / 2 + 11);
+      ctx.lineTo(px + 2, py + ts / 2 + 7);
+      ctx.closePath();
       ctx.fill();
 
-      // Sword on right arm
+      ctx.fillStyle = "#f7fafc";
+      ctx.beginPath();
+      ctx.moveTo(px + 3.5, py + ts / 2 - 1);
+      ctx.lineTo(px + 9.5, py + ts / 2 - 1);
+      ctx.lineTo(px + 8.5, py + ts / 2 + 6);
+      ctx.lineTo(px + 6, py + ts / 2 + 9.5);
+      ctx.lineTo(px + 3.5, py + ts / 2 + 6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#e53e3e";
+      ctx.fillRect(px + 5.5, py + ts / 2, 1.5, 7);
+      ctx.fillRect(px + 3.5, py + ts / 2 + 2, 5.5, 1.5);
+
+      // Steel broadsword on right arm
       ctx.strokeStyle = "#e2e8f0";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(px + ts - 6, py + ts / 2 + 8);
+      ctx.moveTo(px + ts - 6, py + ts / 2 + 9);
       ctx.lineTo(px + ts - 4, py + ts / 2 - 8);
       ctx.stroke();
+
+      // Gold crossguard & pommel
+      ctx.fillStyle = "#d69e2e";
+      ctx.fillRect(px + ts - 7, py + ts / 2 + 3, 5, 2);
+      ctx.beginPath();
+      ctx.arc(px + ts - 6, py + ts / 2 + 10, 1.5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Poison / Might status indicators on player
+    // Status effect badges on player
     if (player.status_effects && player.status_effects.poison) {
       ctx.fillStyle = "#48bb78";
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = "bold 10px sans-serif";
       ctx.fillText("🧪", px + ts - 8, py);
     }
     if (player.status_effects && player.status_effects.might) {
       ctx.fillStyle = "#e53e3e";
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = "bold 10px sans-serif";
       ctx.fillText("⚔️", px, py);
     }
 

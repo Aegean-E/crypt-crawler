@@ -196,6 +196,58 @@ class TestCombat(unittest.TestCase):
         res_vamp = resolve_melee_attack(vamp, self.player, self.rng)
         self.assertEqual(vamp.hp, 13)
 
+    def test_expanded_equipment_slots_and_unequip(self):
+        amulet = create_item("amulet_bloodstone")
+        boots = create_item("boots_shadowstep")
+        hammer = create_item("hammer_thunder")
+        self.assertIsNotNone(amulet)
+        self.assertIsNotNone(boots)
+        self.assertIsNotNone(hammer)
+
+        base_atk = self.player.effective_attack
+        base_def = self.player.effective_defense
+        base_hp = self.player.effective_max_hp
+        base_crit = self.player.effective_crit_chance
+
+        # Equip amulet and boots
+        self.player.equip(amulet)
+        self.player.equip(boots)
+        self.assertEqual(self.player.equipped["amulet"], amulet)
+        self.assertEqual(self.player.equipped["boots"], boots)
+        self.assertEqual(self.player.effective_attack, base_atk + 2)
+        self.assertEqual(self.player.effective_defense, base_def + 2)
+        self.assertEqual(self.player.effective_max_hp, base_hp + 18)
+        self.assertAlmostEqual(self.player.effective_crit_chance, base_crit + 0.10)
+
+        # Equip weapon
+        self.player.equip(hammer)
+        self.assertEqual(self.player.equipped["weapon"], hammer)
+        self.assertEqual(self.player.effective_attack, base_atk + 2 + 13)
+
+        # Unequip boots
+        un_ok = self.player.unequip("boots")
+        self.assertTrue(un_ok)
+        self.assertIsNone(self.player.equipped["boots"])
+        self.assertIn(boots, self.player.inventory)
+        self.assertEqual(self.player.effective_defense, base_def)
+
+        # Fill inventory to max_slots and test unequip failure
+        while len(self.player.inventory) < self.player.max_slots:
+            self.player.inventory.append(create_item("potion_health"))
+        self.assertFalse(self.player.unequip("amulet"))
+        self.assertIsNotNone(self.player.equipped["amulet"])
+
+    def test_divine_aegis_draught_potion(self):
+        pot = create_item("potion_invulnerability")
+        self.player.inventory.append(pot)
+        idx = self.player.inventory.index(pot)
+        base_def = self.player.effective_defense
+        ok, msg = self.player.use_item(idx)
+        self.assertTrue(ok)
+        self.assertIn("Barrier", msg)
+        self.assertEqual(self.player.status_effects.get("shield_wall"), 4)
+        self.assertEqual(self.player.effective_defense, base_def + 6)
+
 
 if __name__ == "__main__":
     unittest.main()

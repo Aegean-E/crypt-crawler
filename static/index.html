@@ -110,9 +110,17 @@
               <span class="slot-type-label">Armor</span>
               <div class="slot-content" id="slotArmorContent">Empty</div>
             </div>
+            <div class="equip-slot" id="slotAmulet" data-slot="amulet" title="Amulet Slot (Click to unequip)">
+              <span class="slot-type-label">Amulet</span>
+              <div class="slot-content" id="slotAmuletContent">Empty</div>
+            </div>
             <div class="equip-slot" id="slotRing" data-slot="ring" title="Ring Slot (Click to unequip)">
               <span class="slot-type-label">Relic Ring</span>
               <div class="slot-content" id="slotRingContent">Empty</div>
+            </div>
+            <div class="equip-slot" id="slotBoots" data-slot="boots" title="Boots Slot (Click to unequip)">
+              <span class="slot-type-label">Boots</span>
+              <div class="slot-content" id="slotBootsContent">Empty</div>
             </div>
           </div>
 
@@ -198,6 +206,7 @@
         <!-- Item Hover / Selection Info Card -->
         <div class="item-card" id="itemInfoCard">
           <h4 id="itemCardName">No Item Selected</h4>
+          <div id="itemCardDiff" class="item-card-diff hidden"></div>
           <p id="itemCardDesc" class="item-card-desc">Click an item in your backpack to view details, use, or equip.</p>
           <div class="item-card-actions">
             <button id="btnItemUse" class="btn btn-primary btn-sm hidden">Use / Equip</button>

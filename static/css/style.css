@@ -364,38 +364,50 @@ body.theme-dark {
 
 /* Equipment Paperdoll Slots */
 .equipment-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
 }
 
 .equip-slot {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
   background: rgba(0, 0, 0, 0.4);
   border: 1px dashed var(--border-muted);
-  padding: 5px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   cursor: pointer;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  min-height: 38px;
+}
+
+.equip-slot:last-child:nth-child(odd) {
+  grid-column: span 2;
 }
 
 .equip-slot:hover {
   border-color: var(--border-gold);
-  background: rgba(200, 155, 60, 0.08);
+  background: rgba(200, 155, 60, 0.12);
 }
 
 .slot-type-label {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .slot-content {
   font-weight: 600;
   color: #fbd38d;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 /* Center Panel: Viewport */
@@ -547,9 +559,25 @@ body.theme-dark {
   box-shadow: 0 0 6px rgba(49, 130, 206, 0.35);
 }
 
+.inv-slot.rarity-epic {
+  border-color: #9f7aea;
+  box-shadow: 0 0 8px rgba(159, 122, 234, 0.5);
+}
+
+@keyframes legendaryPulse {
+  0%, 100% {
+    border-color: #d69e2e;
+    box-shadow: 0 0 8px rgba(214, 158, 46, 0.55);
+  }
+  50% {
+    border-color: #f6e05e;
+    box-shadow: 0 0 14px rgba(246, 224, 94, 0.85);
+  }
+}
+
 .inv-slot.rarity-legendary {
   border-color: #d69e2e;
-  box-shadow: 0 0 9px rgba(214, 158, 46, 0.55);
+  animation: legendaryPulse 2s infinite ease-in-out;
 }
 
 .rarity-pill {
@@ -562,7 +590,55 @@ body.theme-dark {
 }
 .pill-common { color: var(--text-muted); background: rgba(255,255,255,0.06); }
 .pill-rare { color: #63b3ed; background: rgba(49, 130, 206, 0.2); border: 1px solid #3182ce; }
+.pill-epic { color: #d6bcfa; background: rgba(159, 122, 234, 0.22); border: 1px solid #9f7aea; }
 .pill-legendary { color: #f6e05e; background: rgba(214, 158, 46, 0.25); border: 1px solid #d69e2e; }
+
+/* Item Comparison Diff */
+.item-card-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 6px 0;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+  font-size: 0.72rem;
+  border-left: 2px solid var(--border-gold);
+}
+
+.item-card-diff.hidden {
+  display: none;
+}
+
+.diff-target {
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  margin-bottom: 2px;
+}
+
+.diff-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.diff-pos {
+  color: #68d391;
+  background: rgba(72, 187, 120, 0.15);
+}
+
+.diff-neg {
+  color: #fc8181;
+  background: rgba(229, 62, 62, 0.15);
+}
+
+.diff-neutral {
+  color: #a0aec0;
+  background: rgba(160, 174, 192, 0.12);
+}
 
 /* Item Info Card */
 .item-card {

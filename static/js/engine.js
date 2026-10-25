@@ -48,6 +48,7 @@ export class GameEngine {
       const saved = this.loadSavedRun();
       if (saved) {
         this.player = saved.player;
+        this.player.equipped = Object.assign({ weapon: null, armor: null, ring: null, amulet: null, boots: null }, this.player.equipped || {});
         this.dungeon = new ClientDungeon(saved.dungeon);
         this.monsters = saved.monsters;
         this.turn = saved.turn;
@@ -182,7 +183,7 @@ export class GameEngine {
           { id: "dagger_poison", name: "Serpent's Fang Dagger", type: "weapon", rarity: "rare", description: "+5 ATK, poisons on strike.", stats: { attack: 5, poison_chance: 40 } },
           { id: "armor_leather", name: "Hardened Leather Armor", type: "armor", rarity: "common", description: "+2 DEF.", stats: { defense: 2 } },
         ],
-        equipped: { weapon: null, armor: null, ring: null },
+        equipped: { weapon: null, armor: null, ring: null, amulet: null, boots: null },
         status_effects: {},
       };
     } else if (heroClass === "mage") {
@@ -209,7 +210,7 @@ export class GameEngine {
           { id: "robe_mystic", name: "Runed Silk Robe", type: "armor", rarity: "common", description: "+2 DEF, +10 Max Mana.", stats: { defense: 2, max_mana: 10 } },
           { id: "scroll_fireball", name: "Scroll of Inferno", type: "scroll", rarity: "common", description: "Deals 30 fire damage.", stats: { spell_damage: 30 } },
         ],
-        equipped: { weapon: null, armor: null, ring: null },
+        equipped: { weapon: null, armor: null, ring: null, amulet: null, boots: null },
         status_effects: {},
       };
     } else {
@@ -235,7 +236,7 @@ export class GameEngine {
           { id: "sword_iron", name: "Forged Iron Sword", type: "weapon", rarity: "common", description: "+4 ATK.", stats: { attack: 4 } },
           { id: "armor_leather", name: "Hardened Leather Armor", type: "armor", rarity: "common", description: "+2 DEF.", stats: { defense: 2 } },
         ],
-        equipped: { weapon: null, armor: null, ring: null },
+        equipped: { weapon: null, armor: null, ring: null, amulet: null, boots: null },
         status_effects: {},
       };
     }
@@ -784,12 +785,19 @@ export class GameEngine {
       if ((roll < 0.15 || Math.random() < 0.65) && this.player.inventory.length < 12) {
         const pool = [
           { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 Mana, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
+          { id: "potion_invulnerability", name: "Divine Aegis Draught", type: "potion", rarity: "rare", description: "Grants impenetrable Barrier (+6 DEF for 4 turns).", stats: { shield_wall_turns: 4 } },
           { id: "shield_tower", name: "Aegis Tower Shield", type: "armor", rarity: "rare", description: "+8 DEF bulwark.", stats: { defense: 8 } },
           { id: "ring_power", name: "Ring of Arcane Might", type: "ring", rarity: "rare", description: "+3 ATK, +10 Max Mana.", stats: { attack: 3, max_mana: 10 } },
+          { id: "amulet_bloodstone", name: "Bloodstone Talisman", type: "amulet", rarity: "rare", description: "+18 Max HP, +2 ATK.", stats: { max_hp: 18, attack: 2 } },
+          { id: "boots_shadowstep", name: "Shadowstep Treads", type: "boots", rarity: "rare", description: "+2 DEF, +10% Crit Rate.", stats: { defense: 2, crit_bonus: 10 } },
+          { id: "hammer_thunder", name: "Stormforged Warhammer", type: "weapon", rarity: "epic", description: "+13 ATK, 25% stun chance.", stats: { attack: 13, stun_chance: 25 } },
+          { id: "cloak_ethereal", name: "Spectral Shroud", type: "armor", rarity: "epic", description: "+7 DEF, +15 Max MP.", stats: { defense: 7, max_mana: 15 } },
+          { id: "tome_pyromancy", name: "Tome of Blazing Embers", type: "amulet", rarity: "epic", description: "+4 ATK, +20 Max MP.", stats: { attack: 4, max_mana: 20 } },
           { id: "potion_elixir_str", name: "Elixir of the Titan", type: "potion", rarity: "rare", description: "Permanently increases base Attack by +2.", stats: { perm_attack: 2 } },
         ];
         const dropItem = pool[Math.floor(Math.random() * pool.length)];
         this.player.inventory.push(dropItem);
+        this.renderer.addFloatingItemBadge(dropItem.name, dropItem.rarity, nx, ny);
         this.ui.logMessage(`Found rare relic: ${dropItem.name} (${dropItem.rarity.toUpperCase()})!`, "loot");
       }
     }
@@ -950,6 +958,7 @@ export class GameEngine {
       };
       if (this.player.inventory.length < 12) {
         this.player.inventory.push(crown);
+        this.renderer.addFloatingItemBadge(crown.name, crown.rarity, monster.x, monster.y);
       }
       setTimeout(() => this.handleVictory(), 1500);
       return;
@@ -968,8 +977,8 @@ export class GameEngine {
       this.player.attack += 2;
       this.player.defense += 1;
       sounds.playLevelUp();
-      this.renderer.addFloatingText("LEVEL UP!", this.player.x, this.player.y, "#4fd1c5");
-      this.ui.logMessage(`🌟 LEVEL UP! You reached Level ${this.player.level}!`, "level");
+      this.renderer.addLevelUpCelebration(this.player.x, this.player.y, this.player.level);
+      this.ui.logMessage(`⭐ LEVEL UP! You reached Level ${this.player.level}! (+12 HP, +6 MP, +2 ATK, +1 DEF)`, "level");
     }
   }
 
@@ -1382,6 +1391,12 @@ export class GameEngine {
         this.renderer.addFloatingText(`+${item.stats.perm_defense} DEF PERM`, this.player.x, this.player.y, "#ecc94b");
         this.ui.logMessage(`Gained +${item.stats.perm_defense} Permanent Defense!`, "level");
       }
+      if (item.stats?.shield_wall_turns) {
+        this.player.status_effects = this.player.status_effects || {};
+        this.player.status_effects.shield_wall = Math.max(this.player.status_effects.shield_wall || 0, item.stats.shield_wall_turns);
+        this.renderer.addFloatingText("BARRIER (+6 DEF)", this.player.x, this.player.y, "#ecc94b");
+        this.ui.logMessage(`Drank ${item.name}: Raised impenetrable Divine Barrier (+6 DEF for ${item.stats.shield_wall_turns} turns)!`, "loot");
+      }
       this.player.inventory.splice(idx, 1);
       this.ui.clearItemSelection();
       this.finishPlayerTurn();
@@ -1400,7 +1415,7 @@ export class GameEngine {
       this.player.inventory.splice(idx, 1);
       this.ui.clearItemSelection();
       this.finishPlayerTurn();
-    } else if (["weapon", "armor", "ring"].includes(item.type)) {
+    } else if (["weapon", "armor", "ring", "amulet", "boots"].includes(item.type)) {
       const slot = item.type;
       const oldEquip = this.player.equipped[slot];
       this.player.inventory.splice(idx, 1);

@@ -37,11 +37,15 @@ export class UIController {
     // Equipment slots
     this.slotWeaponContent = document.getElementById("slotWeaponContent");
     this.slotArmorContent = document.getElementById("slotArmorContent");
+    this.slotAmuletContent = document.getElementById("slotAmuletContent");
     this.slotRingContent = document.getElementById("slotRingContent");
+    this.slotBootsContent = document.getElementById("slotBootsContent");
+    this.currentEquipped = {};
 
     // Inventory grid & selection
     this.inventoryGrid = document.getElementById("inventoryGrid");
     this.itemCardName = document.getElementById("itemCardName");
+    this.itemCardDiff = document.getElementById("itemCardDiff");
     this.itemCardDesc = document.getElementById("itemCardDesc");
     this.btnItemUse = document.getElementById("btnItemUse");
     this.btnItemDrop = document.getElementById("btnItemDrop");
@@ -87,14 +91,20 @@ export class UIController {
       }
     });
 
-    document.getElementById("slotWeapon").addEventListener("click", () => {
+    document.getElementById("slotWeapon")?.addEventListener("click", () => {
       if (this.onUnequip) this.onUnequip("weapon");
     });
-    document.getElementById("slotArmor").addEventListener("click", () => {
+    document.getElementById("slotArmor")?.addEventListener("click", () => {
       if (this.onUnequip) this.onUnequip("armor");
     });
-    document.getElementById("slotRing").addEventListener("click", () => {
+    document.getElementById("slotAmulet")?.addEventListener("click", () => {
+      if (this.onUnequip) this.onUnequip("amulet");
+    });
+    document.getElementById("slotRing")?.addEventListener("click", () => {
       if (this.onUnequip) this.onUnequip("ring");
+    });
+    document.getElementById("slotBoots")?.addEventListener("click", () => {
+      if (this.onUnequip) this.onUnequip("boots");
     });
 
     this.btnModalClose.addEventListener("click", () => {
@@ -147,9 +157,12 @@ export class UIController {
 
     // Equipment
     const eq = player.equipped || {};
-    this.slotWeaponContent.textContent = eq.weapon ? `⚔️ ${eq.weapon.name}` : "Empty";
-    this.slotArmorContent.textContent = eq.armor ? `🛡️ ${eq.armor.name}` : "Empty";
-    this.slotRingContent.textContent = eq.ring ? `💍 ${eq.ring.name}` : "Empty";
+    this.currentEquipped = eq;
+    if (this.slotWeaponContent) this.slotWeaponContent.textContent = eq.weapon ? `⚔️ ${eq.weapon.name}` : "Empty";
+    if (this.slotArmorContent) this.slotArmorContent.textContent = eq.armor ? `🛡️ ${eq.armor.name}` : "Empty";
+    if (this.slotAmuletContent) this.slotAmuletContent.textContent = eq.amulet ? `📿 ${eq.amulet.name}` : "Empty";
+    if (this.slotRingContent) this.slotRingContent.textContent = eq.ring ? `💍 ${eq.ring.name}` : "Empty";
+    if (this.slotBootsContent) this.slotBootsContent.textContent = eq.boots ? `👢 ${eq.boots.name}` : "Empty";
 
     // Inventory
     this.renderInventory(player.inventory);
@@ -561,13 +574,52 @@ export class UIController {
       this.btnItemUse.classList.remove("hidden");
       this.btnItemDrop.classList.remove("hidden");
 
-      if (["weapon", "armor", "ring"].includes(item.type)) {
+      if (["weapon", "armor", "ring", "amulet", "boots"].includes(item.type)) {
         this.btnItemUse.textContent = "Equip";
+        this._renderItemComparison(item);
       } else {
         this.btnItemUse.textContent = "Use";
+        if (this.itemCardDiff) this.itemCardDiff.classList.add("hidden");
       }
     } else {
       this.clearItemSelection();
+    }
+  }
+
+  _renderItemComparison(item) {
+    if (!this.itemCardDiff) return;
+    const current = this.currentEquipped ? this.currentEquipped[item.type] : null;
+    const curStats = current?.stats || {};
+    const newStats = item.stats || {};
+
+    const diffs = [];
+    const statKeys = [
+      { key: "attack", label: "ATK" },
+      { key: "defense", label: "DEF" },
+      { key: "max_hp", label: "Max HP" },
+      { key: "max_mana", label: "Max MP" },
+      { key: "crit_bonus", label: "Crit" },
+    ];
+
+    statKeys.forEach(({ key, label }) => {
+      const vNew = newStats[key] || 0;
+      const vOld = curStats[key] || 0;
+      const delta = vNew - vOld;
+      if (delta > 0) {
+        diffs.push(`<span class="diff-badge diff-pos">+${delta} ${label}</span>`);
+      } else if (delta < 0) {
+        diffs.push(`<span class="diff-badge diff-neg">${delta} ${label}</span>`);
+      } else if (vNew > 0 && vOld === 0) {
+        diffs.push(`<span class="diff-badge diff-pos">+${vNew} ${label}</span>`);
+      }
+    });
+
+    if (diffs.length > 0) {
+      const targetName = current ? current.name : "Empty Slot";
+      this.itemCardDiff.innerHTML = `<div class="diff-target">vs ${targetName}:</div>${diffs.join(" ")}`;
+      this.itemCardDiff.classList.remove("hidden");
+    } else {
+      this.itemCardDiff.classList.add("hidden");
     }
   }
 
@@ -575,6 +627,7 @@ export class UIController {
     this.selectedItemIndex = -1;
     this.itemCardName.textContent = "No Item Selected";
     this.itemCardDesc.textContent = "Click an item in your backpack to view details, use, or equip.";
+    if (this.itemCardDiff) this.itemCardDiff.classList.add("hidden");
     this.btnItemUse.classList.add("hidden");
     this.btnItemDrop.classList.add("hidden");
 
@@ -585,10 +638,26 @@ export class UIController {
   _getItemIcon(item) {
     if (!item) return "";
     switch (item.type) {
-      case "weapon": return item.id === "dagger_poison" ? "🗡️" : "⚔️";
-      case "armor": return item.id === "shield_tower" ? "🛡️" : "🦺";
-      case "ring": return item.id === "crown_eternity" ? "👑" : "💍";
-      case "potion": return item.id.includes("mana") ? "🧪" : (item.id.includes("rejuvenation") ? "✨" : "🍷");
+      case "weapon":
+        if (item.id === "dagger_poison") return "🗡️";
+        if (item.id === "hammer_thunder") return "🔨";
+        return "⚔️";
+      case "armor":
+        if (item.id === "shield_tower") return "🛡️";
+        if (item.id === "cloak_ethereal") return "👘";
+        return "🦺";
+      case "amulet":
+        if (item.id === "tome_pyromancy") return "📖";
+        return "📿";
+      case "boots":
+        return "👢";
+      case "ring":
+        return item.id === "crown_eternity" ? "👑" : "💍";
+      case "potion":
+        if (item.id?.includes("mana")) return "🧪";
+        if (item.id?.includes("rejuvenation")) return "✨";
+        if (item.id?.includes("invulnerability")) return "🛡️";
+        return "🍷";
       case "scroll": return "📜";
       default: return "📦";
     }

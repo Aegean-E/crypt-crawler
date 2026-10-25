@@ -37,3 +37,10 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Drawing upon CyberPulse behavioral psychology and addictivity mechanics, the game requires variable reinforcement schedules, near-miss survival incentives, Zeigarnik effect micro-goals, and heightened retro arcade visual feel.
 - **Decision**: In `crawler/rewards.py`, implement `roll_chest_reward` (20% Critical 2.5x Gold Jackpot, 15% Rare Relics), `roll_urn_reward` (18% Critical Jackpot), `check_near_miss_survival` (triggering +2 MP, +4 DEF barrier, crimson adrenaline screen vignette, and sub-bass audio surge when surviving with <= 28% HP), and `generate_dungeon_bounties` (3 rotating floor contract bounties per floor). In the canvas renderer and UI, introduce toggleable retro CRT phosphor scanlines, expanding spell shockwave rings, and 36-particle golden coin fountain explosions.
 - **Consequences**: Significantly amplifies dopamine payoff, tension-release cycles, and session retention with zero runtime external dependencies.
+
+### ADR-006: Relic Slots, Equipment Comparison Diffs and Procedural Visual Feedback
+- **Date**: 2026-10-25
+- **Status**: Accepted
+- **Context**: Inventory decisions lacked depth: no amulet or boots slots, no side-by-side comparison, limited relic variety, and combat rewards gave little visual confirmation.
+- **Decision**: Add backward-compatible `amulet` and `boots` equipment slots to the Python and client models, with save loading defaulting missing keys to `null`. Add six relics (Bloodstone Talisman, Shadowstep Treads, Tome of Blazing Embers, Stormforged Warhammer, Spectral Shroud, Divine Aegis Draught), expose them through merchant stock and loot pools, and render per-stat positive/negative comparison badges for the selected item. Expand procedural canvas detail for entities and props, and add a two-shockwave level-up celebration plus rarity-tinted floating loot badges.
+- **Consequences**: The save schema gains optional slot keys but remains readable by older saves; existing item IDs and slot semantics are unchanged; all rendering stays procedural with no external assets or dependencies.
