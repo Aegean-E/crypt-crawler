@@ -10,7 +10,7 @@
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `20`
 - **Total Class Methods**: `89`
-- **Total Source Lines**: `3098`
+- **Total Source Lines**: `3124`
 
 ---
 
@@ -263,7 +263,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `527` lines (`25744` bytes)
+**Size**: `553` lines (`27427` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

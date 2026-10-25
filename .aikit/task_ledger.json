@@ -1,38 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-007",
+    "task_id": "CC-008",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792931589.3230824,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792932812.080684,
     "owner": "kilo:review",
     "started_by": "kilo:review",
-    "continuations": [],
-    "completed_at": 1792931604.8615525
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "CC-004",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[5/5] Full Phase 4 verification passed (27/27 tests, 10 visual screenshots, 0 console errors); checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792877657.5938303,
-      "timestamp_str": "2026-10-25 00:34:17",
-      "agent": "unidentified"
-    },
-    {
-      "task_id": "CC-004",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-004' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792877661.644179,
-      "timestamp_str": "2026-10-25 00:34:21",
-      "agent": "unidentified"
-    },
     {
       "task_id": "CC-005",
       "phase": "phase 2",
@@ -265,6 +243,37 @@
       "timestamp": 1792931604.8615537,
       "timestamp_str": "2026-10-25 15:33:24",
       "agent": "kilo:review"
+    },
+    {
+      "task_id": "CC-008",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Fix mobile layout: single scroll column, unclipped action deck and D-pad, wrapping header",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792932638.501345,
+      "timestamp_str": "2026-10-25 15:50:38",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "Visual review of the pushed build found real mobile defects: at 390px the viewport panel clipped its own overflow, so only the top 12px of the 7-button action deck was visible and the virtual D-pad was completely hidden; the header's Guide and New Game buttons overflowed 154px past the right edge, creating horizontal scroll.",
+        "benefits": "The game is playable on phones again: every tactical action, the D-pad and the whole backpack are reachable in one vertical scroll, with no horizontal overflow.",
+        "risks": "contract: none, CSS-only plus audit checks; dependency: none; concurrency: none; state: none, no markup or save changes",
+        "mitigation": "Geometry probe before and after, new headless layout audit checks (deck inside panel, D-pad only when narrow, no horizontal scroll, inventory reachable), full inspection at three viewports and unit suite"
+      }
+    },
+    {
+      "task_id": "CC-008",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 1/2] Mobile single-scroll layout: deck and D-pad unclipped, header wraps, no horizontal scroll; new per-viewport layout audit; 39 tests and 36/36 audit checks green (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792932812.080684,
+      "timestamp_str": "2026-10-25 15:53:32",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "commit, verify alone, push"
+      }
     }
   ]
 }

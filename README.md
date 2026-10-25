@@ -26,6 +26,9 @@ python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario dungeon 
 ```
 The inspector reports every audit check and exits non-zero when any check or console error fails, so it can gate a commit.
 
+### 📱 Mobile Layout
+Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.
+
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |
 |---|---|

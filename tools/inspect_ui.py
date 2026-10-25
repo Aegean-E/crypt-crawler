@@ -104,11 +104,37 @@ def run_inspection(
                 hero_box = page.eval_on_selector("#characterPanel", "el => el.getBoundingClientRect()")
                 deck_box = page.eval_on_selector("#tacticalDeck", "el => el.getBoundingClientRect()")
 
+                layout = page.evaluate(
+                    """() => {
+                        const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+                        const panel = rect('.panel-viewport');
+                        const deckButtons = document.querySelectorAll('.deck-btn');
+                        const lastDeck = deckButtons[deckButtons.length - 1].getBoundingClientRect();
+                        const dpadEl = document.querySelector('#virtualDpad');
+                        const dpad = dpadEl.getBoundingClientRect();
+                        const inventory = rect('#inventoryPanel');
+                        return {
+                            narrow: innerWidth <= 768,
+                            horizontalScroll: document.documentElement.scrollWidth - innerWidth,
+                            deckInsidePanel: lastDeck.bottom <= panel.bottom + 1,
+                            dpadShown: getComputedStyle(dpadEl).display !== 'none',
+                            dpadInsidePanel: dpad.bottom <= panel.bottom + 1,
+                            inventoryReachable:
+                                inventory.bottom <= document.documentElement.scrollHeight + 1,
+                        };
+                    }"""
+                )
+
                 audit_check = {
                     "viewport": vp_name,
                     "canvas_rendered": canvas_box["width"] > 200 and canvas_box["height"] > 150,
                     "hero_panel_visible": hero_box["width"] > 0,
                     "deck_visible": deck_box["width"] > 0,
+                    "no_horizontal_scroll": layout["horizontalScroll"] <= 1,
+                    "action_deck_inside_panel": layout["deckInsidePanel"],
+                    "dpad_only_when_narrow": layout["dpadShown"] == layout["narrow"],
+                    "dpad_inside_panel": layout["dpadInsidePanel"] or not layout["dpadShown"],
+                    "inventory_reachable": layout["inventoryReachable"],
                 }
                 report["audit_checks"].append(audit_check)
 

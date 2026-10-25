@@ -975,12 +975,15 @@ body.theme-dark {
     overflow-y: auto;
     height: auto;
     min-height: 100vh;
+    align-items: flex-start;
   }
 
+  /* One scroll context: the document grows with the stacked panels. */
   .game-shell {
     height: auto;
+    max-height: none;
     min-height: 100vh;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .game-header {
@@ -991,10 +994,27 @@ body.theme-dark {
     font-size: 1.05rem;
   }
 
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .header-actions .btn {
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+
   .game-main {
     display: flex;
     flex-direction: column;
-    overflow-y: visible;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  /* Panels keep their content height; the column scrolls instead of squashing. */
+  .panel {
+    flex: 0 0 auto;
   }
 
   .panel-viewport {
@@ -1003,6 +1023,7 @@ body.theme-dark {
     border-right: none;
     border-bottom: 1px solid var(--border-muted);
     padding: 8px;
+    overflow: visible;
   }
 
   .canvas-wrapper {
