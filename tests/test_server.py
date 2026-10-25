@@ -35,6 +35,8 @@ class TestServer(unittest.TestCase):
             self.assertIn("dungeon", data)
             self.assertIn("player", data)
             self.assertIn("monsters", data)
+            self.assertIn("bounties", data)
+            self.assertEqual(len(data["bounties"]), 3)
 
             dungeon = data["dungeon"]
             self.assertEqual(dungeon["seed"], 42)

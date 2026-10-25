@@ -173,6 +173,40 @@ def run_inspection(
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 
+                    if "bounties" in scenarios or "all" in scenarios:
+                        print("      Driving Scenario: Bounties Modal & Adrenaline Surge...")
+                        page.click("#btnBounties")
+                        time.sleep(0.3)
+                        bounties_shot = out_dir / "bounties_modal.png"
+                        page.screenshot(path=str(bounties_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "bounties", "file": str(bounties_shot)}
+                        )
+                        print(f"      Saved screenshot: {bounties_shot.name}")
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+
+                        # Test jackpot banner and adrenaline vignette visually
+                        page.evaluate("() => { window.gameEngine.ui.showJackpotBanner('CHEST JACKPOT', '+145 Gold (2.5x Critical Loot!)'); window.gameEngine._triggerNearMissSurge(); }")
+                        time.sleep(0.4)
+                        jackpot_shot = out_dir / "jackpot_and_surge.png"
+                        page.screenshot(path=str(jackpot_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "jackpot", "file": str(jackpot_shot)}
+                        )
+                        print(f"      Saved screenshot: {jackpot_shot.name}")
+
+                    if "crt" in scenarios or "all" in scenarios:
+                        print("      Driving Scenario: CRT Scanlines & Visual Polish...")
+                        page.click("#btnCrtToggle")
+                        time.sleep(0.3)
+                        crt_shot = out_dir / "crt_scanlines.png"
+                        page.screenshot(path=str(crt_shot), full_page=True)
+                        report["screenshots"].append(
+                            {"viewport": vp_name, "scenario": "crt", "file": str(crt_shot)}
+                        )
+                        print(f"      Saved screenshot: {crt_shot.name}")
+
                     if "classes" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Class Selection Modal...")
                         page.click("#btnRestart")

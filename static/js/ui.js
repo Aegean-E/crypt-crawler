@@ -49,6 +49,16 @@ export class UIController {
     // Chronicle Log
     this.chronicleLog = document.getElementById("chronicleLog");
 
+    // Bounties
+    this.bountyBadge = document.getElementById("bountyBadge");
+    this.bountiesList = document.getElementById("bountiesList");
+
+    // Atmospheric & Juicing FX
+    this.jackpotBanner = document.getElementById("jackpotBanner");
+    this.adrenalineVignette = document.getElementById("adrenalineVignette");
+    this.crtOverlay = document.getElementById("crtOverlay");
+    this.crtActive = false;
+
     // Modal
     this.modalOverlay = document.getElementById("modalOverlay");
     this.modalTitle = document.getElementById("modalTitle");
@@ -314,6 +324,103 @@ export class UIController {
     } else {
       this.streakPill.classList.add("hidden");
     }
+  }
+
+  toggleCrt() {
+    this.crtActive = !this.crtActive;
+    if (this.crtOverlay) {
+      this.crtOverlay.classList.toggle("hidden", !this.crtActive);
+    }
+    document.body.classList.toggle("crt-active", this.crtActive);
+    const btn = document.getElementById("btnCrtToggle");
+    if (btn) {
+      btn.style.color = this.crtActive ? "#4fd1c5" : "inherit";
+    }
+    return this.crtActive;
+  }
+
+  showJackpotBanner(text = "★★★ CRITICAL GOLD JACKPOT! 2.5X PAYOUT ★★★") {
+    if (!this.jackpotBanner) return;
+    this.jackpotBanner.textContent = text;
+    this.jackpotBanner.classList.remove("hidden");
+    clearTimeout(this._jackpotTimer);
+    this._jackpotTimer = setTimeout(() => {
+      this.jackpotBanner.classList.add("hidden");
+    }, 2200);
+  }
+
+  triggerAdrenalineVignette() {
+    if (!this.adrenalineVignette) return;
+    this.adrenalineVignette.classList.remove("hidden");
+    clearTimeout(this._adrenalineTimer);
+    this._adrenalineTimer = setTimeout(() => {
+      this.adrenalineVignette.classList.add("hidden");
+    }, 1200);
+  }
+
+  renderBounties(bounties = []) {
+    if (!this.bountiesList) return;
+    this.bountiesList.innerHTML = "";
+
+    const completedCount = bounties.filter((b) => b.completed).length;
+    if (this.bountyBadge) {
+      this.bountyBadge.textContent = `${completedCount}/${bounties.length}`;
+    }
+
+    for (const b of bounties) {
+      const card = document.createElement("div");
+      card.className = `bounty-card ${b.completed ? "completed" : ""}`;
+
+      const pct = Math.min(100, Math.floor((b.progress / b.target) * 100));
+      card.innerHTML = `
+        <div class="bounty-card-header">
+          <span>${b.completed ? "✓ " : ""}${b.title}</span>
+          <span>${b.completed ? "DONE" : `${b.progress}/${b.target}`}</span>
+        </div>
+        <div class="bounty-card-desc">${b.desc} (+${b.reward_gold}🪙, +${b.reward_xp}XP)</div>
+        <div class="bounty-progress-bar">
+          <div class="bounty-progress-fill" style="width: ${pct}%;"></div>
+        </div>
+      `;
+      this.bountiesList.appendChild(card);
+    }
+  }
+
+  showBountiesModal(bounties = []) {
+    let listHtml = "";
+    for (const b of bounties) {
+      const pct = Math.min(100, Math.floor((b.progress / b.target) * 100));
+      listHtml += `
+        <div class="bounty-card ${b.completed ? "completed" : ""}" style="padding: 10px; margin-bottom: 8px;">
+          <div class="bounty-card-header" style="font-size: 0.9rem;">
+            <span>${b.completed ? "✓ " : ""}${b.title}</span>
+            <span>${b.completed ? "CLAIMED" : `${b.progress} / ${b.target}`}</span>
+          </div>
+          <p class="bounty-card-desc" style="font-size: 0.8rem; margin: 4px 0 6px 0;">${b.desc}</p>
+          <div class="bounty-progress-bar" style="height: 6px;">
+            <div class="bounty-progress-fill" style="width: ${pct}%;"></div>
+          </div>
+          <div style="margin-top: 6px; font-size: 0.75rem; color: #ecc94b;">
+            Bounty Reward: <strong>+${b.reward_gold} Gold</strong> & <strong>+${b.reward_xp} XP</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <div style="font-size: 0.85rem; color: #cbd5e0;">
+        <p style="margin-bottom: 10px;">
+          Active contract bounties issued on every floor.
+          Fulfill them before descending to reap instant gold and experience!
+        </p>
+        <div style="max-height: 280px; overflow-y: auto;">
+          ${listHtml}
+        </div>
+      </div>
+    `;
+
+    this.showModal("📜 Floor Contract Bounties", html);
+    this.btnModalClose.textContent = "Back to Dungeon";
   }
 
   showHallOfRecordsModal(records) {

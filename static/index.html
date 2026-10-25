@@ -24,6 +24,8 @@
       <div class="header-actions">
         <button id="btnMusicToggle" class="btn btn-icon" title="Toggle Ambient Music">🎵</button>
         <button id="btnAudioToggle" class="btn btn-icon" title="Toggle Sound FX">🔊</button>
+        <button id="btnCrtToggle" class="btn btn-icon" title="Toggle Retro CRT Scanlines">📺</button>
+        <button id="btnBounties" class="btn btn-secondary" title="Active Floor Bounties">📜 Bounties</button>
         <button id="btnRecords" class="btn btn-secondary" title="Hall of Records & Bestiary">🏆 Records</button>
         <button id="btnHelp" class="btn btn-secondary" title="How to Play">❓ Guide</button>
         <button id="btnRestart" class="btn btn-danger" title="Restart with New Seed">🔄 New Game</button>
@@ -113,6 +115,15 @@
               <div class="slot-content" id="slotRingContent">Empty</div>
             </div>
           </div>
+
+          <!-- Active Floor Bounties (Zeigarnik Effect) -->
+          <div class="bounties-container" id="bountiesContainer">
+            <h3 class="subpanel-title" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <span>Floor Bounties</span>
+              <span class="bounty-badge" id="bountyBadge">0/3</span>
+            </h3>
+            <div class="bounties-list" id="bountiesList"></div>
+          </div>
         </div>
       </aside>
 
@@ -120,6 +131,8 @@
       <section class="panel panel-viewport" id="viewportPanel">
         <div class="canvas-wrapper">
           <canvas id="gameCanvas" width="760" height="540"></canvas>
+          <div id="adrenalineVignette" class="adrenaline-vignette hidden"></div>
+          <div id="jackpotBanner" class="jackpot-banner hidden"></div>
           <div id="targetCrosshair" class="target-crosshair hidden"></div>
           <div id="combatBanner" class="combat-banner hidden"></div>
         </div>
@@ -209,6 +222,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Retro CRT Scanline & Phosphor Overlay -->
+    <div id="crtOverlay" class="crt-overlay hidden"></div>
   </div>
 
   <!-- Game Scripts (ES6 Modules) -->

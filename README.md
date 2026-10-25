@@ -48,6 +48,7 @@ crypt-crawler/
 │   ├── dungeon.py            <- procedural dungeon generator
 │   ├── entities.py           <- player and monster simulation
 │   ├── combat.py             <- combat calculations and status effects
+│   ├── rewards.py            <- variable-ratio jackpots, near-miss & bounties
 │   └── server.py             <- HTTP request handler & REST endpoints
 ├── static/                   <- Web UI assets (zero build step)
 │   ├── index.html            <- modern responsive HTML5 shell
@@ -66,6 +67,7 @@ crypt-crawler/
 │   ├── test_combat.py        <- combat rules tests
 │   ├── test_dungeon.py       <- procedural generation tests
 │   ├── test_inspect.py       <- inspection configuration tests
+│   ├── test_rewards.py       <- reward jackpots, near-miss & bounty tests
 │   └── test_server.py        <- web server endpoints tests
 └── .aikit/                   <- project memory: record, ledger, decisions
 ```

@@ -18,6 +18,7 @@ export class GameEngine {
     this.player = null;
     this.monsters = [];
     this.merchantStock = [];
+    this.bounties = [];
     this.turn = 1;
     this.depth = 1;
     this.kills = 0;
@@ -53,9 +54,11 @@ export class GameEngine {
         this.depth = saved.depth;
         this.kills = saved.kills;
         this.heroClass = saved.heroClass || this.player.hero_class || "paladin";
+        this.bounties = saved.bounties || this._generateOfflineBounties(this.depth);
         sounds.setBiome(this.dungeon.biome);
         this.dungeon.updateFOV(this.player.x, this.player.y, 7);
         this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+        this.ui.renderBounties(this.bounties);
         this.ui.logMessage("⚔️ Resumed your ongoing dungeon run from crystal memory.", "system");
         this._startRenderLoop();
         return;
@@ -72,9 +75,11 @@ export class GameEngine {
       this.player = data.player;
       this.monsters = data.monsters;
       this.merchantStock = data.merchant_stock || [];
+      this.bounties = data.bounties || this._generateOfflineBounties(this.depth);
     } catch (err) {
       console.warn("Server API fallback to offline procedural generator:", err);
       this._generateOfflineState(seed, depth, this.heroClass);
+      this.bounties = this._generateOfflineBounties(this.depth);
     }
 
     sounds.setBiome(this.dungeon.biome);
@@ -84,6 +89,7 @@ export class GameEngine {
 
     // Initial UI update
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.ui.renderBounties(this.bounties);
     this.ui.logMessage(`Entered Depth B${this.depth}F of the ancient catacombs as ${this.player.class_title || "Champion"}.`, "system");
 
     this._startRenderLoop();
@@ -435,6 +441,16 @@ export class GameEngine {
       e.target.textContent = isMuted ? "🔇" : "🔊";
     });
 
+    const btnCrt = document.getElementById("btnCrtToggle");
+    if (btnCrt) {
+      btnCrt.addEventListener("click", () => this.ui.toggleCrt());
+    }
+
+    const btnBounties = document.getElementById("btnBounties");
+    if (btnBounties) {
+      btnBounties.addEventListener("click", () => this.ui.showBountiesModal(this.bounties));
+    }
+
     const btnRec = document.getElementById("btnRecords");
     if (btnRec) {
       btnRec.addEventListener("click", () => {
@@ -596,12 +612,14 @@ export class GameEngine {
       this.dungeon = new ClientDungeon(data.dungeon);
       this.monsters = data.monsters;
       this.merchantStock = data.merchant_stock || this.merchantStock;
+      this.bounties = data.bounties || this._generateOfflineBounties(this.depth);
       this.player.x = data.dungeon.player_spawn[0];
       this.player.y = data.dungeon.player_spawn[1];
     } catch (err) {
       console.warn("Server API fallback to offline procedural generator on descent:", err);
       const prevPlayer = this.player;
       this._generateOfflineState(Date.now() % 1000000, this.depth, this.heroClass);
+      this.bounties = this._generateOfflineBounties(this.depth);
       prevPlayer.x = this.dungeon.playerSpawn[0];
       prevPlayer.y = this.dungeon.playerSpawn[1];
       this.player = prevPlayer;
@@ -610,7 +628,47 @@ export class GameEngine {
     sounds.setBiome(this.dungeon.biome);
     this.dungeon.updateFOV(this.player.x, this.player.y, 7);
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.ui.renderBounties(this.bounties);
     this.saveGameState();
+  }
+
+  updateBountyProgress(bountyId, amount = 1) {
+    if (!this.bounties) return;
+    for (const b of this.bounties) {
+      if (b.id === bountyId && !b.completed) {
+        b.progress = Math.min(b.target, b.progress + amount);
+        if (b.progress >= b.target) {
+          b.completed = true;
+          this.player.gold += b.reward_gold;
+          this.player.xp += b.reward_xp;
+          sounds.playBountyComplete();
+          this.renderer.addFloatingText(`BOUNTY DONE! +${b.reward_gold}🪙`, this.player.x, this.player.y, "#48bb78");
+          this.ui.logMessage(`📜 BOUNTY COMPLETED: ${b.title}! Claimed +${b.reward_gold} Gold & +${b.reward_xp} XP!`, "level");
+          this.renderer.addParticles(this.player.x, this.player.y, "#48bb78", 22);
+        }
+      }
+    }
+    this.ui.renderBounties(this.bounties);
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+  }
+
+  _generateOfflineBounties(depth) {
+    return [
+      { id: "bounty_urns", title: "Catacomb Purifier", desc: "Shatter 3 Burial Urns in the depths", target: 3, progress: 0, completed: false, reward_gold: 25 + depth * 10, reward_xp: 20 + depth * 5 },
+      { id: "bounty_streak", title: "Frenzy of Blades", desc: "Achieve a x3 Kill Streak in rapid combat", target: 3, progress: 0, completed: false, reward_gold: 35 + depth * 10, reward_xp: 30 + depth * 5 },
+      { id: "bounty_chests", title: "Vault Plunderer", desc: "Unlock 2 Hidden Treasure Chests", target: 2, progress: 0, completed: false, reward_gold: 30 + depth * 10, reward_xp: 25 + depth * 5 },
+    ];
+  }
+
+  _triggerNearMissSurge() {
+    sounds.playNearMissSurge();
+    this.renderer.shake(10, 260);
+    this.ui.triggerAdrenalineVignette();
+    this.player.mana = Math.min(this.player.max_mana, this.player.mana + 2);
+    this.player.status_effects.shield_wall = Math.max(this.player.status_effects.shield_wall || 0, 3);
+    this._recalculatePlayerStats();
+    this.renderer.addFloatingText("⚡ ADRENALINE SURGE!", this.player.x, this.player.y, "#e53e3e");
+    this.ui.logMessage("⚡ NEAR-MISS ADRENALINE SURGE! Stared death in the face and rallied (+2 MP, +4 DEF Barrier)!", "crit");
   }
 
   stepPlayer(dx, dy) {
@@ -671,6 +729,7 @@ export class GameEngine {
         this.renderer.addFloatingText("+6 DEF BARRIER", nx, ny, "#ecc94b");
         this.ui.logMessage("🏛️ Ancient Shrine bestowed Blessing of the Aegis (+6 DEF for 25 turns)!", "loot");
       }
+      this.updateBountyProgress("bounty_shrine", 1);
     }
 
     // Check Ceramic Urn
@@ -679,28 +738,55 @@ export class GameEngine {
       urn.broken = true;
       sounds.playUrn();
       this.renderer.addParticles(nx, ny, "#9c4221", 10);
-      const goldDrop = 6 + Math.floor(Math.random() * 14);
+      const isUrnCrit = Math.random() < 0.18;
+      const baseUrnGold = 6 + Math.floor(Math.random() * 12);
+      const goldDrop = isUrnCrit ? Math.floor(baseUrnGold * 2.5) : baseUrnGold;
       this.player.gold += goldDrop;
-      this.renderer.addFloatingText(`+${goldDrop} 🪙`, nx, ny, "#ecc94b");
-      this.ui.logMessage(`Shattered burial urn! Found ${goldDrop} gold coins.`, "loot");
+
+      if (isUrnCrit) {
+        sounds.playJackpot();
+        this.renderer.addJackpotExplosion(nx, ny);
+        this.renderer.addFloatingText(`CRIT URN! +${goldDrop} 🪙`, nx, ny, "#ecc94b");
+        this.ui.logMessage(`✨ Shattered burial urn! CRITICAL JACKPOT: ${goldDrop} Gold!`, "loot");
+      } else {
+        this.renderer.addFloatingText(`+${goldDrop} 🪙`, nx, ny, "#ecc94b");
+        this.ui.logMessage(`Shattered burial urn! Found ${goldDrop} gold coins.`, "loot");
+      }
+      this.updateBountyProgress("bounty_urns", 1);
     }
 
     // Check chest
     const chest = this.dungeon.chests.find((c) => c.x === nx && c.y === ny && !c.opened);
     if (chest) {
       chest.opened = true;
-      sounds.playChest();
-      const goldFound = 18 + Math.floor(Math.random() * 24);
-      this.player.gold += goldFound;
-      this.renderer.addFloatingText(`+${goldFound} 🪙`, nx, ny, "#ecc94b");
-      this.renderer.addParticles(nx, ny, "#ecc94b", 14);
-      this.ui.logMessage(`Opened a locked chest! Found ${goldFound} gold!`, "loot");
+      const roll = Math.random();
+      const baseGold = 18 + Math.floor(Math.random() * 22) + (this.depth - 1) * 10;
+      let goldFound = baseGold;
 
-      if (Math.random() < 0.75 && this.player.inventory.length < 12) {
+      if (roll < 0.22) {
+        // Critical 2.5x Jackpot!
+        goldFound = Math.floor(baseGold * 2.5);
+        sounds.playJackpot();
+        this.renderer.shake(9, 240);
+        this.renderer.addJackpotExplosion(nx, ny);
+        this.ui.showJackpotBanner();
+        this.renderer.addFloatingText(`JACKPOT! +${goldFound} 🪙`, nx, ny, "#ecc94b");
+        this.ui.logMessage(`★★★ CRITICAL TREASURE JACKPOT! Found ${goldFound} Gold! ★★★`, "crit");
+      } else {
+        sounds.playChest();
+        this.renderer.addFloatingText(`+${goldFound} 🪙`, nx, ny, "#ecc94b");
+        this.renderer.addParticles(nx, ny, "#ecc94b", 16);
+        this.ui.logMessage(`Opened a locked chest! Found ${goldFound} gold!`, "loot");
+      }
+      this.player.gold += goldFound;
+      this.updateBountyProgress("bounty_chests", 1);
+
+      if ((roll < 0.15 || Math.random() < 0.65) && this.player.inventory.length < 12) {
         const pool = [
           { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 Mana, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
           { id: "shield_tower", name: "Aegis Tower Shield", type: "armor", rarity: "rare", description: "+8 DEF bulwark.", stats: { defense: 8 } },
           { id: "ring_power", name: "Ring of Arcane Might", type: "ring", rarity: "rare", description: "+3 ATK, +10 Max Mana.", stats: { attack: 3, max_mana: 10 } },
+          { id: "potion_elixir_str", name: "Elixir of the Titan", type: "potion", rarity: "rare", description: "Permanently increases base Attack by +2.", stats: { perm_attack: 2 } },
         ];
         const dropItem = pool[Math.floor(Math.random() * pool.length)];
         this.player.inventory.push(dropItem);
@@ -717,9 +803,15 @@ export class GameEngine {
       sounds.playHit(false);
       this.renderer.addFloatingText(`-${trapDmg}`, nx, ny, "#ff2222");
       this.ui.logMessage(`⚠️ Triggered a spike trap! Took ${trapDmg} damage!`, "hit");
+
       if (this.player.hp <= 0) {
         this.handlePlayerDeath("a concealed spike trap");
         return;
+      }
+
+      // Check Near-Miss Adrenaline Surge on surviving trap
+      if (this.player.hp <= Math.floor(this.player.max_hp * 0.28) && trapDmg >= 6) {
+        this._triggerNearMissSurge();
       }
     }
 
@@ -811,12 +903,17 @@ export class GameEngine {
         this.player.inventory.push(bonusItem);
         this.ui.logMessage(`Found rare champion relic: ${bonusItem.name}!`, "loot");
       }
+      this.updateBountyProgress("bounty_champions", 1);
     }
 
     // Combo Kill Streak & Momentum
     this.killStreak += 1;
     this.turnsSinceKill = 0;
     this.ui.updateStreak(this.killStreak);
+
+    if (this.killStreak >= 3) {
+      this.updateBountyProgress("bounty_streak", this.killStreak);
+    }
 
     if (this.killStreak === 2) {
       sounds.playCombo(2);
@@ -915,6 +1012,7 @@ export class GameEngine {
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playHit(isCrit);
 
+    this.renderer.addShockwave(target.x, target.y, "#48bb78", 65);
     this.renderer.addSlash(target.x, target.y);
     this.renderer.addFloatingText(isCrit ? `SHADOW CRIT! -${dmg}` : `-${dmg}`, target.x, target.y, isCrit ? "#f6ad55" : "#48bb78");
     this.renderer.addParticles(target.x, target.y, "#48bb78", 14);
@@ -981,6 +1079,7 @@ export class GameEngine {
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playFreeze();
 
+    this.renderer.addShockwave(target.x, target.y, "#63b3ed", 80);
     this.renderer.addProjectile(this.player.x, this.player.y, target.x, target.y, "#63b3ed");
     this.renderer.addFloatingText(`❄️ -${dmg} FROZEN`, target.x, target.y, "#90cdf4");
     this.renderer.addParticles(target.x, target.y, "#63b3ed", 16);
@@ -1003,6 +1102,7 @@ export class GameEngine {
 
     this.player.mana -= 10;
     sounds.playNova();
+    this.renderer.addShockwave(this.player.x, this.player.y, "#9f7aea", 130);
 
     let count = 0;
     for (const m of this.monsters) {
@@ -1122,6 +1222,7 @@ export class GameEngine {
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playSpell("fireball");
 
+    this.renderer.addShockwave(target.x, target.y, "#dd6b20", 75);
     this.renderer.addProjectile(this.player.x, this.player.y, target.x, target.y, "#dd6b20");
     this.renderer.addFloatingText(`🔥 -${dmg}`, target.x, target.y, "#f6ad55");
     this.renderer.addParticles(target.x, target.y, "#dd6b20", 16);
@@ -1516,6 +1617,11 @@ export class GameEngine {
         this.renderer.addFloatingText(`-${dmg}`, this.player.x, this.player.y, "#ff3333");
         this.ui.logMessage(`${monster.name} attacks you for ${dmg} damage!`, "hit");
 
+        // Check Near-Miss Adrenaline Surge on surviving heavy combat blow
+        if (this.player.hp > 0 && this.player.hp <= Math.floor(this.player.max_hp * 0.28) && dmg >= 6) {
+          this._triggerNearMissSurge();
+        }
+
         // Vampiric champion leech
         if (monster.champion_affix === "Vampiric" && monster.hp < monster.max_hp) {
           monster.hp = Math.min(monster.max_hp, monster.hp + 3);
@@ -1614,6 +1720,7 @@ export class GameEngine {
         player: this.player,
         monsters: this.monsters,
         merchantStock: this.merchantStock,
+        bounties: this.bounties,
         dungeon: {
           width: this.dungeon.width,
           height: this.dungeon.height,

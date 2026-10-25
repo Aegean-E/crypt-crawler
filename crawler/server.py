@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from crawler.dungeon import DungeonGenerator
 from crawler.entities import HERO_CLASSES, MERCHANT_STOCK, Player, create_item, spawn_monster
+from crawler.rewards import generate_dungeon_bounties
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = PROJECT_ROOT / "static"
@@ -136,6 +137,7 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                     "monsters": [m.to_dict() for m in monsters],
                     "classes": HERO_CLASSES,
                     "merchant_stock": stock,
+                    "bounties": generate_dungeon_bounties(depth=depth, seed=seed),
                 }
             )
         else:

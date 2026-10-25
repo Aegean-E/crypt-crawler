@@ -14,10 +14,43 @@ export class DungeonRenderer {
     this.particles = [];
     this.slashes = [];
     this.projectiles = [];
+    this.shockwaves = [];
     this.shakeIntensity = 0;
     this.shakeDuration = 0;
     this.shakeStartTime = 0;
     this.hoverTile = null;
+  }
+
+  addJackpotExplosion(x, y) {
+    const cx = x * this.tileSize + this.tileSize / 2;
+    const cy = y * this.tileSize + this.tileSize / 2;
+    for (let i = 0; i < 36; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.0 + Math.random() * 4.5;
+      const isCoin = Math.random() < 0.6;
+      this.particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.5,
+        color: isCoin ? "#ecc94b" : (Math.random() < 0.5 ? "#f6ad55" : "#fff"),
+        size: isCoin ? 3.5 : 2,
+        alpha: 1.0,
+        decay: 0.015 + Math.random() * 0.01,
+        gravity: 0.08,
+      });
+    }
+  }
+
+  addShockwave(x, y, color = "#9f7aea", maxRadius = 90) {
+    this.shockwaves.push({
+      x: x * this.tileSize + this.tileSize / 2,
+      y: y * this.tileSize + this.tileSize / 2,
+      radius: 4,
+      maxRadius,
+      color,
+      alpha: 0.95,
+    });
   }
 
   shake(intensity = 6, duration = 200) {
@@ -211,8 +244,9 @@ export class DungeonRenderer {
     // 5. Dynamic Torchlight / Radial Lighting
     this._drawTorchlight(ctx, player, ts, timestamp, biome);
 
-    // 6. Draw Visual FX (Slashes, Projectiles, Particles, Floating Text)
+    // 6. Draw Visual FX (Slashes, Shockwaves, Projectiles, Particles, Floating Text)
     this._renderSlashes(ctx);
+    this._renderShockwaves(ctx);
     this._renderProjectiles(ctx);
     this._renderParticles(ctx);
     this._renderFloatingTexts(ctx);
@@ -453,6 +487,20 @@ export class DungeonRenderer {
     ctx.beginPath();
     ctx.arc(cx, cy - 7, 2, 0, Math.PI * 2);
     ctx.fill();
+
+    // Spawn subtle ambient embers that drift upward
+    if (Math.random() < 0.04) {
+      this.particles.push({
+        x: cx + (Math.random() - 0.5) * 4,
+        y: cy - 8,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.6 - Math.random() * 0.5,
+        color: innerColor,
+        size: 1 + Math.random() * 1.5,
+        alpha: 0.8,
+        decay: 0.025,
+      });
+    }
   }
 
   _drawMerchant(ctx, merchant, ts, timestamp, isVis) {
@@ -877,6 +925,30 @@ export class DungeonRenderer {
     }
   }
 
+  _renderShockwaves(ctx) {
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.radius += 4.5;
+      sw.alpha -= 0.035;
+
+      if (sw.alpha <= 0 || sw.radius >= sw.maxRadius) {
+        this.shockwaves.splice(i, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.strokeStyle = sw.color;
+      ctx.globalAlpha = Math.max(0, sw.alpha);
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = sw.color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   _renderProjectiles(ctx) {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
@@ -884,6 +956,20 @@ export class DungeonRenderer {
 
       const currX = p.sx + (p.tx - p.sx) * p.progress;
       const currY = p.sy + (p.ty - p.sy) * p.progress;
+
+      // Emit flight sparks
+      if (Math.random() < 0.6) {
+        this.particles.push({
+          x: currX + (Math.random() - 0.5) * 4,
+          y: currY + (Math.random() - 0.5) * 4,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: (Math.random() - 0.5) * 0.6,
+          color: p.color,
+          size: 1.5 + Math.random() * 2,
+          alpha: 0.85,
+          decay: 0.06,
+        });
+      }
 
       ctx.save();
       ctx.fillStyle = p.color;
@@ -905,6 +991,9 @@ export class DungeonRenderer {
       const p = this.particles[i];
       p.x += p.vx;
       p.y += p.vy;
+      if (p.gravity) {
+        p.vy += p.gravity;
+      }
       p.alpha -= p.decay;
 
       if (p.alpha <= 0) {

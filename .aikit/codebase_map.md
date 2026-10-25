@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `12`
-- **Total Classes**: `14`
-- **Total Top-Level Functions**: `16`
-- **Total Class Methods**: `76`
-- **Total Source Lines**: `2433`
+- **Total Python Modules**: `14`
+- **Total Classes**: `16`
+- **Total Top-Level Functions**: `20`
+- **Total Class Methods**: `81`
+- **Total Source Lines**: `2696`
 
 ---
 
@@ -114,10 +114,26 @@
 
 ---
 
+### [`crawler/rewards.py`](crawler/rewards.py)
+> *Variable-ratio reward engine, dopamine loot schedules, and near-miss mechanics for Crypt-Crawler.*
+
+**Size**: `156` lines (`5320` bytes)
+
+**Classes:**
+- `class RewardType`
+
+**Functions:**
+- `def roll_chest_reward(depth, rng)` - *Calculate variable-ratio reward payout and drops for opening chests (Skinner box reinforcement schedule).*
+- `def roll_urn_reward(depth, rng)` - *Variable-ratio coin and surprise relic payout when shattering burial urns.*
+- `def check_near_miss_survival(current_hp, max_hp, damage_taken)` - *Near-miss feedback engine (Clark et al. 2009).*
+- `def generate_dungeon_bounties(depth, seed)` - *Generate 3 active contract bounties per floor (Zeigarnik Effect).*
+
+---
+
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `160` lines (`6403` bytes)
+**Size**: `162` lines (`6540` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -203,10 +219,25 @@
 
 ---
 
+### [`tests/test_rewards.py`](tests/test_rewards.py)
+> *Unit tests for the variable-ratio reward engine and dopamine loot schedules.*
+
+**Size**: `69` lines (`2458` bytes)
+
+**Classes:**
+- `class TestRewards`
+  - Method `.test_roll_chest_reward_determinism()`
+  - Method `.test_roll_chest_reward_jackpot()`
+  - Method `.test_roll_urn_reward()`
+  - Method `.test_near_miss_survival()`
+  - Method `.test_generate_dungeon_bounties()`
+
+---
+
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `85` lines (`3293` bytes)
+**Size**: `87` lines (`3392` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -224,7 +255,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `296` lines (`12875` bytes)
+**Size**: `330` lines (`14989` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`
