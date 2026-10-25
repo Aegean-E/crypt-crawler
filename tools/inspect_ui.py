@@ -146,6 +146,50 @@ def run_inspection(
                                 "inventory_rarity_sort": sort_label.strip() == "Sort: Rarity",
                             }
                         )
+
+                        # Sorting reorders slots, so selection must follow the item, not the position.
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.player.inventory.push(
+                                    { id: "audit_rare", name: "Audit Zephyr Ring", type: "ring", rarity: "rare", description: "Audit fixture.", stats: { attack: 1 } },
+                                    { id: "audit_hammer", name: "Audit Warhammer", type: "weapon", rarity: "epic", description: "Audit fixture.", stats: { attack: 13, stun_chance: 25 } }
+                                );
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                            }"""
+                        )
+                        page.click('.inv-slot[title*="Audit Warhammer"]')
+                        time.sleep(0.2)
+                        selected_titles = page.eval_on_selector_all(
+                            ".inv-slot.selected", "els => els.map(el => el.title)"
+                        )
+                        selected_name = selected_titles[0].split(" (")[0] if selected_titles else ""
+                        card_text = page.text_content("#itemCardName") or ""
+                        diff_visible = page.eval_on_selector(
+                            "#itemCardDiff", "el => !el.classList.contains('hidden')"
+                        )
+                        diff_text = page.text_content("#itemCardDiff") or ""
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "inventory_sorted_selection_matches_card": len(selected_titles) == 1
+                                and selected_name == "Audit Warhammer"
+                                and card_text.startswith(selected_name),
+                                "item_comparison_proc_labels": diff_visible
+                                and "Stun" in diff_text
+                                and "%" in diff_text,
+                            }
+                        )
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.player.inventory = e.player.inventory.filter(
+                                    (item) => !String(item.id || "").startsWith("audit_")
+                                );
+                                e.ui.clearItemSelection();
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                            }"""
+                        )
                         page.click("#btnSortInventory")
                         time.sleep(0.1)
 
@@ -185,6 +229,35 @@ def run_inspection(
                             }
                         )
 
+                        # A +max HP relic must not leave the hero above their cap on unequip.
+                        hp_probe = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const hpBefore = e.player.hp;
+                                const previousAmulet = e.player.equipped.amulet;
+                                const amulet = { id: "audit_amulet", name: "Audit Amulet", type: "amulet", rarity: "rare", description: "Audit fixture.", stats: { max_hp: 18 } };
+                                e.player.equipped.amulet = amulet;
+                                e._recalculatePlayerStats();
+                                e.player.hp = e.player.max_hp;
+                                e.unequipSlot("amulet");
+                                const clamped = e.player.hp === e.player.max_hp;
+                                e.player.inventory = e.player.inventory.filter(
+                                    (item) => item.id !== "audit_amulet"
+                                );
+                                e.player.equipped.amulet = previousAmulet;
+                                e.player.hp = hpBefore;
+                                e._recalculatePlayerStats();
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                                return clamped;
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "equipment_unequip_clamps_hp": hp_probe is True,
+                            }
+                        )
+
                     if "combat" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Combat & Magic...")
                         # Test music toggle
@@ -216,6 +289,51 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "shop", "file": str(shop_shot)}
                         )
                         print(f"      Saved screenshot: {shop_shot.name}")
+
+                        expanded_relics = {
+                            "potion_invulnerability",
+                            "hammer_thunder",
+                            "cloak_ethereal",
+                            "amulet_bloodstone",
+                            "boots_shadowstep",
+                            "tome_pyromancy",
+                        }
+                        server_stock = page.eval_on_selector_all(
+                            ".btn-buy", "els => els.map(el => el.dataset.itemId)"
+                        )
+                        epic_pills = page.eval_on_selector_all(
+                            ".shop-item-row .pill-epic", "els => els.length"
+                        )
+                        # Force the offline fallback path and confirm it lists the same relics.
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.__auditStock = e.merchantStock;
+                                e.merchantStock = [];
+                                e.openMerchantShop();
+                            }"""
+                        )
+                        time.sleep(0.2)
+                        fallback_stock = page.eval_on_selector_all(
+                            ".btn-buy", "els => els.map(el => el.dataset.itemId)"
+                        )
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.merchantStock = e.__auditStock;
+                                delete e.__auditStock;
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "merchant_lists_expanded_relics": expanded_relics
+                                <= set(server_stock),
+                                "merchant_offline_fallback_parity": expanded_relics
+                                <= set(fallback_stock),
+                                "merchant_shows_epic_rarity": epic_pills >= 3,
+                            }
+                        )
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 
@@ -324,6 +442,17 @@ def run_inspection(
         server.shutdown()
         server.server_close()
 
+    failed_checks = [
+        {"viewport": check.get("viewport", "unknown"), "check": name}
+        for check in report["audit_checks"]
+        for name, value in check.items()
+        if name != "viewport" and value is not True
+    ]
+    report["failed_checks"] = failed_checks
+    report["total_checks"] = sum(
+        1 for check in report["audit_checks"] for name in check if name != "viewport"
+    )
+
     report_path = out_dir / "audit_report.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
@@ -370,8 +499,10 @@ def main() -> int:
     print("\n" + "=" * 60)
     print(" VISUAL INSPECTION SUMMARY")
     print("=" * 60)
+    failed_checks = report.get("failed_checks", [])
+    total_checks = report.get("total_checks", 0)
     print(f" Screenshots Captured: {len(report['screenshots'])}")
-    print(f" Audit Checks Passed:  {len(report['audit_checks'])}")
+    print(f" Audit Checks Passed:  {total_checks - len(failed_checks)} / {total_checks}")
     print(f" Console Errors:       {len(report['console_errors'])}")
 
     if report["console_errors"]:
@@ -381,8 +512,15 @@ def main() -> int:
     else:
         print("\n [OK] Zero browser console errors or uncaught exceptions detected!")
 
+    if failed_checks:
+        print("\n [FAIL] Failing audit checks:")
+        for failed in failed_checks:
+            print(f"   - [{failed['viewport']}] {failed['check']}")
+    else:
+        print(" [OK] Every audit check passed.")
+
     print("=" * 60)
-    return 0 if not report["console_errors"] else 1
+    return 0 if not report["console_errors"] and not failed_checks else 1
 
 
 if __name__ == "__main__":

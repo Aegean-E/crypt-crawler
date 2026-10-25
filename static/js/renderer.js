@@ -1009,7 +1009,6 @@ export class DungeonRenderer {
 
     // Status effect visuals
     if (monster.status_effects && monster.status_effects.stun) {
-      const starAngle = timestamp * 0.008;
       ctx.fillStyle = "#ecc94b";
       ctx.font = "bold 10px sans-serif";
       ctx.fillText("💫", px + ts / 2 - 5, py - 4);

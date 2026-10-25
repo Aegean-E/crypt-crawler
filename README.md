@@ -24,6 +24,7 @@ Tactical turn-based web dungeon crawler with procedural levels, five-slot equipm
 ```bash
 python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario dungeon --out .inspect
 ```
+The inspector reports every audit check and exits non-zero when any check or console error fails, so it can gate a commit.
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |

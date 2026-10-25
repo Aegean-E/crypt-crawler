@@ -1,51 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-006",
+    "task_id": "CC-007",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792929448.3925133,
-    "owner": "kilo:continue",
-    "started_by": "unidentified",
-    "continuations": [
-      {
-        "agent": "kilo:continue",
-        "from": "unidentified",
-        "at": 1792927510.0690331
-      }
-    ],
-    "completed_at": 1792929458.8585083
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1792931509.212527,
+    "owner": "kilo:review",
+    "started_by": "kilo:review",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "CC-003",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Advanced mechanics, visual overhaul, balance, and procedural music",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792861107.6554618,
-      "timestamp_str": "2026-10-24 19:58:27",
-      "agent": "unidentified",
-      "impact_assessment": {
-        "why": "Enrich gameplay with tactical skills, boss encounters, shrines, visual polish, and atmospheric ambient music",
-        "benefits": "Dramatically improves game depth, aesthetic atmosphere, immersion, and balance",
-        "risks": "contract: none; dependency: none, Web Audio and standard library only; concurrency: none, single-threaded web loop; state: new entity attributes and status effects must serialize cleanly",
-        "mitigation": "Add backward-compatible serialization defaults and comprehensive unit tests"
-      }
-    },
-    {
-      "task_id": "CC-003",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 5/5] feat: mechanics expansion, boss battle, visual overhaul & procedural ambient music (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792861683.3804464,
-      "timestamp_str": "2026-10-24 20:08:03",
-      "agent": "unidentified"
-    },
     {
       "task_id": "CC-003",
       "phase": "completed",
@@ -268,6 +233,37 @@
       "timestamp": 1792929458.85851,
       "timestamp_str": "2026-10-25 14:57:38",
       "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-007",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Fix sorted-inventory slot highlight, comparison badge labels and offline merchant parity",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792930351.9358017,
+      "timestamp_str": "2026-10-25 15:12:31",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "Review of the six unpushed CC-006 commits found a real UI defect: after rarity sorting, selectItem highlights a slot by array position instead of the item's true index, so the wrong slot lights up and the card can disagree with the highlight. Proc stats also render without a percent sign, and the offline merchant fallback omits every new relic.",
+        "benefits": "Correct selection feedback under filtering and sorting, clearer stat deltas, and feature parity when the API is unavailable.",
+        "risks": "contract: none, client-only behavior; dependency: none, natural JS and Python stdlib; concurrency: none; state: no save format change",
+        "mitigation": "Headless audit check that fails before the fix, full test suite, Phase 4 gates and multi-viewport inspection"
+      }
+    },
+    {
+      "task_id": "CC-007",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 1/3] Fixed sorted-selection highlight, percent proc labels, offline merchant parity; clamped HP/MP to equipment caps in both engines; inspector now fails on false checks (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792931509.212527,
+      "timestamp_str": "2026-10-25 15:31:49",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "commit milestone, then verify unpushed commits and push"
+      }
     }
   ]
 }

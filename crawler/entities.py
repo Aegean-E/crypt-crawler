@@ -10,11 +10,11 @@ from typing import Any, Dict, List, Optional, Tuple
 class Item:
     item_id: str
     name: str
-    item_type: str  # 'weapon', 'armor', 'ring', 'potion', 'scroll'
+    item_type: str  # 'weapon', 'armor', 'ring', 'amulet', 'boots', 'potion', 'scroll'
     value: int
     description: str
     stats: Dict[str, int] = field(default_factory=dict)
-    rarity: str = "common"  # 'common', 'rare', 'legendary'
+    rarity: str = "common"  # 'common', 'rare', 'epic', 'legendary'
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -627,6 +627,12 @@ class Player(Entity):
             leveled = True
         return leveled
 
+    def heal(self, amount: int) -> int:
+        """Restore HP up to the cap granted by the current equipment."""
+        prev = self.hp
+        self.hp = min(self.effective_max_hp, self.hp + max(0, amount))
+        return self.hp - prev
+
     def equip(self, item: Item) -> bool:
         slot = item.item_type
         if slot not in self.equipped:
@@ -636,6 +642,7 @@ class Player(Entity):
         if self.equipped[slot] is not None:
             self.inventory.append(self.equipped[slot])  # type: ignore[arg-type]
         self.equipped[slot] = item
+        self._clamp_vitals()
         return True
 
     def unequip(self, slot: str) -> bool:
@@ -646,7 +653,13 @@ class Player(Entity):
         old = self.equipped[slot]
         self.equipped[slot] = None
         self.inventory.append(old)  # type: ignore[arg-type]
+        self._clamp_vitals()
         return True
+
+    def _clamp_vitals(self) -> None:
+        """Keep current pools within the caps granted by the equipment now worn."""
+        self.hp = min(self.hp, self.effective_max_hp)
+        self.mana = min(self.mana, self.effective_max_mana)
 
     def use_item(self, item_index: int) -> Tuple[bool, str]:
         if item_index < 0 or item_index >= len(self.inventory):
@@ -668,8 +681,9 @@ class Player(Entity):
                 restored = self.heal(heal_amount)
                 msg_parts.append(f"restored {restored} HP")
             if mana_amount > 0:
+                prev_mana = self.mana
                 self.mana = min(self.effective_max_mana, self.mana + mana_amount)
-                msg_parts.append(f"restored {mana_amount} Mana")
+                msg_parts.append(f"restored {self.mana - prev_mana} Mana")
             if perm_atk > 0:
                 self.attack += perm_atk
                 self.perm_attack += perm_atk

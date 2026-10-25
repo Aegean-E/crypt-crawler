@@ -611,6 +611,7 @@ export class UIController {
 
       if (entry) {
         const { item, index } = entry;
+        slotDiv.dataset.index = String(index);
         slotDiv.classList.toggle("selected", index === this.selectedItemIndex);
         if (item.rarity && item.rarity !== "common") {
           slotDiv.classList.add(`rarity-${item.rarity}`);
@@ -643,8 +644,8 @@ export class UIController {
   selectItem(index, item) {
     this.selectedItemIndex = index;
     const slots = this.inventoryGrid.querySelectorAll(".inv-slot");
-    slots.forEach((s, idx) => {
-      s.classList.toggle("selected", idx === index);
+    slots.forEach((s) => {
+      s.classList.toggle("selected", s.dataset.index === String(index));
     });
 
     if (item) {
@@ -678,31 +679,29 @@ export class UIController {
       { key: "defense", label: "DEF" },
       { key: "max_hp", label: "Max HP" },
       { key: "max_mana", label: "Max MP" },
-      { key: "crit_bonus", label: "Crit" },
-      { key: "stun_chance", label: "Stun" },
-      { key: "poison_chance", label: "Poison" },
+      { key: "crit_bonus", label: "Crit", suffix: "%" },
+      { key: "stun_chance", label: "Stun", suffix: "%" },
+      { key: "poison_chance", label: "Poison", suffix: "%" },
     ];
 
-    statKeys.forEach(({ key, label }) => {
+    statKeys.forEach(({ key, label, suffix = "" }) => {
       const vNew = newStats[key] || 0;
       const vOld = curStats[key] || 0;
       const delta = vNew - vOld;
       if (delta > 0) {
-        diffs.push(`<span class="diff-badge diff-pos">+${delta} ${label}</span>`);
+        diffs.push(`<span class="diff-badge diff-pos">+${delta}${suffix} ${label}</span>`);
       } else if (delta < 0) {
-        diffs.push(`<span class="diff-badge diff-neg">${delta} ${label}</span>`);
-      } else if (vNew > 0 && vOld === 0) {
-        diffs.push(`<span class="diff-badge diff-pos">+${vNew} ${label}</span>`);
+        diffs.push(`<span class="diff-badge diff-neg">${delta}${suffix} ${label}</span>`);
       }
     });
 
+    const targetName = current ? current.name : "Empty Slot";
     if (diffs.length > 0) {
-      const targetName = current ? current.name : "Empty Slot";
       this.itemCardDiff.innerHTML = `<div class="diff-target">vs ${targetName}:</div>${diffs.join(" ")}`;
-      this.itemCardDiff.classList.remove("hidden");
     } else {
-      this.itemCardDiff.classList.add("hidden");
+      this.itemCardDiff.innerHTML = `<div class="diff-target">vs ${targetName}:</div><span class="diff-badge diff-neutral">No stat change</span>`;
     }
+    this.itemCardDiff.classList.remove("hidden");
   }
 
   clearItemSelection() {

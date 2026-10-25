@@ -9,8 +9,8 @@
 - **Total Python Modules**: `14`
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `86`
-- **Total Source Lines**: `2920`
+- **Total Class Methods**: `89`
+- **Total Source Lines**: `3098`
 
 ---
 
@@ -79,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `720` lines (`23471` bytes)
+**Size**: `734` lines (`24078` bytes)
 
 **Classes:**
 - `class Item`
@@ -103,8 +103,10 @@
   - Property `.effective_max_hp`
   - Property `.effective_max_mana`
   - Method `.add_xp(amount)` - *Add experience points, return True if leveled up.*
+  - Method `.heal(amount)` - *Restore HP up to the cap granted by the current equipment.*
   - Method `.equip(item)`
   - Method `.unequip(slot)`
+  - Method `._clamp_vitals()` - *Keep current pools within the caps granted by the equipment now worn.*
   - Method `.use_item(item_index)`
   - Method `.to_dict()`
 
@@ -169,7 +171,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `302` lines (`12050` bytes)
+**Size**: `328` lines (`13272` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -192,6 +194,7 @@
   - Method `.test_expanded_equipment_slots_and_unequip()`
   - Method `.test_weapon_stun_proc_stuns_target()`
   - Method `.test_weapon_poison_proc_uses_weapon_stats_and_name()`
+  - Method `.test_max_pool_equipment_caps_healing_and_clamps_on_unequip()`
   - Method `.test_expanded_catalog_merchant_stock_and_save_slots()`
   - Method `.test_divine_aegis_draught_potion()`
 
@@ -260,7 +263,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `389` lines (`18233` bytes)
+**Size**: `527` lines (`25744` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

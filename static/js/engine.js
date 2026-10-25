@@ -1171,6 +1171,12 @@ export class GameEngine {
         { item: { id: "sword_runic", name: "Runic Claymore", type: "weapon", rarity: "rare", description: "+10 ATK.", stats: { attack: 10 } }, price: 85 },
         { item: { id: "armor_plate", name: "Knightly Plate Mail", type: "armor", rarity: "rare", description: "+6 DEF.", stats: { defense: 6 } }, price: 75 },
         { item: { id: "ring_shadow", name: "Band of the Shadowstalker", type: "ring", rarity: "rare", description: "+15% Crit Rate, +3 ATK.", stats: { attack: 3, crit_bonus: 15 } }, price: 95 },
+        { item: { id: "potion_invulnerability", name: "Divine Aegis Draught", type: "potion", rarity: "rare", description: "Grants impenetrable Barrier (+6 DEF for 4 turns).", stats: { shield_wall_turns: 4 } }, price: 45 },
+        { item: { id: "hammer_thunder", name: "Stormforged Warhammer", type: "weapon", rarity: "epic", description: "+13 ATK, 25% stun chance.", stats: { attack: 13, stun_chance: 25 } }, price: 130 },
+        { item: { id: "cloak_ethereal", name: "Spectral Shroud", type: "armor", rarity: "epic", description: "+7 DEF, +15 Max MP.", stats: { defense: 7, max_mana: 15 } }, price: 120 },
+        { item: { id: "amulet_bloodstone", name: "Bloodstone Talisman", type: "amulet", rarity: "rare", description: "+18 Max HP, +2 ATK.", stats: { max_hp: 18, attack: 2 } }, price: 75 },
+        { item: { id: "boots_shadowstep", name: "Shadowstep Treads", type: "boots", rarity: "rare", description: "+2 DEF, +10% Crit Rate.", stats: { defense: 2, crit_bonus: 10 } }, price: 65 },
+        { item: { id: "tome_pyromancy", name: "Tome of Blazing Embers", type: "amulet", rarity: "epic", description: "+4 ATK, +20 Max MP.", stats: { attack: 4, max_mana: 20 } }, price: 105 },
         { item: { id: "potion_elixir_str", name: "Elixir of the Titan", type: "potion", rarity: "rare", description: "Permanently increases base Attack by +2.", stats: { perm_attack: 2 } }, price: 70 },
         { item: { id: "potion_elixir_def", name: "Elixir of Ironhide", type: "potion", rarity: "rare", description: "Permanently increases base Defense by +2.", stats: { perm_defense: 2 } }, price: 70 },
       ];
@@ -1513,6 +1519,8 @@ export class GameEngine {
     this.player.crit_chance = critChance;
     this.player.max_hp = baseHp + (this.player.level - 1) * 12 + maxHpBonus;
     this.player.max_mana = baseMp + (this.player.level - 1) * 6 + maxMpBonus;
+    this.player.hp = Math.min(this.player.hp, this.player.max_hp);
+    this.player.mana = Math.min(this.player.mana, this.player.max_mana);
   }
 
   finishPlayerTurn() {

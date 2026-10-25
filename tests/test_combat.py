@@ -262,6 +262,32 @@ class TestCombat(unittest.TestCase):
         self.assertEqual(self.skeleton.status_effects.get("poison"), 3)
         self.assertTrue(any("Custom Fang" in msg for msg in res.messages))
 
+    def test_max_pool_equipment_caps_healing_and_clamps_on_unequip(self):
+        ring = create_item("ring_vitality")
+        self.assertIsNotNone(ring)
+        self.player.equip(ring)  # type: ignore[arg-type]
+        self.assertEqual(self.player.effective_max_hp, self.player.max_hp + 20)
+
+        self.player.hp = 55
+        potion = create_item("potion_health")
+        self.assertIsNotNone(potion)
+        self.player.inventory.append(potion)  # type: ignore[arg-type]
+        ok, _ = self.player.use_item(len(self.player.inventory) - 1)
+        self.assertTrue(ok)
+        self.assertEqual(self.player.hp, self.player.effective_max_hp)
+
+        self.player.hp = self.player.effective_max_hp
+        self.assertTrue(self.player.unequip("ring"))
+        self.assertEqual(self.player.hp, self.player.max_hp)
+
+        mana_ring = create_item("ring_power")
+        self.assertIsNotNone(mana_ring)
+        self.player.equip(mana_ring)  # type: ignore[arg-type]
+        self.assertEqual(self.player.effective_max_mana, self.player.max_mana + 10)
+        self.player.mana = self.player.effective_max_mana
+        self.assertTrue(self.player.unequip("ring"))
+        self.assertEqual(self.player.mana, self.player.max_mana)
+
     def test_expanded_catalog_merchant_stock_and_save_slots(self):
         expanded_ids = [
             "amulet_bloodstone",
