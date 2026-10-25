@@ -149,6 +149,42 @@ def run_inspection(
                         page.click("#btnSortInventory")
                         time.sleep(0.1)
 
+                        hp_before = page.evaluate("() => window.gameEngine.player.hp")
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.player.hp = Math.max(1, Math.floor(e.player.max_hp * 0.2));
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                                e.ui.flashDamage();
+                                e.ui.renderStatusTray({ poison: 2 });
+                            }"""
+                        )
+                        low_hp_visible = page.eval_on_selector(
+                            "#lowHpVignette", "el => !el.classList.contains('hidden')"
+                        )
+                        flash_active = page.eval_on_selector(
+                            "#damageFlash", "el => el.classList.contains('active')"
+                        )
+                        status_tooltip = page.eval_on_selector(
+                            "#heroStatusTray .status-badge", "el => el.title"
+                        )
+                        page.evaluate(
+                            """(hp) => {
+                                const e = window.gameEngine;
+                                e.player.hp = hp;
+                                e.ui.updateHero(e.player, e.turn, e.depth, e.kills);
+                            }""",
+                            hp_before,
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "low_hp_warning_visible": low_hp_visible,
+                                "damage_flash_active": flash_active,
+                                "status_tooltip_present": "Poison" in status_tooltip,
+                            }
+                        )
+
                     if "combat" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Combat & Magic...")
                         # Test music toggle

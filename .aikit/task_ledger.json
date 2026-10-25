@@ -5,7 +5,7 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1792928786.683654,
+    "updated_at": 1792929262.7158144,
     "owner": "kilo:continue",
     "started_by": "unidentified",
     "continuations": [
@@ -17,15 +17,6 @@
     ]
   },
   "checkpoints": [
-    {
-      "task_id": "CC-001",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-001' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792859783.9697433,
-      "timestamp_str": "2026-10-24 19:36:23"
-    },
     {
       "task_id": "CC-002",
       "phase": "phase 2",
@@ -264,6 +255,17 @@
       "status": "in_progress",
       "timestamp": 1792928786.683654,
       "timestamp_str": "2026-10-25 14:46:26",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 4/5] Low-HP pulse vignette, damage impact flash and status tooltips; headless feedback audit green (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792929262.7158144,
+      "timestamp_str": "2026-10-25 14:54:22",
       "agent": "kilo:continue"
     }
   ]

@@ -67,6 +67,10 @@ export class UIController {
     // Atmospheric & Juicing FX
     this.jackpotBanner = document.getElementById("jackpotBanner");
     this.adrenalineVignette = document.getElementById("adrenalineVignette");
+    this.lowHpVignette = document.getElementById("lowHpVignette");
+    this.damageFlash = document.getElementById("damageFlash");
+    this._lastHp = null;
+    this._damageFlashTimer = null;
     this.crtOverlay = document.getElementById("crtOverlay");
     this.crtActive = false;
 
@@ -156,6 +160,12 @@ export class UIController {
     const hpPct = Math.max(0, Math.min(100, (player.hp / player.max_hp) * 100));
     this.hpBar.style.width = `${hpPct}%`;
     this.hpText.textContent = `${player.hp} / ${player.max_hp}`;
+    this.hpBar.classList.toggle("low-hp", hpPct <= 30);
+    if (this.lowHpVignette) this.lowHpVignette.classList.toggle("hidden", hpPct > 30);
+    if (this._lastHp !== null && player.hp < this._lastHp && player.hp > 0) {
+      this.flashDamage();
+    }
+    this._lastHp = player.hp;
 
     // Mana
     const manaPct = Math.max(0, Math.min(100, (player.mana / player.max_mana) * 100));
@@ -533,6 +543,15 @@ export class UIController {
     this.btnModalClose.textContent = "Close Chronicle";
   }
 
+  flashDamage() {
+    if (!this.damageFlash) return;
+    this.damageFlash.classList.remove("active");
+    void this.damageFlash.offsetWidth;
+    this.damageFlash.classList.add("active");
+    if (this._damageFlashTimer) clearTimeout(this._damageFlashTimer);
+    this._damageFlashTimer = setTimeout(() => this.damageFlash.classList.remove("active"), 240);
+  }
+
   renderStatusTray(effects) {
     if (!this.heroStatusTray) return;
     this.heroStatusTray.innerHTML = "";
@@ -544,12 +563,20 @@ export class UIController {
       might: "⚔️ Might",
       stun: "💫 Stunned",
     };
+    const descriptions = {
+      poison: "Poison: loses 3 HP at the start of each turn.",
+      burn: "Burning: loses 4 HP at the start of each turn.",
+      shield_wall: "Barrier: +6 DEF until the remaining turns expire.",
+      might: "Might: +4 ATK until the remaining turns expire.",
+      stun: "Stunned: skips its next action.",
+    };
 
     for (const [key, turns] of Object.entries(effects)) {
       if (turns <= 0) continue;
       const badge = document.createElement("span");
       badge.className = `status-badge badge-${key}`;
       badge.textContent = `${labels[key] || key} (${turns})`;
+      badge.title = descriptions[key] || key;
       this.heroStatusTray.appendChild(badge);
     }
   }

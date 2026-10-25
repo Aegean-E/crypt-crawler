@@ -1196,6 +1196,55 @@ body.crt-active {
   100% { opacity: 1.0; }
 }
 
+/* Persistent Low-HP Warning Vignette */
+.low-hp-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 24;
+  box-shadow: inset 0 0 48px rgba(229, 62, 62, 0.55);
+  animation: lowHpPulse 1.3s infinite alternate ease-in-out;
+}
+
+@keyframes lowHpPulse {
+  0% { opacity: 0.25; }
+  100% { opacity: 0.8; }
+}
+
+.gauge-bar-fill.low-hp {
+  animation: lowHpFillPulse 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes lowHpFillPulse {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.6); }
+}
+
+/* Damage Impact Flash */
+.damage-flash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 26;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(229, 62, 62, 0.05) 30%, rgba(229, 62, 62, 0.45) 100%);
+}
+
+.damage-flash.active {
+  animation: damageFlash 0.24s ease-out;
+}
+
+@keyframes damageFlash {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
 /* Critical Gold Jackpot Celebration Banner */
 .jackpot-banner {
   position: absolute;
