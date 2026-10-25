@@ -599,6 +599,8 @@ export class UIController {
       { key: "max_hp", label: "Max HP" },
       { key: "max_mana", label: "Max MP" },
       { key: "crit_bonus", label: "Crit" },
+      { key: "stun_chance", label: "Stun" },
+      { key: "poison_chance", label: "Poison" },
     ];
 
     statKeys.forEach(({ key, label }) => {

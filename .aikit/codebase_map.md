@@ -9,8 +9,8 @@
 - **Total Python Modules**: `14`
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `83`
-- **Total Source Lines**: `2808`
+- **Total Class Methods**: `85`
+- **Total Source Lines**: `2837`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`crawler/combat.py`](crawler/combat.py)
 > *Turn-based tactical combat resolution for Crypt-Crawler.*
 
-**Size**: `485` lines (`16765` bytes)
+**Size**: `489` lines (`17046` bytes)
 
 **Classes:**
 - `class CombatResult`
@@ -169,7 +169,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `253` lines (`10062` bytes)
+**Size**: `278` lines (`11071` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -190,6 +190,8 @@
   - Method `.test_arcane_nova_and_frost_nova()`
   - Method `.test_champion_monsters_and_affixes()`
   - Method `.test_expanded_equipment_slots_and_unequip()`
+  - Method `.test_weapon_stun_proc_stuns_target()`
+  - Method `.test_weapon_poison_proc_uses_weapon_stats_and_name()`
   - Method `.test_divine_aegis_draught_potion()`
 
 ---

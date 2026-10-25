@@ -5,7 +5,7 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1792927510.0690331,
+    "updated_at": 1792928148.6944983,
     "owner": "kilo:continue",
     "started_by": "unidentified",
     "continuations": [
@@ -240,6 +240,31 @@
       "timestamp_str": "2026-10-25 14:25:10",
       "agent": "kilo:continue",
       "continued_from": "unidentified"
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[2/5] Make weapon stun and poison stats real in both engines; show proc stats in comparison card",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792927793.1709526,
+      "timestamp_str": "2026-10-25 14:29:53",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "crawler/combat.py weapon procs, tests/test_combat.py, static/js/engine.js attackMonster, static/js/ui.js stat labels"
+      }
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/5] Weapon stun/poison procs now honor item stats in Python and JS; comparison card shows proc stats (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792928148.6944983,
+      "timestamp_str": "2026-10-25 14:35:48",
+      "agent": "kilo:continue"
     }
   ]
 }

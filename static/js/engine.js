@@ -873,12 +873,23 @@ export class GameEngine {
       this.renderer.shake(5, 140);
     }
 
-    // Weapon poison effect
+    // Weapon on-hit procs
     const weapon = this.player.equipped.weapon;
-    if (weapon && weapon.id === "dagger_poison" && monster.hp > 0) {
-      if (Math.random() < 0.45) {
-        monster.status_effects.poison = 3;
-        this.ui.logMessage(`Serpent's venom infected ${monster.name}!`, "loot");
+    if (weapon && monster.hp > 0) {
+      const stats = weapon.stats || {};
+      monster.status_effects = monster.status_effects || {};
+      const poisonChance = stats.poison_chance || 0;
+      if (poisonChance > 0 && Math.random() * 100 < poisonChance) {
+        monster.status_effects.poison = Math.max(monster.status_effects.poison || 0, 3);
+        this.renderer.addFloatingText("☠ POISON", monster.x, monster.y, "#48bb78");
+        this.ui.logMessage(`${weapon.name} infected ${monster.name} with venom!`, "loot");
+      }
+      const stunChance = stats.stun_chance || 0;
+      if (stunChance > 0 && Math.random() * 100 < stunChance) {
+        monster.status_effects.stun = Math.max(monster.status_effects.stun || 0, 1);
+        this.renderer.addFloatingText("⚡ STUN", monster.x, monster.y, "#f6e05e");
+        this.renderer.shake(4, 120);
+        this.ui.logMessage(`⚡ ${weapon.name} stunned ${monster.name}!`, "crit");
       }
     }
 

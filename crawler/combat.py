@@ -78,7 +78,11 @@ def resolve_melee_attack(
         if eq_weapon and eq_weapon.stats.get("poison_chance", 0) > 0:
             if rng.random() < (eq_weapon.stats["poison_chance"] / 100.0):
                 defender.apply_status("poison", 3)
-                msgs.append(f"Serpent venom infected {defender.name}!")
+                msgs.append(f"{eq_weapon.name} infected {defender.name} with venom!")
+        if eq_weapon and eq_weapon.stats.get("stun_chance", 0) > 0:
+            if rng.random() < (eq_weapon.stats["stun_chance"] / 100.0):
+                defender.apply_status("stun", 1)
+                msgs.append(f"⚡ {eq_weapon.name} stunned {defender.name}!")
 
     xp = 0
     gold = 0

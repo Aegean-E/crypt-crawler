@@ -237,6 +237,31 @@ class TestCombat(unittest.TestCase):
         self.assertFalse(self.player.unequip("amulet"))
         self.assertIsNotNone(self.player.equipped["amulet"])
 
+    def test_weapon_stun_proc_stuns_target(self):
+        hammer = create_item("hammer_thunder")
+        self.assertIsNotNone(hammer)
+        hammer.stats["stun_chance"] = 100
+        self.player.equip(hammer)  # type: ignore[arg-type]
+        self.skeleton.hp = 1000
+
+        res = resolve_melee_attack(self.player, self.skeleton, self.rng)
+
+        self.assertTrue(self.skeleton.is_stunned)
+        self.assertTrue(any("stunned" in msg for msg in res.messages))
+
+    def test_weapon_poison_proc_uses_weapon_stats_and_name(self):
+        dagger = create_item("dagger_poison")
+        self.assertIsNotNone(dagger)
+        dagger.stats["poison_chance"] = 100
+        dagger.name = "Custom Fang"
+        self.player.equip(dagger)  # type: ignore[arg-type]
+        self.skeleton.hp = 1000
+
+        res = resolve_melee_attack(self.player, self.skeleton, self.rng)
+
+        self.assertEqual(self.skeleton.status_effects.get("poison"), 3)
+        self.assertTrue(any("Custom Fang" in msg for msg in res.messages))
+
     def test_divine_aegis_draught_potion(self):
         pot = create_item("potion_invulnerability")
         self.player.inventory.append(pot)
