@@ -3,52 +3,15 @@
   "active_task": {
     "task_id": "CC-007",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1792931509.212527,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1792931589.3230824,
     "owner": "kilo:review",
     "started_by": "kilo:review",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1792931604.8615525
   },
   "checkpoints": [
-    {
-      "task_id": "CC-003",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-003' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792861688.7668626,
-      "timestamp_str": "2026-10-24 20:08:08",
-      "agent": "unidentified"
-    },
-    {
-      "task_id": "CC-004",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Architectural design and class/biome planning",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792876553.0130684,
-      "timestamp_str": "2026-10-25 00:15:53",
-      "agent": "unidentified",
-      "impact_assessment": {
-        "why": "Expand Crypt-Crawler with hero classes, floor biomes, hermit merchant, save/resume, and enhanced audio",
-        "benefits": "Deepens replayability, RPG depth, visual variety per depth, and prevents progress loss",
-        "risks": "contract: existing API format preserved with backwards-compatible additions; dependency: zero external npm/pip dependencies maintained; concurrency: server remains standard library ThreadingHTTPServer; state: localStorage serialization must be robust against schema migration",
-        "mitigation": "Thorough unit tests, offline fallback parity, resilient JSON parsing with schema defaults, and headless browser validation"
-      }
-    },
-    {
-      "task_id": "CC-004",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/5] Backend hero classes, merchant NPC, biomes, and class abilities implemented and verified with 27 unit tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792876829.9180975,
-      "timestamp_str": "2026-10-25 00:20:29",
-      "agent": "unidentified"
-    },
     {
       "task_id": "CC-004",
       "phase": "phase 4",
@@ -264,6 +227,44 @@
       "handoff": {
         "next": "commit milestone, then verify unpushed commits and push"
       }
+    },
+    {
+      "task_id": "CC-007",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/1] Re-plan: the three review fixes consolidated into one verified change set (selection index, proc labels, merchant parity, livelock-free audit gate and equipment caps)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792931556.5844734,
+      "timestamp_str": "2026-10-25 15:32:36",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "verify the commit alone and push"
+      }
+    },
+    {
+      "task_id": "CC-007",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/1] done: 39 tests, 21/21 audit checks across desktop/laptop/mobile, 0 console errors; commit verified alone with --strict (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792931589.3230824,
+      "timestamp_str": "2026-10-25 15:33:09",
+      "agent": "kilo:review",
+      "handoff": {
+        "next": "complete the task, commit the ledger and push"
+      }
+    },
+    {
+      "task_id": "CC-007",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-007' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792931604.8615537,
+      "timestamp_str": "2026-10-25 15:33:24",
+      "agent": "kilo:review"
     }
   ]
 }
