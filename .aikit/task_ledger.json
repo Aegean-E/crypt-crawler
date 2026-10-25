@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "CC-006",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1792929448.3925133,
     "owner": "kilo:continue",
     "started_by": "unidentified",
@@ -14,18 +14,10 @@
         "from": "unidentified",
         "at": 1792927510.0690331
       }
-    ]
+    ],
+    "completed_at": 1792929458.8585083
   },
   "checkpoints": [
-    {
-      "task_id": "CC-002",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-002' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792860898.222411,
-      "timestamp_str": "2026-10-24 19:54:58"
-    },
     {
       "task_id": "CC-003",
       "phase": "phase 2",
@@ -265,6 +257,16 @@
       "status": "in_progress",
       "timestamp": 1792929448.3925133,
       "timestamp_str": "2026-10-25 14:57:28",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-006' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792929458.85851,
+      "timestamp_str": "2026-10-25 14:57:38",
       "agent": "kilo:continue"
     }
   ]
