@@ -14,7 +14,7 @@ from crawler.combat import (
     shield_wall,
     smoke_bomb,
 )
-from crawler.entities import Monster, Player, create_item, spawn_monster
+from crawler.entities import ITEM_CATALOG, MERCHANT_STOCK, Monster, Player, create_item, spawn_monster
 
 
 class TestCombat(unittest.TestCase):
@@ -261,6 +261,30 @@ class TestCombat(unittest.TestCase):
 
         self.assertEqual(self.skeleton.status_effects.get("poison"), 3)
         self.assertTrue(any("Custom Fang" in msg for msg in res.messages))
+
+    def test_expanded_catalog_merchant_stock_and_save_slots(self):
+        expanded_ids = [
+            "amulet_bloodstone",
+            "boots_shadowstep",
+            "tome_pyromancy",
+            "hammer_thunder",
+            "cloak_ethereal",
+            "potion_invulnerability",
+        ]
+        for item_id in expanded_ids:
+            with self.subTest(item_id=item_id):
+                self.assertIn(item_id, ITEM_CATALOG)
+                item = create_item(item_id)
+                self.assertIsNotNone(item)
+                self.assertEqual(item.item_id, item_id)
+                self.assertIn(item.item_type, ("weapon", "armor", "amulet", "boots", "potion"))
+
+        stocked_ids = {entry["item_id"] for entry in MERCHANT_STOCK}
+        self.assertTrue(set(expanded_ids) <= stocked_ids)
+
+        saved = self.player.to_dict()
+        self.assertIsNone(saved["equipped"]["amulet"])
+        self.assertIsNone(saved["equipped"]["boots"])
 
     def test_divine_aegis_draught_potion(self):
         pot = create_item("potion_invulnerability")

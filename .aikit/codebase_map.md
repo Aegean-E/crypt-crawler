@@ -9,8 +9,8 @@
 - **Total Python Modules**: `14`
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `85`
-- **Total Source Lines**: `2896`
+- **Total Class Methods**: `86`
+- **Total Source Lines**: `2920`
 
 ---
 
@@ -169,7 +169,7 @@
 ### [`tests/test_combat.py`](tests/test_combat.py)
 > *Unit tests for combat, leveling and inventory management.*
 
-**Size**: `278` lines (`11071` bytes)
+**Size**: `302` lines (`12050` bytes)
 
 **Classes:**
 - `class TestCombat`
@@ -192,6 +192,7 @@
   - Method `.test_expanded_equipment_slots_and_unequip()`
   - Method `.test_weapon_stun_proc_stuns_target()`
   - Method `.test_weapon_poison_proc_uses_weapon_stats_and_name()`
+  - Method `.test_expanded_catalog_merchant_stock_and_save_slots()`
   - Method `.test_divine_aegis_draught_potion()`
 
 ---
