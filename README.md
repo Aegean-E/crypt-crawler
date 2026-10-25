@@ -42,6 +42,7 @@ crypt-crawler/
 ├── PLAY.bat                  <- Windows one-click launcher
 ├── play.sh                   <- POSIX one-click launcher
 ├── README.md                 <- documentation and quickstart
+├── COMMERCIAL.md
 ├── run.py                    <- lightweight HTTP server entrypoint
 ├── crawler/                  <- Python engine package
 │   ├── __init__.py
@@ -74,4 +75,4 @@ crypt-crawler/
 
 ## 📜 License
 
-GNU Affero General Public License v3.0; see [LICENSE](LICENSE).
+GNU Affero General Public License v3.0; see [LICENSE](LICENSE). For commercial licensing and proprietary rights, see [COMMERCIAL.md](COMMERCIAL.md).
