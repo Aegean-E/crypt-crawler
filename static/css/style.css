@@ -520,6 +520,58 @@ body.theme-dark {
   gap: 6px;
 }
 
+.inventory-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.inventory-capacity {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.inventory-capacity.full {
+  color: #fc8181;
+  font-weight: 700;
+}
+
+.inventory-filters {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.filter-btn {
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-muted);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.64rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--border-gold);
+  color: var(--text-primary);
+}
+
+.filter-btn.active {
+  border-color: var(--border-gold);
+  background: rgba(200, 155, 60, 0.18);
+  color: #fbd38d;
+}
+
+.sort-btn {
+  white-space: nowrap;
+}
+
 .inventory-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

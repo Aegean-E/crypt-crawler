@@ -44,6 +44,13 @@ export class UIController {
 
     // Inventory grid & selection
     this.inventoryGrid = document.getElementById("inventoryGrid");
+    this.inventoryCapacity = document.getElementById("inventoryCapacity");
+    this.inventoryFilters = Array.from(document.querySelectorAll("[data-filter]"));
+    this.btnSortInventory = document.getElementById("btnSortInventory");
+    this.inventoryFilter = "all";
+    this.inventorySort = "default";
+    this._lastInventory = [];
+    this._visibleIndices = new Set();
     this.itemCardName = document.getElementById("itemCardName");
     this.itemCardDiff = document.getElementById("itemCardDiff");
     this.itemCardDesc = document.getElementById("itemCardDesc");
@@ -89,6 +96,20 @@ export class UIController {
       if (this.selectedItemIndex >= 0 && this.onDropItem) {
         this.onDropItem(this.selectedItemIndex);
       }
+    });
+
+    this.inventoryFilters.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.inventoryFilter = btn.dataset.filter || "all";
+        this.inventoryFilters.forEach((other) => other.classList.toggle("active", other === btn));
+        this.renderInventory(this._lastInventory);
+      });
+    });
+
+    this.btnSortInventory?.addEventListener("click", () => {
+      this.inventorySort = this.inventorySort === "rarity" ? "default" : "rarity";
+      this.btnSortInventory.textContent = this.inventorySort === "rarity" ? "Sort: Rarity" : "Sort: Default";
+      this.renderInventory(this._lastInventory);
     });
 
     document.getElementById("slotWeapon")?.addEventListener("click", () => {
@@ -534,30 +555,62 @@ export class UIController {
   }
 
   renderInventory(items = []) {
-    this.inventoryGrid.innerHTML = "";
+    this._lastInventory = items;
     const totalSlots = 12;
+    const view = items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => this._matchesInventoryFilter(item));
 
-    for (let i = 0; i < totalSlots; i++) {
+    if (this.inventorySort === "rarity") {
+      view.sort((a, b) => this._rarityRank(b.item) - this._rarityRank(a.item) || a.item.name.localeCompare(b.item.name));
+    }
+
+    this._visibleIndices = new Set(view.map((entry) => entry.index));
+    if (this.selectedItemIndex >= 0 && !this._visibleIndices.has(this.selectedItemIndex)) {
+      this.clearItemSelection();
+    }
+
+    if (this.inventoryCapacity) {
+      this.inventoryCapacity.textContent = `${items.length} / ${totalSlots}`;
+      this.inventoryCapacity.classList.toggle("full", items.length >= totalSlots);
+      this.inventoryCapacity.title = items.length >= totalSlots ? "Backpack is full" : `${totalSlots - items.length} slot(s) free`;
+    }
+
+    this.inventoryGrid.innerHTML = "";
+    for (let slot = 0; slot < totalSlots; slot++) {
       const slotDiv = document.createElement("div");
       slotDiv.className = "inv-slot";
-      if (i === this.selectedItemIndex) {
-        slotDiv.classList.add("selected");
-      }
+      const entry = view[slot];
 
-      if (i < items.length) {
-        const item = items[i];
+      if (entry) {
+        const { item, index } = entry;
+        slotDiv.classList.toggle("selected", index === this.selectedItemIndex);
         if (item.rarity && item.rarity !== "common") {
           slotDiv.classList.add(`rarity-${item.rarity}`);
         }
         slotDiv.textContent = this._getItemIcon(item);
         slotDiv.title = `${item.name} (${item.rarity ? item.rarity.toUpperCase() : "COMMON"} ${item.type})`;
-        slotDiv.addEventListener("click", () => this.selectItem(i, item));
+        slotDiv.addEventListener("click", () => this.selectItem(index, item));
       } else {
         slotDiv.textContent = "";
       }
 
       this.inventoryGrid.appendChild(slotDiv);
     }
+  }
+
+  _matchesInventoryFilter(item) {
+    if (this.inventoryFilter === "gear") {
+      return ["weapon", "armor", "ring", "amulet", "boots"].includes(item.type);
+    }
+    if (this.inventoryFilter === "consumable") {
+      return ["potion", "scroll"].includes(item.type);
+    }
+    return true;
+  }
+
+  _rarityRank(item) {
+    return { common: 0, rare: 1, epic: 2, legendary: 3 }[item.rarity] ?? 0;
   }
 
   selectItem(index, item) {

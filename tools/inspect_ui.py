@@ -126,6 +126,29 @@ def run_inspection(
                         )
                         print(f"      Saved screenshot: {inv_shot.name}")
 
+                        capacity_text = page.text_content("#inventoryCapacity") or ""
+                        page.click('[data-filter="gear"]')
+                        time.sleep(0.2)
+                        gear_titles = page.eval_on_selector_all(
+                            ".inv-slot", "els => els.filter(el => el.title).map(el => el.title)"
+                        )
+                        gear_types = (" weapon)", " armor)", " ring)", " amulet)", " boots)")
+                        page.click('[data-filter="all"]')
+                        page.click("#btnSortInventory")
+                        time.sleep(0.2)
+                        sort_label = page.text_content("#btnSortInventory") or ""
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "inventory_capacity_visible": "/" in capacity_text,
+                                "inventory_gear_filter": bool(gear_titles)
+                                and all(title.endswith(gear_types) for title in gear_titles),
+                                "inventory_rarity_sort": sort_label.strip() == "Sort: Rarity",
+                            }
+                        )
+                        page.click("#btnSortInventory")
+                        time.sleep(0.1)
+
                     if "combat" in scenarios or "all" in scenarios:
                         print("      Driving Scenario: Combat & Magic...")
                         # Test music toggle

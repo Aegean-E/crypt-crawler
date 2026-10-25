@@ -5,7 +5,7 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1792928148.6944983,
+    "updated_at": 1792928786.683654,
     "owner": "kilo:continue",
     "started_by": "unidentified",
     "continuations": [
@@ -17,32 +17,6 @@
     ]
   },
   "checkpoints": [
-    {
-      "task_id": "CC-001",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Core dungeon engine & tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792859206.735142,
-      "timestamp_str": "2026-10-24 19:26:46",
-      "impact_assessment": {
-        "why": "Build the core procedural generation, entity and combat models",
-        "benefits": "Ensures robust turn-based game logic and reproducible dungeon seeds",
-        "risks": "contract: none; dependency: none, standard library only; concurrency: none, single threaded event loop; state: generation seeds determine map and entity state",
-        "mitigation": "Verify path connectivity via BFS unit tests and assert valid room layouts"
-      }
-    },
-    {
-      "task_id": "CC-001",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 5/5] feat: build crypt-crawler game, headless browser inspection and UI suite (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792859772.1851466,
-      "timestamp_str": "2026-10-24 19:36:12"
-    },
     {
       "task_id": "CC-001",
       "phase": "completed",
@@ -264,6 +238,32 @@
       "status": "in_progress",
       "timestamp": 1792928148.6944983,
       "timestamp_str": "2026-10-25 14:35:48",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[3/5] Inventory capacity meter, gear/item filters, rarity sorting that preserves original item indices",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792928506.1724362,
+      "timestamp_str": "2026-10-25 14:41:46",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "static/index.html toolbar, static/js/ui.js renderInventory and selectItem, static/css/style.css",
+        "evidence": "inspect_ui inventory scenario"
+      }
+    },
+    {
+      "task_id": "CC-006",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 3/5] Inventory capacity meter, gear/item filters and rarity sorting preserve original item indices; headless inventory audit green (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792928786.683654,
+      "timestamp_str": "2026-10-25 14:46:26",
       "agent": "kilo:continue"
     }
   ]

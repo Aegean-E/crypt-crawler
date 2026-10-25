@@ -199,6 +199,15 @@
       <!-- Right Panel: Inventory & Chronicle Log -->
       <aside class="panel panel-inventory" id="inventoryPanel">
         <h2 class="panel-title">Backpack & Items</h2>
+        <div class="inventory-toolbar">
+          <span class="inventory-capacity" id="inventoryCapacity">0 / 12</span>
+          <div class="inventory-filters" role="group" aria-label="Inventory filters">
+            <button class="filter-btn active" data-filter="all" type="button">All</button>
+            <button class="filter-btn" data-filter="gear" type="button">Gear</button>
+            <button class="filter-btn" data-filter="consumable" type="button">Items</button>
+          </div>
+          <button class="filter-btn sort-btn" id="btnSortInventory" type="button" title="Toggle rarity sorting">Sort: Default</button>
+        </div>
         <div class="inventory-grid" id="inventoryGrid">
           <!-- 12 Item slots rendered dynamically -->
         </div>
