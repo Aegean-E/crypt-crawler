@@ -82,8 +82,6 @@ crypt-crawler/
 └── .aikit/                   <- project memory: record, ledger, decisions
 ```
 
-> **License history:** versions up to and including `agpl-final` remain available under GNU AGPL-3.0.
-
 ## 📜 License
 
 Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE](LICENSE). It is DRM-free: Licensor ships no DRM and a distributor may not add it. Streaming, modding and free mods are allowed. Commercial use, paid mods and AI training need the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).
