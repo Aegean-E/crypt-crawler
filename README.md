@@ -42,7 +42,10 @@ Below 768px the three panels stack into one vertically scrolling column; the act
 ```text
 crypt-crawler/
 ├── .gitignore                <- transient state & screenshots excluded
-├── LICENSE                   <- GNU AGPL-3.0
+├── LICENSE                   <- Aegean Game License 1.1 (AGL-1.1): DRM-free personal play
+├── LICENSES/                 <- REUSE license texts
+├── REUSE.toml                <- Machine-readable SPDX metadata
+├── ASSETS.md                 <- Asset/data manifest: what the license covers
 ├── PLAY.bat                  <- Windows one-click launcher
 ├── play.sh                   <- POSIX one-click launcher
 ├── README.md                 <- documentation and quickstart
@@ -79,6 +82,8 @@ crypt-crawler/
 └── .aikit/                   <- project memory: record, ledger, decisions
 ```
 
+> **License history:** versions up to and including `agpl-final` remain available under GNU AGPL-3.0.
+
 ## 📜 License
 
-GNU Affero General Public License v3.0; see [LICENSE](LICENSE). For commercial licensing and proprietary rights, see [COMMERCIAL.md](COMMERCIAL.md).
+Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE](LICENSE). It is DRM-free: Licensor ships no DRM and a distributor may not add it. Streaming, modding and free mods are allowed. Commercial use, paid mods and AI training need the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).

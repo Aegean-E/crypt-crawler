@@ -74,3 +74,9 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Build one `reserved` set of every interactive prop plus spawn and stairs on the server, and use it for both random spawns and the two boss escorts. Mirror the rule in the client `_isOccupied` so monsters never move or get summoned onto merchants, chests, shrines, urns, souls, sigils or the vault. Give the offline fallback one soul, three sigils and a vault on walkable room tiles, and move its fixed spider off the shrine. Validate the soul choice before marking the soul resolved. Route bounty, double-slay and rampage XP through `_grantXp` so a level-up is immediate and identical in every source.
 - **Consequences**: Every interactive prop stays visible and reachable, and the floor objective and boss phases work identically online, offline and in the browser. Level-ups no longer lag behind bounty payouts. Spawn placement now reserves more cells, which can reduce monster count by at most the number of props in a room. The headless audit asserts offline souls/sigils/vault, prop occupancy, and the server test sweeps seeds and depths for prop coverage.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (platform parity between server and client), PRINCIPLE-014 (regression test for spawn coverage) and PRINCIPLE-015 (live offline-path dogfooding).
+
+## Licensing migration (agpl-final)
+
+- New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
+- Rights holder: AegeanWorks; commercial use under ACL-1.0.
+- Counsel review of the 1.1 texts remains pending.
