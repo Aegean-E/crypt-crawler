@@ -2,9 +2,9 @@
 
 <!-- aegean:media:start -->
 <p align="center"><img src="assets/social-preview.png" alt="Crypt-Crawler social preview" width="100%"></p>
+<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-AGL--1.1-7048e8" alt="License"></a> <a href="https://github.com/AegeanWorks/AIKit"><img src="https://img.shields.io/badge/AIKit-integrated-6f42c1" alt="AIKit Integrated"></a></p>
 <!-- aegean:media:end -->
 
-[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
 Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, sigil-sealed vaults, phased boss fights, and headless browser inspection.
 
