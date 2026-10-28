@@ -1,5 +1,10 @@
 # crypt-crawler
 
+<!-- aegean:media:start -->
+<p align="center"><img src="assets/logo.svg" alt="Crypt-Crawler logo" width="96" height="96"></p>
+<p align="center"><img src="assets/social-preview.svg" alt="Crypt-Crawler social preview" width="100%"></p>
+<!-- aegean:media:end -->
+
 [![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
 Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, sigil-sealed vaults, phased boss fights, and headless browser inspection.
@@ -85,3 +90,11 @@ crypt-crawler/
 ## 📜 License
 
 Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE](LICENSE). It is DRM-free: Licensor ships no DRM and a distributor may not add it. Streaming, modding and free mods are allowed. Commercial use, paid mods and AI training need the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).
+
+<!-- aegean:screenshots:start -->
+## Screenshots
+
+<a href="https://github.com/AegeanWorks/Crypt-Crawler/commit/941f16f"><img src="assets/screenshots/2026-10-28-index.png" alt="Crypt-Crawler interface at 2026-10-28"></a>
+
+*Crypt-Crawler interface captured from C:\Users\Yunus-Emre\Desktop\portable_agent_kit\projects\crypt-crawler\static\index.html* · commit `941f16f` · 2026-10-28
+<!-- aegean:screenshots:end -->
