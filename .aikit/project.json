@@ -4,25 +4,25 @@
   "test_command": "python -m unittest discover -s tests",
   "topics": [
     "aikit",
+    "source-available",
+    "aegean-game-license",
+    "drm-free",
+    "commercial-license",
     "dungeon-crawler",
     "game",
     "playwright",
     "roguelike",
     "browser-game",
-    "drm-free",
     "javascript",
     "procedural-generation",
     "python",
-    "source-available",
     "turn-based",
     "aegeanworks",
     "html5-game",
-    "software",
     "user-interface",
     "web-app",
     "web-game",
-    "inventory-management",
-    "loot-system"
+    "inventory-management"
   ],
   "gates": {},
   "ui_required": false,
@@ -47,5 +47,11 @@
   "topics_choice_round3": [
     "inventory-management",
     "loot-system"
+  ],
+  "license_topics": [
+    "source-available",
+    "aegean-game-license",
+    "drm-free",
+    "commercial-license"
   ]
 }
