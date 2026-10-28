@@ -15,17 +15,31 @@
   "assets": {
     "logo": {
       "path": "assets/logo.jpg",
-      "status": "pending_review",
+      "status": "approved",
       "commit": "",
       "generated_at": "2026-10-28T16:12:09",
-      "review": null
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "CRYPT CRAWLER\nGAME Title rendered uppercase 'CRYPT CRAWLER' (expected 'Crypt Crawler') \u2014 case styling, not garbled; acceptable",
+        "score": 86,
+        "reviewed_at": "2026-10-28T17:52:09"
+      }
     },
     "social_preview": {
-      "path": "assets/social-preview.jpg",
-      "status": "pending_review",
+      "path": "assets/social-preview.png",
+      "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T16:12:09",
-      "review": null
+      "generated_at": "2026-10-28T17:40:50",
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "Crypt Crawler\nGAME",
+        "score": 93,
+        "reviewed_at": "2026-10-28T17:52:09"
+      }
     }
   },
   "screenshots": [
