@@ -4,6 +4,7 @@
   "test_command": "python -m unittest discover -s tests",
   "topics": [
     "aikit",
+    "aikit-integrated",
     "source-available",
     "aegean-game-license",
     "drm-free",
@@ -21,8 +22,7 @@
     "html5-game",
     "user-interface",
     "web-app",
-    "web-game",
-    "inventory-management"
+    "web-game"
   ],
   "gates": {},
   "ui_required": false,
