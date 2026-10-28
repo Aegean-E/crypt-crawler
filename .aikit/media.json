@@ -5,53 +5,48 @@
   "has_ui": true,
   "ui_kind": "web",
   "palette": [
-    "#07111f",
-    "#0e2a47",
-    "#fbbf24",
-    "#e2f8ff"
+    "#06141b",
+    "#12303f",
+    "#5eead4",
+    "#fda4af"
   ],
+  "motif": "dungeon",
+  "layout": "grid",
   "assets": {
     "logo": {
       "path": "assets/logo.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:23",
+      "generated_at": "2026-10-28T08:52:20",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "CC monogram in gold/yellow, dark teal, coherent with set.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "CC arch, legible",
+        "score": 88,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:23",
+      "generated_at": "2026-10-28T08:52:20",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "CC icon, title, web crawler description, WEB tag, gold gradient.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "Consistent template, legible",
+        "score": 88,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview_png": {
       "path": "assets/social-preview.png",
-      "status": "approved",
+      "status": "pending_review",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:24",
-      "review": {
-        "status": "approved",
-        "reviewer": "subagent:vision-review",
-        "method": "structural",
-        "notes": "Rendered from the approved 1280x640 social SVG; exact dimensions verified.",
-        "score": null,
-        "reviewed_at": "2026-10-28T08:16:24"
-      }
+      "generated_at": "2026-10-28T08:52:21",
+      "review": null
     }
   },
   "screenshots": [
@@ -69,9 +64,9 @@
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "2026-10-28-index.png \u2014 real terminal-style dashboard UI 'CRYPT-CRAWLER', non-blank.",
-        "score": 90,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "Real index UI with controls, non-blank",
+        "score": 88,
+        "reviewed_at": "2026-10-28T08:58:21"
       }
     }
   ]
