@@ -1,8 +1,8 @@
 # crypt-crawler
 
 <!-- aegean:media:start -->
-<p align="center"><img src="assets/logo.jpg" alt="Crypt-Crawler logo" width="96" height="96"></p>
 <p align="center"><img src="assets/social-preview.png" alt="Crypt-Crawler social preview" width="100%"></p>
+*Brand assets are generated and may not fully represent the project scope.*
 <!-- aegean:media:end -->
 
 [![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
@@ -96,5 +96,5 @@ Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE
 
 <a href="https://github.com/AegeanWorks/Crypt-Crawler/commit/941f16f"><img src="assets/screenshots/2026-10-28-index.png" alt="Crypt-Crawler interface at 2026-10-28"></a>
 
-*Crypt-Crawler interface captured from C:\Users\Yunus-Emre\Desktop\portable_agent_kit\projects\crypt-crawler\static\index.html* · commit `941f16f` · 2026-10-28
+*commit `941f16f` · 2026-10-28*
 <!-- aegean:screenshots:end -->
