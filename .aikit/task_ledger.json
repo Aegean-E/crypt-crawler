@@ -2,61 +2,16 @@
   "version": 1,
   "active_task": {
     "task_id": "CC-016",
-    "last_phase": "phase 2",
-    "active_phase": 2,
-    "status": "in_progress",
-    "updated_at": 1793295786.8705301,
+    "last_phase": "phase 4",
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1793296645.072835,
     "owner": "kilo:continue",
     "started_by": "kilo:continue",
     "continuations": [],
-    "impact_assessment": {
-      "why": "Every floor played the same, the only mid-depth enemy closed to melee, the header showed no floor mood, and the codex stopped at the pacts.",
-      "benefits": "Rule-changing deterministic floor moods, two new enemy behaviours and silhouettes, keyboard and motion accessibility, and a story thread that closes at the Crown.",
-      "risks": "contract: additive omen state and lore ids; dependency: none; concurrency: omen applies once per seed+depth; state: omen recomputed on resume, reduced motion persisted",
-      "mitigation": "Server/lore/unit tests, 28-check harness selftest, 63-check three-viewport audit with pixel proofs, gates"
-    }
+    "completed_at": 1793296645.5667617
   },
   "checkpoints": [
-    {
-      "task_id": "CC-011",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/3] 49 tests pass; 4/4 gates pass after map/README repair; 54/54 audit checks across desktop, laptop and mobile with 0 console errors",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793279241.2160366,
-      "timestamp_str": "2026-10-29 16:07:21",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "one vision subagent review of pact site, pact modal and three viewports"
-      }
-    },
-    {
-      "task_id": "CC-011",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 3/3] One vision subagent reviewed 5 screenshots: altar distinct on map, pact modal clean, desktop/laptop/mobile coherent, no visual regressions; work uncommitted",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793279250.6373272,
-      "timestamp_str": "2026-10-29 16:07:30",
-      "agent": "kilo:continue",
-      "handoff": {
-        "state": "verified and ready",
-        "next": "commit on authorization",
-        "evidence": "aikit 4/4, inspect 54/54, vision PASS"
-      }
-    },
-    {
-      "task_id": "CC-011",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-011' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793279250.9744973,
-      "timestamp_str": "2026-10-29 16:07:30",
-      "agent": "kilo:continue"
-    },
     {
       "task_id": "CC-012",
       "phase": "phase 2",
@@ -302,6 +257,46 @@
         "risks": "contract: additive omen state and lore ids; dependency: none; concurrency: omen applies once per seed+depth; state: omen recomputed on resume, reduced motion persisted",
         "mitigation": "Server/lore/unit tests, 28-check harness selftest, 63-check three-viewport audit with pixel proofs, gates"
       }
+    },
+    {
+      "task_id": "CC-016",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/3] 69 tests, harness 28/28, inspector 63/63 at three viewports with 0 console errors, 5/5 gates; vision review PASS on the omen pill (desktop+mobile) and the 4x sprite crop after fixing the crop to the camera centre",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296644.6166158,
+      "timestamp_str": "2026-10-29 20:57:24",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "record the UI task and push"
+      }
+    },
+    {
+      "task_id": "CC-016",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 3/3] Committed 733756c and the UI evidence cc63e65; strict delivery 5/5 with the game-ui task finished; pushing to origin/master",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296645.072835,
+      "timestamp_str": "2026-10-29 20:57:25",
+      "agent": "kilo:continue",
+      "handoff": {
+        "state": "committed and verified",
+        "next": "push 733756c..cc63e65",
+        "evidence": "strict 5/5"
+      }
+    },
+    {
+      "task_id": "CC-016",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-016' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793296645.566763,
+      "timestamp_str": "2026-10-29 20:57:25",
+      "agent": "kilo:continue"
     }
   ]
 }
