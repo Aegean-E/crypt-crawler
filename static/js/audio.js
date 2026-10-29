@@ -131,15 +131,16 @@ class SoundSystem {
 
     if (this.musicGain && this.ctx) {
       const now = this.ctx.currentTime;
+      const stopping = this.musicNodes;
       this.musicGain.gain.linearRampToValueAtTime(0.001, now + 1.0);
       setTimeout(() => {
-        this.musicNodes.forEach((node) => {
+        stopping.forEach((node) => {
           try {
             if (node.stop) node.stop();
             if (node.disconnect) node.disconnect();
           } catch (_) {}
         });
-        this.musicNodes = [];
+        if (this.musicNodes === stopping) this.musicNodes = [];
       }, 1100);
     }
   }

@@ -1347,7 +1347,7 @@ export class GameEngine {
       );
       let goldFound = baseGold;
 
-      if (roll < 0.22) {
+      if (roll >= 0.15 && roll < 0.35) {
         // Critical 2.5x Jackpot!
         goldFound = Math.floor(baseGold * 2.5);
         sounds.playJackpot();
@@ -1365,7 +1365,7 @@ export class GameEngine {
       this.player.gold += goldFound;
       this.updateBountyProgress("bounty_chests", 1);
 
-      if ((roll < 0.15 || Math.random() < 0.65) && this.player.inventory.length < 12) {
+      if (roll < 0.15 && this.player.inventory.length < 12) {
         const pool = [
           { id: "potion_rejuvenation", name: "Draught of Rejuvenation", type: "potion", rarity: "rare", description: "Restores 30 HP & 20 Mana, cleanses afflictions.", stats: { heal_hp: 30, restore_mana: 20 } },
           { id: "potion_invulnerability", name: "Divine Aegis Draught", type: "potion", rarity: "rare", description: "Grants impenetrable Barrier (+6 DEF for 4 turns).", stats: { shield_wall_turns: 4 } },
@@ -2430,19 +2430,21 @@ export class GameEngine {
 
   handleVictory() {
     this.victory = true;
+    const crownKept = this.player.inventory.some((item) => item.id === "crown_eternity")
+      || (this.player.equipped?.ring?.id === "crown_eternity");
     sounds.stopMusic();
     this.clearSavedRun();
     this.recordRunEnd(true);
     this.ui.showModal(
       "🏆 TRIUMPH OF THE DUNGEON",
-      `<p>You conquered the deepest vault, defeated Arch-Lich Malakor, and recovered the legendary <strong>Crown of Eternity</strong>!</p>
+      `<p>You conquered the deepest vault, defeated Arch-Lich Malakor${crownKept ? ", and recovered the legendary <strong>Crown of Eternity</strong>" : ""}!</p>
        <br>
        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 4px; border: 1px solid #d69e2e;">
          <p><strong>Hero Archetype:</strong> ${this.player.class_title || "Champion"}</p>
          <p><strong>Hero Level:</strong> ${this.player.level}</p>
          <p><strong>Monsters Slain:</strong> ${this.kills}</p>
          <p><strong>Total Gold:</strong> ${this.player.gold} 🪙</p>
-         <p><strong>Relics Recovered:</strong> Crown of Eternity</p>
+         <p><strong>Relics Recovered:</strong> ${crownKept ? "Crown of Eternity" : "Crown of Eternity (left on the altar — backpack full)"}</p>
        </div>
        <br>
         <p>The ledger closes. Somewhere above, a lantern-keeper finally sets down a flame he has carried too long — and the debt of Malakor is paid in full.</p>

@@ -77,6 +77,7 @@ export class UIController {
     this.lowHpVignette = document.getElementById("lowHpVignette");
     this.damageFlash = document.getElementById("damageFlash");
     this._lastHp = null;
+    this._lastMaxHp = null;
     this._damageFlashTimer = null;
     this.crtOverlay = document.getElementById("crtOverlay");
     this.crtActive = false;
