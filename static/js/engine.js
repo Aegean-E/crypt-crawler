@@ -113,6 +113,7 @@ export class GameEngine {
     // A new run invalidates any in-flight floor descent: the pending fetch must not
     // overwrite this run's dungeon, and the flag must not stick true.
     this.runToken = (this.runToken || 0) + 1;
+    const token = this.runToken;
     this.transitioning = false;
     this.depth = depth;
     this.turn = 1;
@@ -122,6 +123,7 @@ export class GameEngine {
     this.victory = false;
     this.heroClass = heroClass || "paladin";
     await this._loadLore();
+    if (token !== this.runToken) return;
     const loreArchive = this.loadLoreArchive();
 
     // Attempt to resume saved run if starting fresh at depth 1 without explicit seed
@@ -135,6 +137,7 @@ export class GameEngine {
         this.turn = saved.turn;
         this.depth = saved.depth;
         this.kills = saved.kills;
+        this.merchantStock = saved.merchantStock || [];
         this.heroClass = saved.heroClass || this.player.hero_class || "paladin";
         this.bounties = saved.bounties || this._generateOfflineBounties(this.depth);
         this.loreUnlocked = Array.from(new Set([
@@ -159,8 +162,10 @@ export class GameEngine {
     try {
       const url = `/api/new-game?seed=${seed || Date.now() % 1000000}&depth=${this.depth}&class=${this.heroClass}`;
       const res = await fetch(url);
+      if (token !== this.runToken) return;
       if (!res.ok) throw new Error("Failed to load map from server");
       const data = await res.json();
+      if (token !== this.runToken) return;
 
       this.dungeon = new ClientDungeon(data.dungeon);
       this.player = data.player;
@@ -371,8 +376,8 @@ export class GameEngine {
         {
           name: isChamp ? "Molten Crypt Skeleton" : "Crypt Skeleton",
           type: "skeleton",
-          x: rooms[1].center[0] + 1,
-          y: rooms[1].center[1],
+          x: rooms[2].center[0],
+          y: rooms[2].center[1] + 1,
           hp: isChamp ? 28 : 18,
           max_hp: isChamp ? 28 : 18,
           attack: 6,
@@ -447,7 +452,6 @@ export class GameEngine {
   _setupInputListeners() {
     window.addEventListener("keydown", (e) => {
       this._triggerMusicStart();
-      if (this.gameOver || this.victory || this.transitioning) return;
       if (this.ui.isModalOpen()) {
         // QoL: Escape closes the dialog that already advertises a close button.
         if (e.key === "Escape") {
@@ -456,6 +460,7 @@ export class GameEngine {
         }
         return;
       }
+      if (this.gameOver || this.victory || this.transitioning) return;
       if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
         e.preventDefault();
         document.getElementById("btnHelp")?.click();
@@ -822,7 +827,7 @@ export class GameEngine {
   recordMonsterDefeat(monsterType) {
     const rec = this.loadRecords();
     rec.totalKills = (rec.totalKills || 0) + 1;
-    rec.highestStreak = Math.max(rec.highestStreak || 0, this.killStreak);
+    rec.highestStreak = Math.max(rec.highestStreak || 0, this.killStreak + 1);
     rec.bestiary = rec.bestiary || {};
     rec.bestiary[monsterType] = rec.bestiary[monsterType] || { slain: 0 };
     rec.bestiary[monsterType].slain += 1;
@@ -1150,6 +1155,7 @@ export class GameEngine {
   _spawnOmenFoe() {
     const candidates = [];
     for (const room of this.dungeon.rooms || []) {
+      if ((this.dungeon.merchants || []).some((m) => m.x === room.center[0] && m.y === room.center[1])) continue;
       for (let y = room.y + 1; y < room.y + room.h - 1; y += 1) {
         for (let x = room.x + 1; x < room.x + room.w - 1; x += 1) {
           if (!this.dungeon.isWalkable(x, y) || this._isOccupied(x, y)) continue;
@@ -1551,7 +1557,7 @@ export class GameEngine {
         this.player.inventory.push(crown);
         this.renderer.addFloatingItemBadge(crown.name, crown.rarity, monster.x, monster.y);
       }
-      setTimeout(() => this.handleVictory(), 1500);
+      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);
       return;
     }
 
@@ -1593,7 +1599,7 @@ export class GameEngine {
     }
 
     this.player.mana -= 4;
-    const isCrit = Math.random() < 0.70;
+    const isCrit = Math.random() < Math.min(0.95, (this.player.crit_chance || 0.30) + 0.40);
     const baseDmg = Math.max(3, this.player.attack - target.defense);
     const dmg = Math.floor(baseDmg * (isCrit ? 1.9 : 1.3));
     target.hp = Math.max(0, target.hp - dmg);
@@ -1916,7 +1922,7 @@ export class GameEngine {
 
     this.player.mana -= 6;
     this.player.status_effects = this.player.status_effects || {};
-    this.player.status_effects.shield_wall = 4;
+    this.player.status_effects.shield_wall = Math.max(this.player.status_effects.shield_wall || 0, 4);
     this._recalculatePlayerStats();
 
     sounds.playShieldWall();
@@ -1986,6 +1992,22 @@ export class GameEngine {
         this.renderer.addFloatingText("BARRIER (+6 DEF)", this.player.x, this.player.y, "#ecc94b");
         this.ui.logMessage(`Drank ${item.name}: Raised impenetrable Divine Barrier (+6 DEF for ${item.stats.shield_wall_turns} turns)!`, "loot");
       }
+      this.player.inventory.splice(idx, 1);
+      this.ui.clearItemSelection();
+      this.finishPlayerTurn();
+    } else if (item.type === "scroll" && item.id === "scroll_fireball") {
+      const target = this._findTargetInRange(99);
+      if (!target) {
+        this.ui.logMessage("No visible enemy for the Scroll of Inferno.", "system");
+        return;
+      }
+      const damage = item.stats?.spell_damage || 30;
+      this.ui.logMessage(`📜 Read ${item.name}! ${damage} fire damage engulfs ${target.name}.`, "crit");
+      sounds.playSpell("fireball");
+      target.hp = Math.max(0, target.hp - damage);
+      this.renderer.addFloatingText(`-${damage} FIRE`, target.x, target.y, this.renderer.emberColor);
+      this.renderer.addParticles(target.x, target.y, this.renderer.emberColor, 14);
+      if (target.hp <= 0) this._handleMonsterDefeat(target);
       this.player.inventory.splice(idx, 1);
       this.ui.clearItemSelection();
       this.finishPlayerTurn();
@@ -2172,7 +2194,7 @@ export class GameEngine {
         if (m.status_effects.poison <= 0) delete m.status_effects.poison;
         if (m.hp <= 0) this._handleMonsterDefeat(m);
       }
-      if (m.status_effects && m.status_effects.burn) {
+      if (m.hp > 0 && m.status_effects && m.status_effects.burn) {
         m.hp = Math.max(0, m.hp - 5);
         this.renderer.addFloatingText("-5 BURN", m.x, m.y, "#dd6b20");
         m.status_effects.burn -= 1;

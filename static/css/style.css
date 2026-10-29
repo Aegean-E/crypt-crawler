@@ -1115,7 +1115,11 @@ body.theme-dark {
 
 /* Reduced motion: the player can switch off screen shake and pulsing accents. */
 body.reduced-motion .streak-pill,
-body.reduced-motion .jackpot-banner {
+body.reduced-motion .jackpot-banner,
+body.reduced-motion .adrenaline-vignette,
+body.reduced-motion .low-hp-vignette,
+body.reduced-motion .gauge-bar-fill.low-hp,
+body.reduced-motion .inv-slot.rarity-legendary {
   animation: none;
 }
 

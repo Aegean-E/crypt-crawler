@@ -20,6 +20,7 @@ export class DungeonRenderer {
     this.shakeStartTime = 0;
     this.hoverTile = null;
     this.reducedMotion = false;
+    this.emberColor = "#dd6b20";
   }
 
   addJackpotExplosion(x, y) {

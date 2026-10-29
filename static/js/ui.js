@@ -174,10 +174,11 @@ export class UIController {
     this.hpText.textContent = `${player.hp} / ${player.max_hp}`;
     this.hpBar.classList.toggle("low-hp", hpPct <= 30);
     if (this.lowHpVignette) this.lowHpVignette.classList.toggle("hidden", hpPct > 30);
-    if (this._lastHp !== null && player.hp < this._lastHp && player.hp > 0) {
+    if (this._lastHp !== null && player.hp < this._lastHp && player.hp > 0 && player.max_hp === this._lastMaxHp) {
       this.flashDamage();
     }
     this._lastHp = player.hp;
+    this._lastMaxHp = player.max_hp;
 
     // Mana
     const manaPct = Math.max(0, Math.min(100, (player.mana / player.max_mana) * 100));
@@ -576,6 +577,7 @@ export class UIController {
       { id: "skeleton", name: "Crypt Skeleton", icon: "💀", desc: "Reanimated legionnaire. Susceptible to holy bash and crushing blunt force.", weakness: "Blunt / Stun" },
       { id: "goblin", name: "Sneaky Goblin", icon: "👺", desc: "Devious looter that pilfers coins upon strike. Low defense.", weakness: "Ranged / Piercing" },
       { id: "spider", name: "Venomous Brood-Spider", icon: "🕷️", desc: "Spits debilitating neurotoxin. Cleansing prayers counteract poison.", weakness: "Fire / Cleanse" },
+      { id: "bat", name: "Cave Bat", icon: "🦇", desc: "Erratic flyer that darts through the dark. Fragile but hard to pin down.", weakness: "Ranged / Fire" },
       { id: "necromancer", name: "Dread Necromancer", icon: "🧙‍♂️", desc: "Chants dark spells from afar. High mana shields.", weakness: "Melee Rush" },
       { id: "wraith", name: "Pact-Bound Wraith", icon: "👻", desc: "A debt given shape. Rises from a Pact of Avarice and hunts the debtor.", weakness: "Holy / Fire" },
       { id: "archer", name: "Skeletal Archer", icon: "🏹", desc: "Keeps its distance and looses bone arrows across open rooms.", weakness: "Melee / Smoke" },
