@@ -6145,12 +6145,85 @@
           "e1dbf909153d2fc986d334553e7b965c2c9f7e8f"
         ],
         "prior_commits": [],
-        "findings": [],
-        "repairs": [],
-        "counts": {},
+        "findings": [
+          {
+            "code": "review-victory-timeout-stale-restart",
+            "category": "review",
+            "severity": "medium",
+            "path": "static/js/engine.js",
+            "line": 1560,
+            "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+            "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#10",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": true,
+            "interaction": "",
+            "repaired": true,
+            "source": "review",
+            "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+            "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+          },
+          {
+            "code": "review-start-offline-fallback-token",
+            "category": "review",
+            "severity": "medium",
+            "path": "static/js/engine.js",
+            "line": 177,
+            "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+            "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#4",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          },
+          {
+            "code": "review",
+            "category": "improvement",
+            "severity": "low",
+            "path": "static/js/engine.js",
+            "line": 1998,
+            "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+            "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#13",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          }
+        ],
+        "repairs": [
+          {
+            "code": "review-victory-timeout-stale-restart",
+            "path": "static/js/engine.js",
+            "line": 1560,
+            "summary": "applied review suggestion: The 1.5s victory callback only checks gameOver/victory, but start() resets both ",
+            "test_name": "",
+            "applied": true
+          }
+        ],
+        "counts": {
+          "review": 2,
+          "improvement": 1
+        },
         "reviewed": 18,
         "review": {
-          "status": "unreviewed",
+          "status": "reviewed",
           "rejected": [],
           "files": [
             ".aikit/codebase_map.md",
@@ -6174,14 +6247,86 @@
           ],
           "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-3-1-d0b2854fd688.md",
           "redacted": 0,
-          "reason": "awaiting the reviewer's findings",
-          "findings": []
+          "reason": "",
+          "findings": [
+            {
+              "code": "review-victory-timeout-stale-restart",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 1560,
+              "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+              "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#10",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": true,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+              "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+            },
+            {
+              "code": "review-start-offline-fallback-token",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 177,
+              "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+              "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#4",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            },
+            {
+              "code": "review",
+              "category": "improvement",
+              "severity": "low",
+              "path": "static/js/engine.js",
+              "line": 1998,
+              "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+              "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#13",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            }
+          ]
         },
         "skipped": [
           "assets/screenshots/2026-10-28-index.png",
           "assets/social-preview.png"
         ],
-        "tests": {},
+        "tests": {
+          "command": "C:\\Python314\\python.exe -m unittest discover tests",
+          "code": 0,
+          "passed": true,
+          "output": "......................................................................\n----------------------------------------------------------------------\nRan 70 tests in 1.801s\n\nOK",
+          "tail": [
+            "......................................................................",
+            "----------------------------------------------------------------------",
+            "Ran 70 tests in 1.801s",
+            "OK"
+          ]
+        },
         "gates": {},
         "timestamp": "2026-10-29T22:47:55",
         "dirty_targets": []
@@ -6202,12 +6347,85 @@
             "e1dbf909153d2fc986d334553e7b965c2c9f7e8f"
           ],
           "prior_commits": [],
-          "findings": [],
-          "repairs": [],
-          "counts": {},
+          "findings": [
+            {
+              "code": "review-victory-timeout-stale-restart",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 1560,
+              "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+              "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#10",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": true,
+              "interaction": "",
+              "repaired": true,
+              "source": "review",
+              "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+              "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+            },
+            {
+              "code": "review-start-offline-fallback-token",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 177,
+              "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+              "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#4",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            },
+            {
+              "code": "review",
+              "category": "improvement",
+              "severity": "low",
+              "path": "static/js/engine.js",
+              "line": 1998,
+              "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+              "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+              "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+              "hunk": "5552d134e95d:static/js/engine.js#13",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            }
+          ],
+          "repairs": [
+            {
+              "code": "review-victory-timeout-stale-restart",
+              "path": "static/js/engine.js",
+              "line": 1560,
+              "summary": "applied review suggestion: The 1.5s victory callback only checks gameOver/victory, but start() resets both ",
+              "test_name": "",
+              "applied": true
+            }
+          ],
+          "counts": {
+            "review": 2,
+            "improvement": 1
+          },
           "reviewed": 18,
           "review": {
-            "status": "unreviewed",
+            "status": "reviewed",
             "rejected": [],
             "files": [
               ".aikit/codebase_map.md",
@@ -6231,14 +6449,86 @@
             ],
             "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-3-1-d0b2854fd688.md",
             "redacted": 0,
-            "reason": "awaiting the reviewer's findings",
-            "findings": []
+            "reason": "",
+            "findings": [
+              {
+                "code": "review-victory-timeout-stale-restart",
+                "category": "review",
+                "severity": "medium",
+                "path": "static/js/engine.js",
+                "line": 1560,
+                "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+                "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+                "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+                "hunk": "5552d134e95d:static/js/engine.js#10",
+                "symbol": "",
+                "introduced": true,
+                "reproducible": false,
+                "fixable": true,
+                "interaction": "",
+                "repaired": false,
+                "source": "review",
+                "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+                "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+              },
+              {
+                "code": "review-start-offline-fallback-token",
+                "category": "review",
+                "severity": "medium",
+                "path": "static/js/engine.js",
+                "line": 177,
+                "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+                "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+                "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+                "hunk": "5552d134e95d:static/js/engine.js#4",
+                "symbol": "",
+                "introduced": true,
+                "reproducible": false,
+                "fixable": false,
+                "interaction": "",
+                "repaired": false,
+                "source": "review",
+                "patch_old": "",
+                "patch_new": ""
+              },
+              {
+                "code": "review",
+                "category": "improvement",
+                "severity": "low",
+                "path": "static/js/engine.js",
+                "line": 1998,
+                "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+                "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+                "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+                "hunk": "5552d134e95d:static/js/engine.js#13",
+                "symbol": "",
+                "introduced": true,
+                "reproducible": false,
+                "fixable": false,
+                "interaction": "",
+                "repaired": false,
+                "source": "review",
+                "patch_old": "",
+                "patch_new": ""
+              }
+            ]
           },
           "skipped": [
             "assets/screenshots/2026-10-28-index.png",
             "assets/social-preview.png"
           ],
-          "tests": {},
+          "tests": {
+            "command": "C:\\Python314\\python.exe -m unittest discover tests",
+            "code": 0,
+            "passed": true,
+            "output": "......................................................................\n----------------------------------------------------------------------\nRan 70 tests in 1.801s\n\nOK",
+            "tail": [
+              "......................................................................",
+              "----------------------------------------------------------------------",
+              "Ran 70 tests in 1.801s",
+              "OK"
+            ]
+          },
           "gates": {},
           "timestamp": "2026-10-29T22:47:55",
           "dirty_targets": []
@@ -6268,12 +6558,85 @@
       "e1dbf909153d2fc986d334553e7b965c2c9f7e8f"
     ],
     "prior_commits": [],
-    "findings": [],
-    "repairs": [],
-    "counts": {},
+    "findings": [
+      {
+        "code": "review-victory-timeout-stale-restart",
+        "category": "review",
+        "severity": "medium",
+        "path": "static/js/engine.js",
+        "line": 1560,
+        "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+        "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+        "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+        "hunk": "5552d134e95d:static/js/engine.js#10",
+        "symbol": "",
+        "introduced": true,
+        "reproducible": false,
+        "fixable": true,
+        "interaction": "",
+        "repaired": true,
+        "source": "review",
+        "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+        "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+      },
+      {
+        "code": "review-start-offline-fallback-token",
+        "category": "review",
+        "severity": "medium",
+        "path": "static/js/engine.js",
+        "line": 177,
+        "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+        "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+        "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+        "hunk": "5552d134e95d:static/js/engine.js#4",
+        "symbol": "",
+        "introduced": true,
+        "reproducible": false,
+        "fixable": false,
+        "interaction": "",
+        "repaired": false,
+        "source": "review",
+        "patch_old": "",
+        "patch_new": ""
+      },
+      {
+        "code": "review",
+        "category": "improvement",
+        "severity": "low",
+        "path": "static/js/engine.js",
+        "line": 1998,
+        "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+        "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+        "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+        "hunk": "5552d134e95d:static/js/engine.js#13",
+        "symbol": "",
+        "introduced": true,
+        "reproducible": false,
+        "fixable": false,
+        "interaction": "",
+        "repaired": false,
+        "source": "review",
+        "patch_old": "",
+        "patch_new": ""
+      }
+    ],
+    "repairs": [
+      {
+        "code": "review-victory-timeout-stale-restart",
+        "path": "static/js/engine.js",
+        "line": 1560,
+        "summary": "applied review suggestion: The 1.5s victory callback only checks gameOver/victory, but start() resets both ",
+        "test_name": "",
+        "applied": true
+      }
+    ],
+    "counts": {
+      "review": 2,
+      "improvement": 1
+    },
     "reviewed": 18,
     "review": {
-      "status": "unreviewed",
+      "status": "reviewed",
       "rejected": [],
       "files": [
         ".aikit/codebase_map.md",
@@ -6297,14 +6660,86 @@
       ],
       "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-3-1-d0b2854fd688.md",
       "redacted": 0,
-      "reason": "awaiting the reviewer's findings",
-      "findings": []
+      "reason": "",
+      "findings": [
+        {
+          "code": "review-victory-timeout-stale-restart",
+          "category": "review",
+          "severity": "medium",
+          "path": "static/js/engine.js",
+          "line": 1560,
+          "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+          "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#10",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": true,
+          "interaction": "",
+          "repaired": false,
+          "source": "review",
+          "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+          "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+        },
+        {
+          "code": "review-start-offline-fallback-token",
+          "category": "review",
+          "severity": "medium",
+          "path": "static/js/engine.js",
+          "line": 177,
+          "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+          "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#4",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": false,
+          "interaction": "",
+          "repaired": false,
+          "source": "review",
+          "patch_old": "",
+          "patch_new": ""
+        },
+        {
+          "code": "review",
+          "category": "improvement",
+          "severity": "low",
+          "path": "static/js/engine.js",
+          "line": 1998,
+          "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+          "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#13",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": false,
+          "interaction": "",
+          "repaired": false,
+          "source": "review",
+          "patch_old": "",
+          "patch_new": ""
+        }
+      ]
     },
     "skipped": [
       "assets/screenshots/2026-10-28-index.png",
       "assets/social-preview.png"
     ],
-    "tests": {},
+    "tests": {
+      "command": "C:\\Python314\\python.exe -m unittest discover tests",
+      "code": 0,
+      "passed": true,
+      "output": "......................................................................\n----------------------------------------------------------------------\nRan 70 tests in 1.801s\n\nOK",
+      "tail": [
+        "......................................................................",
+        "----------------------------------------------------------------------",
+        "Ran 70 tests in 1.801s",
+        "OK"
+      ]
+    },
     "gates": {},
     "timestamp": "2026-10-29T22:47:55",
     "dirty_targets": []
@@ -6325,12 +6760,85 @@
         "e1dbf909153d2fc986d334553e7b965c2c9f7e8f"
       ],
       "prior_commits": [],
-      "findings": [],
-      "repairs": [],
-      "counts": {},
+      "findings": [
+        {
+          "code": "review-victory-timeout-stale-restart",
+          "category": "review",
+          "severity": "medium",
+          "path": "static/js/engine.js",
+          "line": 1560,
+          "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+          "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#10",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": true,
+          "interaction": "",
+          "repaired": true,
+          "source": "review",
+          "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+          "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+        },
+        {
+          "code": "review-start-offline-fallback-token",
+          "category": "review",
+          "severity": "medium",
+          "path": "static/js/engine.js",
+          "line": 177,
+          "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+          "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#4",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": false,
+          "interaction": "",
+          "repaired": false,
+          "source": "review",
+          "patch_old": "",
+          "patch_new": ""
+        },
+        {
+          "code": "review",
+          "category": "improvement",
+          "severity": "low",
+          "path": "static/js/engine.js",
+          "line": 1998,
+          "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+          "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+          "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+          "hunk": "5552d134e95d:static/js/engine.js#13",
+          "symbol": "",
+          "introduced": true,
+          "reproducible": false,
+          "fixable": false,
+          "interaction": "",
+          "repaired": false,
+          "source": "review",
+          "patch_old": "",
+          "patch_new": ""
+        }
+      ],
+      "repairs": [
+        {
+          "code": "review-victory-timeout-stale-restart",
+          "path": "static/js/engine.js",
+          "line": 1560,
+          "summary": "applied review suggestion: The 1.5s victory callback only checks gameOver/victory, but start() resets both ",
+          "test_name": "",
+          "applied": true
+        }
+      ],
+      "counts": {
+        "review": 2,
+        "improvement": 1
+      },
       "reviewed": 18,
       "review": {
-        "status": "unreviewed",
+        "status": "reviewed",
         "rejected": [],
         "files": [
           ".aikit/codebase_map.md",
@@ -6354,14 +6862,86 @@
         ],
         "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-3-1-d0b2854fd688.md",
         "redacted": 0,
-        "reason": "awaiting the reviewer's findings",
-        "findings": []
+        "reason": "",
+        "findings": [
+          {
+            "code": "review-victory-timeout-stale-restart",
+            "category": "review",
+            "severity": "medium",
+            "path": "static/js/engine.js",
+            "line": 1560,
+            "message": "The 1.5s victory callback only checks gameOver/victory, but start() resets both flags. If the boss-kill timer is still pending when the player restarts, the callback fires on the fresh run, calls handleVictory, shows a false victory and records a run. Capture this.runToken before the timer and compare it in the callback.",
+            "evidence": "setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#10",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": true,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);",
+            "patch_new": "      const victoryToken = this.runToken;\n      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);"
+          },
+          {
+            "code": "review-start-offline-fallback-token",
+            "category": "review",
+            "severity": "medium",
+            "path": "static/js/engine.js",
+            "line": 177,
+            "message": "The new run-token guards cover only the success path. If an older start's fetch or res.json() rejects after a newer start has begun, this catch still calls _generateOfflineState and overwrites the newer run's dungeon/player/monsters, then continues to save that stale state. descendFloor already checks the token in its catch; add the same guard here.",
+            "evidence": "this._generateOfflineState(seed, depth, this.heroClass);",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#4",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          },
+          {
+            "code": "review",
+            "category": "improvement",
+            "severity": "low",
+            "path": "static/js/engine.js",
+            "line": 1998,
+            "message": "The new Scroll of Inferno branch fixes a previously silent no-op, but no test exercises it: the harness selftest only calls useInventoryItem with a weapon and inspect_ui never uses a scroll. A regression that drops this branch would pass the suite again. Add a browser/harness scenario that uses a scroll_fireball on a visible enemy and asserts damage, item consumption and a turn advance.",
+            "evidence": "} else if (item.type === \"scroll\" && item.id === \"scroll_fireball\") {",
+            "commit": "5552d134e95d9cc91b3cbc0142b35832eb1d43b1",
+            "hunk": "5552d134e95d:static/js/engine.js#13",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          }
+        ]
       },
       "skipped": [
         "assets/screenshots/2026-10-28-index.png",
         "assets/social-preview.png"
       ],
-      "tests": {},
+      "tests": {
+        "command": "C:\\Python314\\python.exe -m unittest discover tests",
+        "code": 0,
+        "passed": true,
+        "output": "......................................................................\n----------------------------------------------------------------------\nRan 70 tests in 1.801s\n\nOK",
+        "tail": [
+          "......................................................................",
+          "----------------------------------------------------------------------",
+          "Ran 70 tests in 1.801s",
+          "OK"
+        ]
+      },
       "gates": {},
       "timestamp": "2026-10-29T22:47:55",
       "dirty_targets": []
