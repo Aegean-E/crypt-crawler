@@ -3,41 +3,15 @@
   "active_task": {
     "task_id": "CC-014",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1793290975.0459435,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1793291223.7049513,
     "owner": "kilo:continue",
     "started_by": "kilo:continue",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793291224.1779423
   },
   "checkpoints": [
-    {
-      "task_id": "CC-009",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-009' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792959439.87027,
-      "timestamp_str": "2026-10-25 23:17:19",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "CC-010",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Review pass: keep every prop reachable (spawn and movement), make the offline fallback carry the new objective, and validate soul choices",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792960184.041252,
-      "timestamp_str": "2026-10-25 23:29:44",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "Reviewing the CC-009 diff found props can be covered by monsters: random spawns still ignore chests, shrines and urns, and the depth-3 boss escorts ignore every prop (seed 999 places a skeleton on a sigil). The offline fallback has no Lost Soul, sigils or vault, so the new objective disappears when the API is down, and resolveSoul accepts an unknown choice while still consuming the soul.",
-        "benefits": "Props stay visible and collectable on every floor, the feature set survives an offline start, and the soul interaction cannot be consumed by an invalid action.",
-        "risks": "contract: server spawn placement changes, save schema unchanged; dependency: none; concurrency: none; state: offline dungeon gains props, and older saves already default them safely",
-        "mitigation": "Failing-first spawn/overlap test across seeds and depths, offline fallback audit check in the headless inspector, full suite, gates and three-viewport inspection"
-      }
-    },
     {
       "task_id": "CC-010",
       "phase": "phase 4",
@@ -295,6 +269,32 @@
         "next": "push to origin/master",
         "evidence": "5/5 gates"
       }
+    },
+    {
+      "task_id": "CC-014",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 3/3] Committed 4982eda (game + tooling) and 7403dc2 (ui history); strict delivery passes with 5/5 gates and the game-ui task finished; pushing to origin/master",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793291223.7049513,
+      "timestamp_str": "2026-10-29 19:27:03",
+      "agent": "kilo:continue",
+      "handoff": {
+        "state": "committed and UI evidence recorded",
+        "next": "verify the pushed commit",
+        "evidence": "strict 5/5, inspect 59/59, harness 17/17"
+      }
+    },
+    {
+      "task_id": "CC-014",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-014' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793291224.1779437,
+      "timestamp_str": "2026-10-29 19:27:04",
+      "agent": "kilo:continue"
     }
   ]
 }
