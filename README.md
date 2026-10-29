@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, sigil-sealed vaults, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -30,6 +30,30 @@ python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario dungeon 
 ```
 The inspector reports every audit check and exits non-zero when any check or console error fails, so it can gate a commit.
 
+### 🤖 AI Mechanics Harness (deterministic, JSON in / JSON out)
+```bash
+python tools/ai_harness.py catalog
+python tools/ai_harness.py play --seed 42 --class paladin --actions '[{"action":"wait"}]'
+python tools/ai_harness.py selftest
+```
+`catalog` prints the classes, the five deck abilities, every action field, the pact choices and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, all three pact bargains surviving turns, boss damage, save round-trip, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
+```json
+{"seed": 42, "depth": 1, "class": "rogue",
+ "actions": [{"action": "move", "dx": 1, "dy": 0}, {"action": "ability", "slot": 2}]}
+```
+Every action object is validated before a browser starts. Playwright with Edge is only needed for `play` and `selftest`; `catalog` and the unit tests run on the standard library.
+
+### 🧱 UI Guard (AIKit `aikit ui`)
+`.aikit/ui.json` declares the `game-ui` surface (`static/**`), the protected paths, the fast proof (`python -m unittest discover -s tests`) and the inventory command (`python tools/ui_inventory.py`), which prints one stable line per control, choice, handler group and theme token.
+```bash
+cd ..            # AIKit root
+python aikit.py ui begin crypt-crawler --surface game-ui
+python aikit.py ui verify crypt-crawler      # add --json for stable finding codes
+python aikit.py ui finish crypt-crawler --reviewed
+python aikit.py ui abort crypt-crawler
+```
+`begin` needs a clean, green baseline; `verify` rejects edits outside the surface, protected-path changes, diff-budget overruns, a lost inventory entry, hardcoded colours outside the theme paths, and a failed proof; `finish` also records the human review. Delivery guards (`check --strict`, `publish`) refuse an open UI task, and `ui_required` can be turned on in `.aikit/project.json` once the first UI task has finished.
+
 ### 📱 Mobile Layout
 Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.
 
@@ -41,11 +65,14 @@ Below 768px the three panels stack into one vertically scrolling column; the act
 | Repair memory and map, then check | `python aikit.py fix crypt-crawler` |
 | Resume an interrupted task | `python aikit.py resume crypt-crawler` |
 
+The `mechanics` gate runs `python tools/ai_harness.py selftest`, declared in `.aikit/project.json` as `mechanics.core` (the headless rules: `crawler`, `static/js`, `tools/ai_harness.py`) and `mechanics.test`, so a mechanics regression fails the same gate set as the unit suite.
+
 ## 📦 What's Inside
 
 ```text
 crypt-crawler/
 ├── .gitignore                <- transient state & screenshots excluded
+├── assets/                   <- reviewed logo, social preview and screenshots
 ├── LICENSE                   <- Aegean Game License 1.1 (AGL-1.1): DRM-free personal play
 ├── LICENSES/                 <- REUSE license texts
 ├── REUSE.toml                <- Machine-readable SPDX metadata
@@ -60,7 +87,7 @@ crypt-crawler/
 │   ├── dungeon.py            <- procedural dungeon generator
 │   ├── entities.py           <- player and monster simulation
 │   ├── combat.py             <- combat calculations and status effects
-│   ├── lore.py               <- codex entries, categories and discovery events
+│   ├── lore.py               <- codex entries, pact altars and discovery events
 │   ├── rewards.py            <- variable-ratio jackpots, near-miss & bounties
 │   └── server.py             <- HTTP request handler & REST endpoints
 ├── static/                   <- Web UI assets (zero build step)
@@ -74,16 +101,19 @@ crypt-crawler/
 │       ├── ui.js             <- HUD, inventory panel, combat log
 │       └── audio.js          <- Web Audio API synthetic SFX synthesizer
 ├── tools/
-│   └── inspect_ui.py         <- Playwright headless Edge UI inspector
+│   ├── inspect_ui.py         <- Playwright headless Edge UI inspector
+│   ├── ai_harness.py         <- seeded JSON gameplay harness for agents
+│   └── ui_inventory.py       <- deterministic control/handler inventory
 ├── tests/
 │   ├── __init__.py
+│   ├── test_ai_harness.py    <- harness validation and UI inventory tests
 │   ├── test_combat.py        <- combat rules tests
 │   ├── test_dungeon.py       <- procedural generation tests
 │   ├── test_inspect.py       <- inspection configuration tests
 │   ├── test_lore.py          <- codex data and /api/lore endpoint tests
 │   ├── test_rewards.py       <- reward jackpots, near-miss & bounty tests
 │   └── test_server.py        <- web server endpoints tests
-└── .aikit/                   <- project memory: record, ledger, decisions
+└── .aikit/                   <- project memory: record, ledger, decisions, ui.json guard
 ```
 
 <!-- aegean:brand-assets:start -->

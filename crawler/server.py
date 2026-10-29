@@ -96,25 +96,34 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                 | set(dungeon.urns)
                 | set(dungeon.souls)
                 | set(dungeon.sigils)
+                | set(dungeon.pacts)
                 | {dungeon.player_spawn, dungeon.stairs_pos}
             )
             if dungeon.vault:
                 reserved.add(dungeon.vault)
 
-            # Boss Chamber on Depth 3
-            farthest_room = dungeon.rooms[-1] if dungeon.rooms else None
-            if depth >= 3 and farthest_room:
-                bx, by = farthest_room.center
+            # Boss Chamber on Depth 3. The generator's last room is not necessarily the
+            # farthest one, so trusting `rooms[-1]` let the boss stand on a chest, an urn
+            # or a sigil and away from the stairs; the stairs tile is the generator's
+            # guaranteed clear, farthest tile, and the boss guards it.
+            boss_room = None
+            if depth >= 3 and dungeon.rooms:
+                bx, by = dungeon.stairs_pos
                 monsters.append(spawn_monster("boss_lich", bx, by, depth=depth))
-                if farthest_room.w >= 4 and farthest_room.h >= 4:
+                boss_room = next((r for r in dungeon.rooms if r.center == dungeon.stairs_pos), None)
+                if boss_room and boss_room.w >= 4 and boss_room.h >= 4:
                     for ex, ey in ((bx - 1, by), (bx + 1, by)):
                         if (ex, ey) not in reserved and dungeon.is_walkable(ex, ey):
                             monsters.append(
                                 spawn_monster("skeleton", ex, ey, depth=depth)
                             )
 
+            # No two monsters may share a tile: the random roll below is independent
+            # per monster and used to stack pairs on one square.
+            occupied = {(m.x, m.y) for m in monsters}
+
             for room in dungeon.rooms[1:]:
-                if depth >= 3 and room == farthest_room:
+                if depth >= 3 and room == boss_room:
                     continue
                 # Keep the Merchant's sanctuary room free of aggressive monsters
                 if any(room.center == m for m in dungeon.merchants):
@@ -123,8 +132,9 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
                 for _ in range(m_count):
                     mx = dungeon.rng.randint(room.x1 + 1, room.x2 - 2)
                     my = dungeon.rng.randint(room.y1 + 1, room.y2 - 2)
-                    if (mx, my) in reserved:
+                    if (mx, my) in reserved or (mx, my) in occupied:
                         continue
+                    occupied.add((mx, my))
                     m_type = dungeon.rng.choice(monster_types)
                     is_champ = dungeon.rng.random() < 0.16
                     affix = (

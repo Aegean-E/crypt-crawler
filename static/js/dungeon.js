@@ -16,6 +16,7 @@ export const TileType = {
   SOUL: 10,
   SIGIL: 11,
   VAULT: 12,
+  PACT: 13,
 };
 
 export class ClientDungeon {
@@ -59,6 +60,10 @@ export class ClientDungeon {
     this.vault = data.vault
       ? { ...point(data.vault), opened: Array.isArray(data.vault) ? false : Boolean(data.vault.opened) }
       : null;
+    this.pacts = (data.pacts || []).map((p) => ({
+      ...point(p),
+      used: Array.isArray(p) ? false : Boolean(p.used),
+    }));
     this.sigilsHeld = 0;
     this.sconces = (data.sconces || []).map(point);
     this.merchants = (data.merchants || []).map(point);

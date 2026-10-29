@@ -110,6 +110,35 @@ class TestDungeon(unittest.TestCase):
                 self.assertEqual(len(data["sigils"]), len(dungeon.sigils))
                 self.assertEqual(data["vault"], list(dungeon.vault))
 
+    def test_one_pact_altar_per_floor_in_a_walkable_spot(self):
+        for seed in (42, 777, 12345):
+            dungeon = DungeonGenerator(width=45, height=30).generate(seed=seed)
+            with self.subTest(seed=seed):
+                self.assertEqual(len(dungeon.pacts), 1)
+                ax, ay = dungeon.pacts[0]
+                self.assertEqual(dungeon.tiles[ay][ax], TileType.PACT)
+                self.assertTrue(dungeon.is_walkable(ax, ay))
+                self.assertTrue(dungeon.is_transparent(ax, ay))
+                self.assertNotIn((ax, ay), dungeon.sigils)
+                self.assertNotIn((ax, ay), dungeon.souls)
+                self.assertNotIn((ax, ay), dungeon.merchants)
+                self.assertNotEqual((ax, ay), dungeon.player_spawn)
+                self.assertNotEqual((ax, ay), dungeon.stairs_pos)
+                self.assertIn([ax, ay], dungeon.to_dict()["pacts"])
+
+    def test_pact_altar_still_spawns_on_a_degenerate_two_room_map(self):
+        for seed in (20, 27, 54, 102, 118):
+            dungeon = DungeonGenerator(width=20, height=20).generate(seed=seed)
+            with self.subTest(seed=seed):
+                self.assertEqual(len(dungeon.pacts), 1, "every floor must offer one altar")
+                ax, ay = dungeon.pacts[0]
+                self.assertEqual(dungeon.tiles[ay][ax], TileType.PACT)
+                self.assertTrue(dungeon.is_walkable(ax, ay))
+                self.assertNotEqual((ax, ay), dungeon.player_spawn)
+                self.assertNotEqual((ax, ay), dungeon.stairs_pos)
+                self.assertGreaterEqual(len(dungeon.sigils), 3)
+                self.assertIsNotNone(dungeon.vault)
+
     def test_merchant_spawns_on_depth_2(self):
         gen = DungeonGenerator(width=45, height=30, depth=2)
         dungeon = gen.generate(seed=777)

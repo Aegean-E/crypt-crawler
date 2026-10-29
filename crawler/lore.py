@@ -133,6 +133,14 @@ LORE_ENTRIES: List[Dict[str, str]] = [
         ),
     },
     {
+        "id": "lore_pact",
+        "title": "The Black Altars",
+        "category": "Whispers",
+        "text": (
+            "The black altars were not built to be worshipped. They were " "built to settle accounts. A soldier who wanted to survive a siege " "gave them his fear; a queen who wanted a son gave them her voice. " "The stone keeps what it is given and returns it with interest, which " "is why the wise count the cost before they touch the candles."
+        ),
+    },
+    {
         "id": "lore_death",
         "title": "The Catacombs Keep Their Own",
         "category": "Whispers",
@@ -163,6 +171,7 @@ LORE_EVENTS: Dict[str, str] = {
     "crown": "lore_crown",
     "death": "lore_death",
     "watchers": "lore_watchers",
+    "pact": "lore_pact",
 }
 
 

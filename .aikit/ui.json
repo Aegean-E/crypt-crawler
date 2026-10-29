@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "surfaces": {
+    "game-ui": {
+      "paths": [
+        "static/**"
+      ]
+    }
+  },
+  "protected": [
+    "tests/**",
+    "tools/**",
+    ".aikit/**",
+    "crawler/**",
+    "assets/**",
+    "README.md",
+    "ASSETS.md",
+    "COMMERCIAL.md",
+    "LICENSE",
+    "LICENSES/**",
+    "REUSE.toml",
+    "run.py",
+    "PLAY.bat",
+    "play.sh",
+    ".gitignore"
+  ],
+  "commands": {
+    "fast": "python -m unittest discover -s tests",
+    "fast_timeout": 180,
+    "snapshot": "python tools/ui_inventory.py",
+    "snapshot_timeout": 60
+  },
+  "style": {
+    "theme_paths": [
+      "static/css/style.css",
+      "static/js/renderer.js"
+    ]
+  },
+  "limits": {
+    "max_files": 8,
+    "max_lines": 400
+  }
+}

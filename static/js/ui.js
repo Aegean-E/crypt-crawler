@@ -401,6 +401,36 @@ export class UIController {
     });
   }
 
+  showPactModal(pact, onChoice) {
+    const html = `
+      <p class="soul-whisper">A black altar drinks the torchlight. Three wounds in the stone wait to be fed.</p>
+      <p class="soul-text">"Every gift has a price," it says in your own voice. "Choose what you can live without."</p>
+      <div class="soul-choices pact-choices">
+        <button class="btn btn-secondary soul-choice pact-choice" data-choice="wrath" type="button">
+          🩸 Pact of Wrath
+          <span class="soul-choice-note">+4 Attack forever, but 20% of your maximum HP is burned away</span>
+        </button>
+        <button class="btn btn-secondary soul-choice pact-choice" data-choice="ward" type="button">
+          🦴 Pact of the Grave
+          <span class="soul-choice-note">+18 Max HP, but 3 Max Mana is sealed inside the stone</span>
+        </button>
+        <button class="btn btn-secondary soul-choice pact-choice" data-choice="avarice" type="button">
+          🪙 Pact of Avarice
+          <span class="soul-choice-note">A heavy purse now, but two Pact-Bound Wraiths rise to collect</span>
+        </button>
+      </div>
+    `;
+    this.showModal("🕯️ The Black Altar", html);
+    this.btnModalClose.textContent = "Refuse the bargain";
+    this.modalBody.querySelectorAll(".pact-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const choice = btn.dataset.choice;
+        this.closeModal();
+        if (onChoice) onChoice(choice);
+      });
+    });
+  }
+
   updateStreak(streak) {
     if (!this.streakPill || !this.streakCount) return;
     if (streak >= 2) {
@@ -534,6 +564,7 @@ export class UIController {
       { id: "goblin", name: "Sneaky Goblin", icon: "👺", desc: "Devious looter that pilfers coins upon strike. Low defense.", weakness: "Ranged / Piercing" },
       { id: "spider", name: "Venomous Brood-Spider", icon: "🕷️", desc: "Spits debilitating neurotoxin. Cleansing prayers counteract poison.", weakness: "Fire / Cleanse" },
       { id: "necromancer", name: "Dread Necromancer", icon: "🧙‍♂️", desc: "Chants dark spells from afar. High mana shields.", weakness: "Melee Rush" },
+      { id: "wraith", name: "Pact-Bound Wraith", icon: "👻", desc: "A debt given shape. Rises from a Pact of Avarice and hunts the debtor.", weakness: "Holy / Fire" },
       { id: "boss_lich", name: "Arch-Lich Malakor", icon: "👑", desc: "Lord of the Sunken Crypt. Drains mortal souls to regenerate essence.", weakness: "Crown of Eternity" },
     ];
 

@@ -23,6 +23,7 @@ class TileType:
     SOUL = 10
     SIGIL = 11
     VAULT = 12
+    PACT = 13
 
 
 @dataclass
@@ -78,6 +79,7 @@ class Dungeon:
         self.souls: List[Tuple[int, int]] = []
         self.sigils: List[Tuple[int, int]] = []
         self.vault: Optional[Tuple[int, int]] = None
+        self.pacts: List[Tuple[int, int]] = []
         self.sconces: List[Tuple[int, int]] = []
         self.merchants: List[Tuple[int, int]] = []
         self.depth: int = 1
@@ -110,6 +112,7 @@ class Dungeon:
             TileType.SOUL,
             TileType.SIGIL,
             TileType.VAULT,
+            TileType.PACT,
         )
 
     def is_transparent(self, x: int, y: int) -> bool:
@@ -128,6 +131,7 @@ class Dungeon:
             TileType.SOUL,
             TileType.SIGIL,
             TileType.VAULT,
+            TileType.PACT,
         )
 
     def compute_fov(self, px: int, py: int, radius: int = 8) -> Set[Tuple[int, int]]:
@@ -215,6 +219,7 @@ class Dungeon:
             "souls": [list(s) for s in self.souls],
             "sigils": [list(s) for s in self.sigils],
             "vault": list(self.vault) if self.vault else None,
+            "pacts": [list(p) for p in self.pacts],
             "sconces": [list(sc) for sc in self.sconces],
             "merchants": [list(m) for m in self.merchants],
             "rooms": [
@@ -361,6 +366,47 @@ class DungeonGenerator:
                     dungeon.tiles[sy][sx] = TileType.SOUL
                     dungeon.souls.append((sx, sy))
                     break
+
+            # One black pact altar: a risk-for-power bargain on every floor.
+            # Placed before sigils so the objective never consumes its tile.
+            for room in dungeon.rooms[1:]:
+                if room == farthest_room:
+                    continue
+                if any(room.center == m for m in dungeon.merchants):
+                    continue
+                altar: Optional[Tuple[int, int]] = None
+                for ay in range(room.y1 + 1, room.y2 - 1):
+                    for ax in range(room.x1 + 1, room.x2 - 1):
+                        if dungeon.tiles[ay][ax] == TileType.FLOOR:
+                            altar = (ax, ay)
+                            break
+                    if altar:
+                        break
+                if altar:
+                    px, py = altar
+                    dungeon.tiles[py][px] = TileType.PACT
+                    dungeon.pacts.append(altar)
+                    break
+
+            # A tiny map can have no ordinary room to spare (finding: seeds 20/27/54
+            # at 20x20). Fall back to any free floor, then to the stairs room itself,
+            # never on the stairs tile, spawn or a merchant.
+            if not dungeon.pacts:
+                reserved = {dungeon.player_spawn, dungeon.stairs_pos} | set(dungeon.merchants)
+                fallback = next(
+                    (
+                        (x, y)
+                        for room in dungeon.rooms
+                        for y in range(room.y1 + 1, room.y2 - 1)
+                        for x in range(room.x1 + 1, room.x2 - 1)
+                        if dungeon.tiles[y][x] == TileType.FLOOR and (x, y) not in reserved
+                    ),
+                    None,
+                )
+                if fallback:
+                    px, py = fallback
+                    dungeon.tiles[py][px] = TileType.PACT
+                    dungeon.pacts.append(fallback)
 
             # Three sigils and one sealed vault: the floor's optional objective
             free_tiles = [

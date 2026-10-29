@@ -35,7 +35,7 @@ class TestLoreData(unittest.TestCase):
     def test_every_event_points_at_a_real_entry(self):
         for event in (
             "start", "depth2", "depth3", "shrine", "merchant", "soul",
-            "vault", "sigil", "boss", "crown", "death", "watchers",
+            "vault", "sigil", "boss", "crown", "death", "watchers", "pact",
         ):
             with self.subTest(event=event):
                 self.assertTrue(is_valid_entry(entry_for_event(event)))

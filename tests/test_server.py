@@ -75,9 +75,10 @@ class TestServer(unittest.TestCase):
         self.assertEqual(len(dungeon["sigils"]), 3)
         self.assertIsNotNone(dungeon["vault"])
         self.assertEqual(len(dungeon["souls"]), 1)
+        self.assertEqual(len(dungeon["pacts"]), 1)
 
         monster_coords = {(m["x"], m["y"]) for m in data["monsters"]}
-        for x, y in dungeon["sigils"] + [dungeon["vault"]] + dungeon["souls"]:
+        for x, y in dungeon["sigils"] + [dungeon["vault"]] + dungeon["souls"] + dungeon["pacts"]:
             self.assertNotIn((x, y), monster_coords)
 
     def test_monsters_never_cover_an_interactive_prop(self):
@@ -89,7 +90,7 @@ class TestServer(unittest.TestCase):
                         data = json.loads(response.read().decode("utf-8"))
                     dungeon = data["dungeon"]
                     props = set()
-                    for key in ("merchants", "chests", "shrines", "urns", "souls", "sigils"):
+                    for key in ("merchants", "chests", "shrines", "urns", "souls", "sigils", "pacts"):
                         props.update(tuple(entry) for entry in dungeon[key])
                     if dungeon.get("vault"):
                         props.add(tuple(dungeon["vault"]))
@@ -98,6 +99,37 @@ class TestServer(unittest.TestCase):
                         occupied & props,
                         f"monsters spawned on interactive props: {sorted(occupied & props)}",
                     )
+
+    def test_no_two_monsters_share_a_tile(self):
+        for seed in (1, 2, 5, 7, 8, 42, 777, 1234):
+            for depth in (1, 2, 3):
+                with self.subTest(seed=seed, depth=depth):
+                    url = f"{self.base_url}/api/new-game?seed={seed}&depth={depth}"
+                    with urlopen(url, timeout=3) as response:
+                        data = json.loads(response.read().decode("utf-8"))
+                    tiles = [(m["x"], m["y"]) for m in data["monsters"]]
+                    self.assertEqual(
+                        len(tiles), len(set(tiles)),
+                        f"monsters stacked on one tile: {sorted(tiles)}",
+                    )
+
+    def test_depth_three_boss_guards_the_stairs(self):
+        for seed in (1, 2, 5, 7, 8, 42, 777, 1234):
+            with self.subTest(seed=seed):
+                url = f"{self.base_url}/api/new-game?seed={seed}&depth=3"
+                with urlopen(url, timeout=3) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                dungeon = data["dungeon"]
+                bosses = [m for m in data["monsters"] if m["is_boss"]]
+                self.assertEqual(len(bosses), 1)
+                self.assertEqual(
+                    (bosses[0]["x"], bosses[0]["y"]), tuple(dungeon["stairs_pos"]),
+                    "the boss must guard the stairs, not an arbitrary room",
+                )
+                others = [
+                    (m["x"], m["y"]) for m in data["monsters"] if not m["is_boss"]
+                ]
+                self.assertNotIn(tuple(dungeon["stairs_pos"]), others)
 
     def test_api_new_game_with_class_and_merchant(self):
         url = f"{self.base_url}/api/new-game?seed=101&depth=2&class=rogue"

@@ -253,6 +253,12 @@ export class DungeonRenderer {
         this._drawSoul(ctx, soul, ts, timestamp, dungeon.isVisible(soul.x, soul.y));
       }
     }
+
+    for (const pact of (dungeon.pacts || [])) {
+      if (dungeon.isExplored(pact.x, pact.y)) {
+        this._drawPact(ctx, pact, ts, timestamp, dungeon.isVisible(pact.x, pact.y));
+      }
+    }
     for (const sigil of (dungeon.sigils || [])) {
       if (!sigil.collected && dungeon.isExplored(sigil.x, sigil.y)) {
         this._drawSigil(ctx, sigil, ts, timestamp, dungeon.isVisible(sigil.x, sigil.y));
@@ -365,6 +371,7 @@ export class DungeonRenderer {
       tile === TileType.SOUL ||
       tile === TileType.SIGIL ||
       tile === TileType.VAULT ||
+      tile === TileType.PACT ||
       tile === TileType.MERCHANT
     ) {
       const altColor = (x + y) % 2 === 0;
@@ -690,6 +697,64 @@ export class DungeonRenderer {
 
     // Interactable pip
     this._drawInteractMarker(ctx, cx, cy - 14 + bob, "#d6bcfa", timestamp);
+  }
+
+  _drawPact(ctx, pact, ts, timestamp, isVis) {
+    const cx = pact.x * ts + ts / 2;
+    const cy = pact.y * ts + ts / 2;
+
+    if (pact.used) {
+      ctx.fillStyle = isVis ? "#2a1a1a" : "#150d0d";
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 4, 7, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    const pulse = 0.55 + Math.sin(timestamp * 0.006 + pact.x) * 0.25;
+
+    // Crimson halo: the altar is visible across a dark room
+    const glow = ctx.createRadialGradient(cx, cy, 1, cx, cy, 20);
+    glow.addColorStop(0, `rgba(245, 101, 101, ${pulse * 0.5})`);
+    glow.addColorStop(0.6, `rgba(155, 44, 44, ${pulse * 0.25})`);
+    glow.addColorStop(1, "rgba(120, 30, 30, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Obsidian slab
+    ctx.fillStyle = isVis ? "#1a1218" : "#0d090c";
+    ctx.beginPath();
+    ctx.moveTo(cx - 11, cy + 9);
+    ctx.lineTo(cx + 11, cy + 9);
+    ctx.lineTo(cx + 8, cy - 4);
+    ctx.lineTo(cx - 8, cy - 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = isVis ? "#742a2a" : "#3a1414";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Three red votive candles
+    for (const offset of [-6, 0, 6]) {
+      const flicker = 2 + Math.sin(timestamp * 0.01 + offset) * 1.2;
+      ctx.fillStyle = isVis ? "#feb2b2" : "#5b2020";
+      ctx.fillRect(cx + offset - 1.5, cy - 4, 3, 5);
+      ctx.fillStyle = isVis ? "#f6ad55" : "#7b341e";
+      ctx.beginPath();
+      ctx.ellipse(cx + offset, cy - 6, 1.4, flicker, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Offer bowl with a bone hand
+    ctx.strokeStyle = isVis ? "#e2e8f0" : "#4a5568";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 4, 3.5, 0, Math.PI);
+    ctx.stroke();
+
+    this._drawInteractMarker(ctx, cx, cy - 15, "#fc8181", timestamp);
   }
 
   _drawSigil(ctx, sigil, ts, timestamp, isVis) {
@@ -1178,6 +1243,53 @@ export class DungeonRenderer {
       ctx.moveTo(px + ts - 5, py + ts / 2 + 7);
       ctx.lineTo(px + ts - 3, py + ts / 2 - 3);
       ctx.stroke();
+    } else if (monster.type === "wraith") {
+      // Pact-Bound Wraith: a crimson debt given shape. It must read as a different
+      // threat from the violet Lost Soul and the grey skeleton at a glance.
+      const drift = Math.sin(timestamp * 0.004 + monster.y) * 1.5;
+      ctx.save();
+      ctx.translate(0, drift);
+
+      const glow = ctx.createRadialGradient(
+        px + ts / 2, py + ts / 2, 1, px + ts / 2, py + ts / 2, ts * 0.6
+      );
+      glow.addColorStop(0, "rgba(245, 101, 101, 0.45)");
+      glow.addColorStop(1, "rgba(245, 101, 101, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(px + ts / 2, py + ts / 2, ts * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tattered shroud tapering into a ragged tail
+      ctx.fillStyle = "rgba(120, 32, 40, 0.92)";
+      ctx.beginPath();
+      ctx.moveTo(px + ts / 2, py + 3);
+      ctx.quadraticCurveTo(px + ts - 3, py + ts / 2, px + ts / 2, py + ts - 1);
+      ctx.quadraticCurveTo(px + 3, py + ts / 2, px + ts / 2, py + 3);
+      ctx.fill();
+
+      // Bone-white mask and hollow sockets with red pinpoints
+      ctx.fillStyle = "#f7fafc";
+      ctx.beginPath();
+      ctx.ellipse(px + ts / 2, py + 8, 4.4, 5.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(px + ts / 2 - 2.4, py + 6, 1.8, 2.2);
+      ctx.fillRect(px + ts / 2 + 0.6, py + 6, 1.8, 2.2);
+      ctx.fillStyle = "#fc8181";
+      ctx.fillRect(px + ts / 2 - 1.9, py + 6.5, 1, 1);
+      ctx.fillRect(px + ts / 2 + 1, py + 6.5, 1, 1);
+
+      // Debt chains hanging from the wrists
+      ctx.strokeStyle = "rgba(236, 201, 75, 0.8)";
+      ctx.lineWidth = 1.2;
+      for (const sign of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(px + ts / 2 + sign * 6, py + ts / 2);
+        ctx.lineTo(px + ts / 2 + sign * 7, py + ts - 3);
+        ctx.stroke();
+      }
+      ctx.restore();
     } else if (monster.type === "necromancer") {
       // Dread Necromancer with bone skull staff and hovering runes
       // Shroud
@@ -1699,12 +1811,20 @@ export class DungeonRenderer {
           tile === TileType.CHEST ||
           tile === TileType.MERCHANT ||
           tile === TileType.SHRINE ||
-          tile === TileType.URN
+          tile === TileType.URN ||
+          tile === TileType.PACT ||
+          tile === TileType.SOUL ||
+          tile === TileType.SIGIL ||
+          tile === TileType.VAULT
         ) {
           if (tile === TileType.STAIRS_DOWN) ctx.fillStyle = "#ecc94b";
           else if (tile === TileType.MERCHANT) ctx.fillStyle = "#b794f4";
           else if (tile === TileType.SHRINE) ctx.fillStyle = "#38b2ac";
           else if (tile === TileType.CHEST) ctx.fillStyle = "#ed8936";
+          else if (tile === TileType.PACT) ctx.fillStyle = "#f56565";
+          else if (tile === TileType.SOUL) ctx.fillStyle = "#d6bcfa";
+          else if (tile === TileType.SIGIL) ctx.fillStyle = "#63b3ed";
+          else if (tile === TileType.VAULT) ctx.fillStyle = "#d69e2e";
           else ctx.fillStyle = "#2d3748";
           ctx.fillRect(mx + x * scaleX, my + y * scaleY, Math.max(1, scaleX), Math.max(1, scaleY));
         }
@@ -1841,6 +1961,76 @@ export class DungeonRenderer {
       }
 
       ctx.restore();
+      return;
     }
+
+    // Interactive props: the altar and the objective props explain themselves on hover
+    // so a player does not have to step into a bargain to learn its price.
+    const prop = this._propAt(tx, ty, dungeon);
+    if (prop) {
+      const cardW = 176;
+      const cardH = 58;
+      // World coordinates: the caller has already applied the camera translation, so a
+      // screen-space clamp here would draw the card far from the prop it explains.
+      const cardX = px + ts / 2 - cardW / 2;
+      const cardY = py - cardH - 10;
+      ctx.save();
+      ctx.fillStyle = "rgba(10, 14, 22, 0.94)";
+      ctx.strokeStyle = prop.border;
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      ctx.fillStyle = prop.color;
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText(prop.title, cardX + 6, cardY + 14);
+      ctx.fillStyle = "#cbd5e0";
+      ctx.font = "10px sans-serif";
+      prop.lines.forEach((line, index) => {
+        ctx.fillText(line, cardX + 6, cardY + 29 + index * 13);
+      });
+      ctx.restore();
+    }
+  }
+
+  _propAt(tx, ty, dungeon) {
+    if (!dungeon) return null;
+    const at = (entry) => entry && entry.x === tx && entry.y === ty;
+    const pact = (dungeon.pacts || []).find((p) => at(p) && !p.used);
+    if (pact) {
+      return {
+        title: "🕯️ Black Pact Altar",
+        border: "#742a2a",
+        color: "#fc8181",
+        lines: ["Three bargains, each with a price.", "Step onto it to choose or refuse."],
+      };
+    }
+    const soul = (dungeon.souls || []).find((s) => at(s) && !s.resolved);
+    if (soul) {
+      return {
+        title: "🕯️ A Soul Without a Grave",
+        border: "#6b46c1",
+        color: "#d6bcfa",
+        lines: ["It kept a door no one came through.", "Speak with it for a gift or a story."],
+      };
+    }
+    const sigil = (dungeon.sigils || []).find((s) => at(s) && !s.collected);
+    if (sigil) {
+      return {
+        title: "🔑 Floor Sigil",
+        border: "#2b6cb0",
+        color: "#90cdf4",
+        lines: ["Three sigils open the sealed vault.", "Carry it to the vault door."],
+      };
+    }
+    if (at(dungeon.vault) && !dungeon.vault.opened) {
+      return {
+        title: "🔒 Sealed Vault",
+        border: "#975a16",
+        color: "#fbd38d",
+        lines: [`Sockets filled: ${dungeon.sigilsHeld || 0}/3.`, "A legendary relic waits inside."],
+      };
+    }
+    return null;
   }
 }

@@ -364,6 +364,254 @@ def run_inspection(
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 
+                        # Canvas probe helpers: read through a willReadFrequently copy so
+                        # the game canvas does not warn on repeated getImageData.
+                        page.evaluate(
+                            """() => {
+                                const game = window.gameEngine.canvas;
+                                const probe = document.createElement("canvas");
+                                probe.width = game.width;
+                                probe.height = game.height;
+                                const pctx = probe.getContext("2d", { willReadFrequently: true });
+                                window.__auditSnap = () => {
+                                    pctx.clearRect(0, 0, probe.width, probe.height);
+                                    pctx.drawImage(game, 0, 0);
+                                    return pctx.getImageData(0, 0, probe.width, probe.height).data;
+                                };
+                                window.__auditDiff = (a, b) => {
+                                    let n = 0;
+                                    for (let i = 0; i < a.length; i += 4) {
+                                        if (a[i] !== b[i] || a[i + 1] !== b[i + 1]
+                                            || a[i + 2] !== b[i + 2]) n += 1;
+                                    }
+                                    return n;
+                                };
+                            }"""
+                        )
+
+                        # Black pact altar: exactly one per floor AND the renderer is
+                        # actually invoked for it. A visibility check alone would still
+                        # pass if `_drawPact` were deleted.
+                        pact_site = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const pacts = e.dungeon.pacts || [];
+                                if (pacts.length !== 1) {
+                                    return { count: pacts.length, visible: false, rendered: false };
+                                }
+                                const pact = pacts[0];
+                                const spot = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+                                    .map(([dx, dy]) => [pact.x + dx, pact.y + dy])
+                                    .find(([x, y]) => e.dungeon.isWalkable(x, y));
+                                const origin = { x: e.player.x, y: e.player.y };
+                                if (spot) { e.player.x = spot[0]; e.player.y = spot[1]; }
+                                e.dungeon.updateFOV(e.player.x, e.player.y, 7);
+                                let draws = 0;
+                                const original = e.renderer._drawPact;
+                                e.renderer._drawPact = (...args) => {
+                                    draws += 1;
+                                    return original.apply(e.renderer, args);
+                                };
+                                e.renderer.render(e.dungeon, e.player, e.monsters, performance.now());
+                                e.renderer._drawPact = original;
+                                return {
+                                    count: pacts.length,
+                                    origin,
+                                    visible: e.dungeon.isVisible(pact.x, pact.y),
+                                    rendered: draws > 0,
+                                };
+                            }"""
+                        )
+                        page.wait_for_timeout(350)
+                        page.screenshot(
+                            path=str(out_dir / f"pact_site_{vp_name}.png"), full_page=True
+                        )
+                        page.evaluate(
+                            """(origin) => {
+                                const e = window.gameEngine;
+                                e.player.x = origin.x;
+                                e.player.y = origin.y;
+                                e.dungeon.updateFOV(e.player.x, e.player.y, 7);
+                            }""",
+                            pact_site.get("origin") or {"x": 0, "y": 0},
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "pact_altar_renders_on_map": pact_site.get("count") == 1
+                                and pact_site.get("visible") is True
+                                and pact_site.get("rendered") is True,
+                            }
+                        )
+
+                        # Hover legibility: the altar and the objective props must explain
+                        # themselves without stepping into a bargain.
+                        tooltip = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const d = e.dungeon;
+                                const altar = (d.pacts || [])[0];
+                                const sigil = (d.sigils || [])[0];
+                                const empty = (() => {
+                                    for (let y = 0; y < d.height; y += 1) {
+                                        for (let x = 0; x < d.width; x += 1) {
+                                            if (d.isWalkable(x, y) && !e.renderer._propAt(x, y, d)) {
+                                                return { x, y };
+                                            }
+                                        }
+                                    }
+                                    return null;
+                                })();
+                                const reads = (x, y) => {
+                                    const info = e.renderer._propAt(x, y, d);
+                                    return info ? { title: info.title, lines: info.lines } : null;
+                                };
+                                const altarInfo = altar ? reads(altar.x, altar.y) : null;
+                                const sigilInfo = sigil ? reads(sigil.x, sigil.y) : null;
+                                const origin = { x: e.player.x, y: e.player.y };
+                                let painted = 0;
+                                if (altar) {
+                                    const spot = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+                                        .map(([dx, dy]) => [altar.x + dx, altar.y + dy])
+                                        .find(([x, y]) => d.isWalkable(x, y));
+                                    if (spot) { e.player.x = spot[0]; e.player.y = spot[1]; }
+                                    d.updateFOV(e.player.x, e.player.y, 7);
+                                    // Pixel proof: the card must actually paint. Sampling
+                                    // inside one evaluate keeps the RAF loop from interleaving.
+                                    e.renderer.hoverTile = null;
+                                    e.renderer.render(d, e.player, e.monsters, 1000);
+                                    const before = window.__auditSnap();
+                                    e.renderer.hoverTile = { x: altar.x, y: altar.y };
+                                    e.renderer.render(d, e.player, e.monsters, 1000);
+                                    painted = window.__auditDiff(before, window.__auditSnap());
+                                }
+                                return {
+                                    origin,
+                                    painted,
+                                    altar: altarInfo,
+                                    sigil: sigilInfo,
+                                    emptyClear: empty ? reads(empty.x, empty.y) === null : false,
+                                };
+                            }"""
+                        )
+                        page.wait_for_timeout(250)
+                        page.screenshot(
+                            path=str(out_dir / f"prop_tooltip_{vp_name}.png"), full_page=True
+                        )
+                        page.evaluate(
+                            """(origin) => {
+                                const e = window.gameEngine;
+                                e.renderer.hoverTile = null;
+                                e.player.x = origin.x;
+                                e.player.y = origin.y;
+                                e.dungeon.updateFOV(e.player.x, e.player.y, 7);
+                            }""",
+                            tooltip.get("origin") or {"x": 0, "y": 0},
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "prop_tooltip_explains_altar": tooltip["altar"] is not None
+                                and "Altar" in tooltip["altar"]["title"]
+                                and len(tooltip["altar"]["lines"]) >= 1,
+                                "prop_tooltip_explains_objective": tooltip["sigil"] is not None
+                                and "Sigil" in tooltip["sigil"]["title"],
+                                "prop_tooltip_ignores_plain_floor": tooltip["emptyClear"] is True,
+                                "prop_tooltip_paints_on_canvas": tooltip.get("painted", 0) > 200,
+                            }
+                        )
+
+                        # Avarice wraith: the raised enemy must render, not fall back to
+                        # the grey placeholder circle.
+                        wraith = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                                    .map(([dx, dy]) => [e.player.x + dx, e.player.y + dy])
+                                    .find(([x, y]) => e.dungeon.isWalkable(x, y));
+                                if (!spot) return { skip: true };
+                                const w = e._spawnPactWraith(spot[0], spot[1]);
+                                e.dungeon.updateFOV(e.player.x, e.player.y, 7);
+                                let drawn = 0;
+                                const original = e.renderer._drawMonster;
+                                e.renderer._drawMonster = (c, monster, ts, ts2) => {
+                                    if (monster.type === "wraith") drawn += 1;
+                                    return original.call(e.renderer, c, monster, ts, ts2);
+                                };
+                                e.renderer.render(e.dungeon, e.player, e.monsters, 1000);
+                                const before = window.__auditSnap();
+                                e.monsters.push(w);
+                                e.renderer.render(e.dungeon, e.player, e.monsters, 1000);
+                                const painted = window.__auditDiff(before, window.__auditSnap());
+                                e.renderer._drawMonster = original;
+                                window.__auditWraith = w;
+                                return { skip: false, drawn, painted, x: spot[0], y: spot[1] };
+                            }"""
+                        )
+                        page.wait_for_timeout(250)
+                        page.screenshot(
+                            path=str(out_dir / f"wraith_{vp_name}.png"), full_page=True
+                        )
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.monsters = e.monsters.filter((m) => m !== window.__auditWraith);
+                                window.__auditWraith = null;
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "wraith_renders": wraith.get("skip") is True
+                                or (wraith.get("drawn", 0) >= 1 and wraith.get("painted", 0) > 60),
+                            }
+                        )
+
+                        # Black pact altar: three bargains, a real cost, and lore.
+                        pact_state = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const pact = { x: e.player.x, y: e.player.y, used: false };
+                                e.ui.showPactModal(pact, (choice) => e.resolvePact(pact, choice));
+                                const choices = Array.from(document.querySelectorAll(".pact-choice"))
+                                    .map((btn) => btn.dataset.choice);
+                                const opened = e.ui.isModalOpen();
+                                const probe = { x: e.player.x, y: e.player.y, used: false };
+                                e.resolvePact(probe, "bogus");
+                                const ignored = probe.used === false;
+                                const beforeHp = e.player.max_hp;
+                                const beforeMana = e.player.max_mana;
+                                e.resolvePact(pact, "ward");
+                                return {
+                                    choices,
+                                    opened,
+                                    ignored,
+                                    used: pact.used,
+                                    hpGain: e.player.max_hp > beforeHp,
+                                    manaSealed: e.player.max_mana < beforeMana,
+                                    lore: e.loreUnlocked.includes("lore_pact"),
+                                };
+                            }"""
+                        )
+                        page.screenshot(
+                            path=str(out_dir / f"pact_altar_{vp_name}.png"), full_page=True
+                        )
+                        page.click("#btnModalClose")
+                        time.sleep(0.2)
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "pact_altar_has_three_choices": pact_state["choices"]
+                                == ["wrath", "ward", "avarice"],
+                                "pact_bargain_applies_cost_and_boon": pact_state["opened"]
+                                and pact_state["used"]
+                                and pact_state["hpGain"]
+                                and pact_state["manaSealed"],
+                                "pact_invalid_choice_ignored": pact_state["ignored"] is True,
+                                "pact_unlocks_lore": pact_state["lore"] is True,
+                            }
+                        )
+
                         # A resumed run must remember which props are already spent.
                         save_state = page.evaluate(
                             """() => {
@@ -373,9 +621,19 @@ def run_inspection(
                                 e.dungeon.urns.forEach((urn) => { urn.broken = true; });
                                 e.dungeon.shrines.forEach((shrine) => { shrine.activated = true; });
                                 (e.dungeon.souls || []).forEach((soul) => { soul.resolved = true; });
+                                (e.dungeon.pacts || []).forEach((pact) => { pact.used = true; });
                                 e.saveGameState();
                                 const saved = e.loadSavedRun();
                                 if (!saved) return { ok: false };
+                                const livePacts = e.dungeon.pacts || [];
+                                const savedPacts = saved.dungeon.pacts || [];
+                                // `[].every(...)` is true, so an empty or missing list must
+                                // fail explicitly; coordinates must round-trip too.
+                                const pactsSaved = savedPacts.length > 0
+                                    && savedPacts.length === livePacts.length
+                                    && savedPacts.every((p, i) => p.used === true
+                                        && p.x === livePacts[i].x
+                                        && p.y === livePacts[i].y);
                                 return {
                                     ok: true,
                                     chests: saved.dungeon.chests.every((c) => c.opened === true),
@@ -383,6 +641,7 @@ def run_inspection(
                                     urns: saved.dungeon.urns.every((u) => u.broken === true),
                                     shrines: saved.dungeon.shrines.every((s) => s.activated === true),
                                     souls: saved.dungeon.souls.every((s) => s.resolved === true),
+                                    pacts: pactsSaved,
                                     lore: Array.isArray(saved.loreUnlocked)
                                         && saved.loreUnlocked.length > 0,
                                 };
@@ -403,6 +662,7 @@ def run_inspection(
                                 and save_state.get("urns")
                                 and save_state.get("shrines")
                                 and save_state.get("souls")
+                                and save_state.get("pacts")
                                 and save_state.get("lore"),
                             }
                         )
@@ -496,11 +756,13 @@ def run_inspection(
                                     ...e.dungeon.urns,
                                     ...e.dungeon.souls,
                                     ...e.dungeon.sigils,
+                                    ...e.dungeon.pacts,
                                 ];
                                 const result = {
                                     souls: e.dungeon.souls.length,
                                     sigils: e.dungeon.sigils.length,
                                     vault: Boolean(e.dungeon.vault),
+                                    pacts: e.dungeon.pacts.length,
                                     blockedSigil: e._isOccupied(
                                         e.dungeon.sigils[0].x, e.dungeon.sigils[0].y
                                     ),
@@ -524,7 +786,8 @@ def run_inspection(
                                 "viewport": vp_name,
                                 "offline_fallback_has_objective": offline["souls"] == 1
                                 and offline["sigils"] == 3
-                                and offline["vault"],
+                                and offline["vault"]
+                                and offline["pacts"] == 1,
                                 "monsters_never_cover_props": offline["blockedSigil"]
                                 and not offline["monstersOnProps"],
                             }

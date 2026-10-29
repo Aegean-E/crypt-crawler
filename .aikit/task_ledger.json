@@ -1,237 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-010",
+    "task_id": "CC-014",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792961213.389987,
-    "owner": "kilo:review",
-    "started_by": "kilo:review",
-    "continuations": [],
-    "completed_at": 1792961267.3453805
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1793290975.0459435,
+    "owner": "kilo:continue",
+    "started_by": "kilo:continue",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "CC-006",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 5/5] 38 tests pass; 14 screenshots across desktop/laptop/mobile with 0 console errors; catalog and save-slot regression added (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792929448.3925133,
-      "timestamp_str": "2026-10-25 14:57:28",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-006",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-006' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792929458.85851,
-      "timestamp_str": "2026-10-25 14:57:38",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-007",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Fix sorted-inventory slot highlight, comparison badge labels and offline merchant parity",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792930351.9358017,
-      "timestamp_str": "2026-10-25 15:12:31",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "Review of the six unpushed CC-006 commits found a real UI defect: after rarity sorting, selectItem highlights a slot by array position instead of the item's true index, so the wrong slot lights up and the card can disagree with the highlight. Proc stats also render without a percent sign, and the offline merchant fallback omits every new relic.",
-        "benefits": "Correct selection feedback under filtering and sorting, clearer stat deltas, and feature parity when the API is unavailable.",
-        "risks": "contract: none, client-only behavior; dependency: none, natural JS and Python stdlib; concurrency: none; state: no save format change",
-        "mitigation": "Headless audit check that fails before the fix, full test suite, Phase 4 gates and multi-viewport inspection"
-      }
-    },
-    {
-      "task_id": "CC-007",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 1/3] Fixed sorted-selection highlight, percent proc labels, offline merchant parity; clamped HP/MP to equipment caps in both engines; inspector now fails on false checks (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792931509.212527,
-      "timestamp_str": "2026-10-25 15:31:49",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "commit milestone, then verify unpushed commits and push"
-      }
-    },
-    {
-      "task_id": "CC-007",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/1] Re-plan: the three review fixes consolidated into one verified change set (selection index, proc labels, merchant parity, livelock-free audit gate and equipment caps)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792931556.5844734,
-      "timestamp_str": "2026-10-25 15:32:36",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "verify the commit alone and push"
-      }
-    },
-    {
-      "task_id": "CC-007",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[1/1] done: 39 tests, 21/21 audit checks across desktop/laptop/mobile, 0 console errors; commit verified alone with --strict (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792931589.3230824,
-      "timestamp_str": "2026-10-25 15:33:09",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "complete the task, commit the ledger and push"
-      }
-    },
-    {
-      "task_id": "CC-007",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-007' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792931604.8615537,
-      "timestamp_str": "2026-10-25 15:33:24",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "CC-008",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Fix mobile layout: single scroll column, unclipped action deck and D-pad, wrapping header",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792932638.501345,
-      "timestamp_str": "2026-10-25 15:50:38",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "Visual review of the pushed build found real mobile defects: at 390px the viewport panel clipped its own overflow, so only the top 12px of the 7-button action deck was visible and the virtual D-pad was completely hidden; the header's Guide and New Game buttons overflowed 154px past the right edge, creating horizontal scroll.",
-        "benefits": "The game is playable on phones again: every tactical action, the D-pad and the whole backpack are reachable in one vertical scroll, with no horizontal overflow.",
-        "risks": "contract: none, CSS-only plus audit checks; dependency: none; concurrency: none; state: none, no markup or save changes",
-        "mitigation": "Geometry probe before and after, new headless layout audit checks (deck inside panel, D-pad only when narrow, no horizontal scroll, inventory reachable), full inspection at three viewports and unit suite"
-      }
-    },
-    {
-      "task_id": "CC-008",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 1/2] Mobile single-scroll layout: deck and D-pad unclipped, header wraps, no horizontal scroll; new per-viewport layout audit; 39 tests and 36/36 audit checks green (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792932812.080684,
-      "timestamp_str": "2026-10-25 15:53:32",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "commit, verify alone, push"
-      }
-    },
-    {
-      "task_id": "CC-008",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/2] done: mobile fix committed and verified alone with --strict; visual re-review PASS at desktop, laptop and mobile (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792932862.7609024,
-      "timestamp_str": "2026-10-25 15:54:22",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "complete the task, commit the ledger and push"
-      }
-    },
-    {
-      "task_id": "CC-008",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-008' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792932867.0413823,
-      "timestamp_str": "2026-10-25 15:54:27",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "CC-009",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Lore codex, prologue and Journal panel; then Lost Soul dialogue, sigil-vault objective, boss phases and polish",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792954783.4733825,
-      "timestamp_str": "2026-10-25 21:59:43",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "The game has solid combat and loot but almost no narrative payoff or non-combat interaction: the only story is one-line log text, there is nothing to discover or read, and every floor plays the same way. The user asked for more mechanics, fun, lore, story and interaction.",
-        "benefits": "A persistent, unlockable codex gives discoveries meaning and rewards exploration; a branching NPC choice adds role-play and risk/reward; a per-floor sigil-and-vault objective gives each floor a goal beyond the stairs; boss phases make the finale readable and dramatic.",
-        "risks": "contract: new /api/lore endpoint and extra save fields, both additive; dependency: none, standard library and canvas only; concurrency: unchanged, client-driven; state: save schema grows (loreUnlocked, prop states, sigils) and must stay readable for old saves",
-        "mitigation": "Additive defaults on load, Python unit tests for lore and generation, headless audit checks for journal/dialogue/vault and save round-trip, multi-viewport inspection, full gates"
-      }
-    },
-    {
-      "task_id": "CC-009",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[2/4] Lost Soul dialogue with three branching choices, plus persistent prop states so a resumed run cannot re-loot the same floor",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792955909.5753467,
-      "timestamp_str": "2026-10-25 22:18:29",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "crawler/dungeon.py soul tile, server spawn guard, static/js/dungeon.js prop parsing, engine resolveSoul, ui modal, renderer ghost"
-      }
-    },
-    {
-      "task_id": "CC-009",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[3/4] Sigil-and-vault floor objective with HUD tracker, legendary reward and lore; boss phases at 50% and 25% HP",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792956585.2431073,
-      "timestamp_str": "2026-10-25 22:29:45",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "dungeon sigils/vault tiles, server spawn guard, rewards bounty, engine collect/open, renderer vault, boss summons"
-      }
-    },
-    {
-      "task_id": "CC-009",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[4/4] Persistent codex archive across runs, informative enemy tooltips, prop legibility polish, README and ADR-009",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792959400.4943197,
-      "timestamp_str": "2026-10-25 23:16:40",
-      "agent": "kilo:review",
-      "handoff": {
-        "next": "full suite, gates, three-viewport inspection, free-model visual review"
-      }
-    },
-    {
-      "task_id": "CC-009",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 4/4] Lore archive persists across reloads (12 entries, 1/12 -> 2/12 after reload); enemy tooltip shows affix/status; soul and vault props redrawn after VL review; README and ADR-009; 47 tests, 4/4 gates, 45/45 audit checks, 14 screenshots, 0 console errors (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792959429.053889,
-      "timestamp_str": "2026-10-25 23:17:09",
-      "agent": "kilo:review",
-      "handoff": {
-        "state": "work complete and uncommitted",
-        "next": "review the diff and commit on authorization",
-        "evidence": "aikit fix 4/4, inspect 45/45"
-      }
-    },
     {
       "task_id": "CC-009",
       "phase": "completed",
@@ -284,6 +63,238 @@
       "timestamp": 1792961267.345382,
       "timestamp_str": "2026-10-25 23:47:47",
       "agent": "kilo:review"
+    },
+    {
+      "task_id": "CC-011",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add one Black Pact Altar per floor with three risk-for-power bargains, fix deck hotkey priority and guard async floor descent",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793279204.6069212,
+      "timestamp_str": "2026-10-29 16:06:44",
+      "agent": "kilo:continue",
+      "impact_assessment": {
+        "why": "The game had no repeatable risk-for-power decision, and review found movement keys 2/4/6 silently shadowed the advertised deck hotkeys while descendFloor could run twice under held input.",
+        "benefits": "A build-defining floor choice with explicit costs, working [1]-[6] hotkeys, and no double depth increment.",
+        "risks": "contract: additive pacts field and new lore event; dependency: none; concurrency: browser input only; state: saves without pacts load as empty",
+        "mitigation": "Server and client reservation of pact tiles, generation/server/lore tests, three-viewport headless audit, save round-trip and one vision review"
+      }
+    },
+    {
+      "task_id": "CC-011",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 1/3] Pact altar generated, reserved, rendered, persisted and resolved; bonuses now flow through _recalculatePlayerStats; hotkey and descent fixes in place",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793279240.9316635,
+      "timestamp_str": "2026-10-29 16:07:20",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "run full suite, gates and three-viewport inspection",
+        "evidence": "49 tests"
+      }
+    },
+    {
+      "task_id": "CC-011",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/3] 49 tests pass; 4/4 gates pass after map/README repair; 54/54 audit checks across desktop, laptop and mobile with 0 console errors",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793279241.2160366,
+      "timestamp_str": "2026-10-29 16:07:21",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "one vision subagent review of pact site, pact modal and three viewports"
+      }
+    },
+    {
+      "task_id": "CC-011",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 3/3] One vision subagent reviewed 5 screenshots: altar distinct on map, pact modal clean, desktop/laptop/mobile coherent, no visual regressions; work uncommitted",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793279250.6373272,
+      "timestamp_str": "2026-10-29 16:07:30",
+      "agent": "kilo:continue",
+      "handoff": {
+        "state": "verified and ready",
+        "next": "commit on authorization",
+        "evidence": "aikit 4/4, inspect 54/54, vision PASS"
+      }
+    },
+    {
+      "task_id": "CC-011",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-011' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793279250.9744973,
+      "timestamp_str": "2026-10-29 16:07:30",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-012",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Integrate the AIKit UI guard and make mechanics AI-testable: ui.json contract, deterministic UI inventory, seeded JSON gameplay harness, stat-base parity fix",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793281590.0603137,
+      "timestamp_str": "2026-10-29 16:46:30",
+      "agent": "kilo:continue",
+      "impact_assessment": {
+        "why": "The project had no UI guard contract and no way for an agent to read or drive the shipped mechanics; the first harness run also proved the client rewrote a fresh paladin to 60 HP / 3 DEF while HERO_CLASSES ships 65 / 4.",
+        "benefits": "Surface-bounded UI edits with a lost-control proof, reproducible seeded mechanics for agents and tests, and server/client stat parity.",
+        "risks": "contract: additive .aikit/ui.json and new tools; dependency: Playwright only for play/selftest; concurrency: none; state: none, save schema unchanged",
+        "mitigation": "Contract validated by the AIKit loader, 12 new fast unit tests, harness selftest, three-viewport inspector and the full gate triad"
+      }
+    },
+    {
+      "task_id": "CC-012",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 1/3] Added .aikit/ui.json (game-ui surface, snapshot+fast proofs), tools/ui_inventory.py (188 stable entries), tools/ai_harness.py (catalog/play/selftest) and 12 fast unit tests; fixed client stat bases to mirror HERO_CLASSES (paladin 65 HP / 4 DEF)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793281798.9790773,
+      "timestamp_str": "2026-10-29 16:49:58",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "verify with the full suite, harness selftest, inspector and gates",
+        "evidence": "61 tests"
+      }
+    },
+    {
+      "task_id": "CC-012",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/3] 61 tests pass, harness selftest 9/9, UI inventory snapshot 188 entries, 54/54 audit checks at desktop/laptop/mobile with 0 console errors, 4/4 AIKit gates pass",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793281799.221962,
+      "timestamp_str": "2026-10-29 16:49:59",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "apply the independent code review, then re-verify"
+      }
+    },
+    {
+      "task_id": "CC-013",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Apply the independent review: token-guarded descent, full input gating, non-vacuous inspector checks, failing-first harness tests, degenerate-map altar fallback, restored 7/8/9 diagonals and modal label reset",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793285083.476584,
+      "timestamp_str": "2026-10-29 17:44:43",
+      "agent": "kilo:continue",
+      "impact_assessment": {
+        "why": "Review found descendFloor could leave a stuck movement lock, an old fetch could overwrite a new run, every non-movement action still fired during the fetch, two inspector checks passed vacuously, and neither input/descent fix had a failing-first test.",
+        "benefits": "No corrupt run state or softlock, honest gates, and regression coverage for the exact defects.",
+        "risks": "contract: none; dependency: Playwright only for the added harness checks; concurrency: runToken invalidation is browser-local; state: depth is assigned only after the map arrives",
+        "mitigation": "Failing-first harness checks, degenerate-map dungeon test, full suite, three-viewport inspector and 4/4 gates"
+      }
+    },
+    {
+      "task_id": "CC-012",
+      "phase": "superseded",
+      "phase_num": 4,
+      "description": "Superseded by 'CC-013' without --complete or --reset",
+      "status": "superseded",
+      "timestamp": 1793285083.476584,
+      "timestamp_str": "2026-10-29 17:44:43",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-013",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 1/2] Descent is token-guarded with depth assigned after the map arrives, every turn entry point is gated on transitioning, 7/8/9 diagonals restored, modal close label reset, and a fallback altar covers degenerate 20x20 maps",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793285104.8380466,
+      "timestamp_str": "2026-10-29 17:45:04",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "re-verify with the failing-first harness checks"
+      }
+    },
+    {
+      "task_id": "CC-013",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/2] Inspector render and save checks are non-vacuous (exactly one altar, real _drawPact invocation, non-empty pact list with coordinates); 62 tests, 13/13 harness checks, 54/54 inspector checks at three viewports, 0 console errors, 4/4 gates; work uncommitted",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793285126.133344,
+      "timestamp_str": "2026-10-29 17:45:26",
+      "agent": "kilo:continue",
+      "handoff": {
+        "state": "verified and ready",
+        "next": "commit on authorization",
+        "evidence": "selftest 13/13, inspect 54/54, aikit 4/4"
+      }
+    },
+    {
+      "task_id": "CC-013",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-013' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793285126.4660225,
+      "timestamp_str": "2026-10-29 17:45:26",
+      "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-014",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Verify and harden after the review: spawn uniqueness, boss on stairs, wraith sprite, prop tooltips, mechanics gate, pixel-proof audits",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793290895.452696,
+      "timestamp_str": "2026-10-29 19:21:35",
+      "agent": "kilo:continue",
+      "impact_assessment": {
+        "why": "Seeded fuzz found 325/900 floors stacking two monsters on a tile and 25/120 Depth-3 floors with the boss on a prop; Avarice raised an unrendered wraith; props explained nothing; the game had no declared mechanics contract.",
+        "benefits": "No stacked or prop-overlapping spawns, the boss fight at the stairs, a legible debt enemy, self-explaining props, and a mechanics gate in the standard gate set.",
+        "risks": "contract: additive mechanics block and four inspector checks; dependency: Playwright only for the mechanics gate; concurrency: none; state: none",
+        "mitigation": "Dungeon/server tests, 17-check harness selftest, 59-check three-viewport inspection, pixel-diff proofs and one vision review"
+      }
+    },
+    {
+      "task_id": "CC-014",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 2/3] 64 tests pass, mechanics gate 17/17, inspector 59/59 across three viewports with 0 console errors, 5/5 gates pass; vision review returned PASS for tooltip and wraith after the world-space tooltip fix",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793290974.633856,
+      "timestamp_str": "2026-10-29 19:22:54",
+      "agent": "kilo:continue",
+      "handoff": {
+        "next": "commit the verified work, then record the UI task"
+      }
+    },
+    {
+      "task_id": "CC-014",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[milestone 3/3] Verified work committed; UI task recorded against the committed surface; delivery gate re-run before push",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793290975.0459435,
+      "timestamp_str": "2026-10-29 19:22:55",
+      "agent": "kilo:continue",
+      "handoff": {
+        "state": "commit and UI record done",
+        "next": "push to origin/master",
+        "evidence": "5/5 gates"
+      }
     }
   ]
 }

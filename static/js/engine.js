@@ -34,12 +34,18 @@ export class GameEngine {
     this.victory = false;
     this.animFrameId = null;
     this.musicStarted = false;
+    this.transitioning = false;
+    this.runToken = 0;
 
     this._setupCallbacks();
     this._setupInputListeners();
   }
 
   async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true) {
+    // A new run invalidates any in-flight floor descent: the pending fetch must not
+    // overwrite this run's dungeon, and the flag must not stick true.
+    this.runToken = (this.runToken || 0) + 1;
+    this.transitioning = false;
     this.depth = depth;
     this.turn = 1;
     this.killStreak = 0;
@@ -178,6 +184,8 @@ export class GameEngine {
     tiles[vault[1]][vault[0]] = TileType.VAULT;
     const souls = [[rooms[4].center[0] + 1, rooms[4].center[1]]];
     souls.forEach(([sx, sy]) => { tiles[sy][sx] = TileType.SOUL; });
+    const pacts = [[rooms[2].center[0] + 1, rooms[2].center[1] + 1]];
+    pacts.forEach(([px, py]) => { tiles[py][px] = TileType.PACT; });
 
     this.dungeon = new ClientDungeon({
       width: w,
@@ -195,6 +203,7 @@ export class GameEngine {
       souls: souls,
       sigils: sigils,
       vault: vault,
+      pacts: pacts,
       sconces: [[rooms[0].center[0], rooms[0].y - 1]],
       merchants: merchants,
     });
@@ -350,8 +359,26 @@ export class GameEngine {
   _setupInputListeners() {
     window.addEventListener("keydown", (e) => {
       this._triggerMusicStart();
-      if (this.gameOver || this.victory) return;
+      if (this.gameOver || this.victory || this.transitioning) return;
       if (this.ui.isModalOpen()) return;
+
+      // Numpad movement is read from e.code so the 1-6 deck hotkeys on the
+      // number row keep working; e.key would report the same digits.
+      const numpadMoves = {
+        Numpad8: [0, -1],
+        Numpad2: [0, 1],
+        Numpad4: [-1, 0],
+        Numpad6: [1, 0],
+        Numpad7: [-1, -1],
+        Numpad9: [1, -1],
+        Numpad1: [-1, 1],
+        Numpad3: [1, 1],
+      };
+      if (numpadMoves[e.code]) {
+        e.preventDefault();
+        this.stepPlayer(...numpadMoves[e.code]);
+        return;
+      }
 
       let dx = 0;
       let dy = 0;
@@ -361,28 +388,24 @@ export class GameEngine {
         case "w":
         case "W":
         case "k":
-        case "8":
           dy = -1;
           break;
         case "ArrowDown":
         case "s":
         case "S":
         case "j":
-        case "2":
           dy = 1;
           break;
         case "ArrowLeft":
         case "a":
         case "A":
         case "h":
-        case "4":
           dx = -1;
           break;
         case "ArrowRight":
         case "d":
         case "D":
         case "l":
-        case "6":
           dx = 1;
           break;
         case "y":
@@ -402,6 +425,9 @@ export class GameEngine {
         case "n":
           dx = 1;
           dy = 1;
+          break;
+        case "8":
+          dy = -1;
           break;
         case "1":
           this.triggerSlotAction(1);
@@ -532,7 +558,8 @@ export class GameEngine {
          <br>
          <p><strong>Controls & Tactics:</strong></p>
          <ul style="margin-left: 20px; line-height: 1.6;">
-           <li><strong>Move / Attack:</strong> Arrow keys, WASD, Vi keys (HJKL), Numpad</li>
+           <li><strong>Move / Attack:</strong> Arrow keys, WASD, Vi keys (HJKL/YUBN), Numpad</li>
+           <li><strong>Number row vs Numpad:</strong> 1-6 cast deck abilities; Numpad 1-9 moves and attacks in all eight directions</li>
            <li><strong>[1] Strike:</strong> Melee strike adjacent foe</li>
            <li><strong>[2] Fireball:</strong> Ranged fire blast (10 MP, Burn effect)</li>
            <li><strong>[3] Bash:</strong> Shield bash (4 MP, Stuns enemy for 1 turn)</li>
@@ -544,6 +571,10 @@ export class GameEngine {
          <br>
          <p><strong>Interactive Objects:</strong></p>
          <ul style="margin-left: 20px; line-height: 1.6;">
+           <li><strong>Black Pact Altars:</strong> Trade a permanent cost for permanent power. Wrath burns max HP for Attack, the Grave seals max Mana for health, Avarice pays gold and raises two Pact-Bound Wraiths. Refusing is free.</li>
+           <li><strong>Lost Souls:</strong> Speak with the unburied to heal, take their toll, or learn what happened here.</li>
+           <li><strong>Sigils & Sealed Vaults:</strong> Gather three floor sigils to open the vault for a legendary relic.</li>
+           <li><strong>Journal:</strong> Every discovery is recorded in the codex and survives death.</li>
            <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
            <li><strong>Traps & Sconces:</strong> Watch out for poison/spike traps; stay near wall sconces for light!</li>
@@ -576,7 +607,7 @@ export class GameEngine {
   }
 
   _handleCanvasClick(e) {
-    if (this.gameOver || this.victory || this.ui.isModalOpen()) return;
+    if (this.gameOver || this.victory || this.transitioning || this.ui.isModalOpen()) return;
     const tile = this._getTileAtPointer(e);
     if (!tile) return;
 
@@ -700,39 +731,56 @@ export class GameEngine {
   }
 
   async descendFloor() {
-    this.depth += 1;
-    this.ui.logMessage(`You descended into Depth B${this.depth}F! The catacombs grow colder...`, "system");
+    if (this.transitioning || this.gameOver || this.victory) return;
+    this.transitioning = true;
+    const token = this.runToken;
+    const newDepth = this.depth + 1;
+    this.ui.logMessage(`You descended into Depth B${newDepth}F! The catacombs grow colder...`, "system");
 
     try {
-      const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${this.depth}&class=${this.heroClass}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to load map from server");
-      const data = await res.json();
+      let data = null;
+      try {
+        const url = `/api/new-game?seed=${Date.now() % 1000000}&depth=${newDepth}&class=${this.heroClass}`;
+        const res = await fetch(url);
+        if (token !== this.runToken) return;
+        if (!res.ok) throw new Error("Failed to load map from server");
+        data = await res.json();
+        if (token !== this.runToken) return;
+      } catch (err) {
+        if (token !== this.runToken) return;
+        console.warn("Server API fallback to offline procedural generator on descent:", err);
+        data = null;
+      }
 
-      this.dungeon = new ClientDungeon(data.dungeon);
-      this.monsters = data.monsters;
-      this.merchantStock = data.merchant_stock || this.merchantStock;
-      this.bounties = data.bounties || this._generateOfflineBounties(this.depth);
-      this.player.x = data.dungeon.player_spawn[0];
-      this.player.y = data.dungeon.player_spawn[1];
-    } catch (err) {
-      console.warn("Server API fallback to offline procedural generator on descent:", err);
-      const prevPlayer = this.player;
-      this._generateOfflineState(Date.now() % 1000000, this.depth, this.heroClass);
-      this.bounties = this._generateOfflineBounties(this.depth);
-      prevPlayer.x = this.dungeon.playerSpawn[0];
-      prevPlayer.y = this.dungeon.playerSpawn[1];
-      this.player = prevPlayer;
+      this.depth = newDepth;
+      if (data) {
+        this.dungeon = new ClientDungeon(data.dungeon);
+        this.monsters = data.monsters;
+        this.merchantStock = data.merchant_stock || this.merchantStock;
+        this.bounties = data.bounties || this._generateOfflineBounties(this.depth);
+        this.player.x = data.dungeon.player_spawn[0];
+        this.player.y = data.dungeon.player_spawn[1];
+      } else {
+        const prevPlayer = this.player;
+        this._generateOfflineState(Date.now() % 1000000, this.depth, this.heroClass);
+        this.bounties = this._generateOfflineBounties(this.depth);
+        prevPlayer.x = this.dungeon.playerSpawn[0];
+        prevPlayer.y = this.dungeon.playerSpawn[1];
+        this.player = prevPlayer;
+      }
+
+      sounds.setBiome(this.dungeon.biome);
+      this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+      this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+      this.ui.renderBounties(this.bounties);
+      this.sigilCount = 0;
+      this.updateSigils();
+      this.unlockLore(this.loreEvents?.[`depth${this.depth}`]);
+      this.saveGameState();
+    } finally {
+      // Only the run that owns this descent clears its own flag.
+      if (token === this.runToken) this.transitioning = false;
     }
-
-    sounds.setBiome(this.dungeon.biome);
-    this.dungeon.updateFOV(this.player.x, this.player.y, 7);
-    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
-    this.ui.renderBounties(this.bounties);
-    this.sigilCount = 0;
-    this.updateSigils();
-    this.unlockLore(this.loreEvents?.[`depth${this.depth}`]);
-    this.saveGameState();
   }
 
   updateBountyProgress(bountyId, amount = 1) {
@@ -888,8 +936,88 @@ export class GameEngine {
     this.saveGameState();
   }
 
+  resolvePact(pact, choice) {
+    if (!pact || pact.used) return;
+    if (!["wrath", "ward", "avarice"].includes(choice)) return;
+    pact.used = true;
+    this.player.status_effects = this.player.status_effects || {};
+
+    if (choice === "wrath") {
+      const burned = Math.max(5, Math.floor(this.player.max_hp * 0.2));
+      this.player.perm_attack = (this.player.perm_attack || 0) + 4;
+      this.player.bonus_max_hp = (this.player.bonus_max_hp || 0) - burned;
+      this._recalculatePlayerStats();
+      this.player.hp = Math.min(this.player.hp, this.player.max_hp);
+      sounds.playLevelUp();
+      this.renderer.shake(8, 220);
+      this.renderer.addParticles(pact.x, pact.y, "#e53e3e", 20);
+      this.renderer.addFloatingText(`+4 ATK  -${burned} MAX HP`, this.player.x, this.player.y, "#fc8181");
+      this.ui.logMessage(`🩸 PACT OF WRATH: +4 Attack forever. The altar took ${burned} maximum HP as its tithe.`, "crit");
+    } else if (choice === "ward") {
+      const sealed = Math.min(3, this.player.max_mana);
+      this.player.bonus_max_hp = (this.player.bonus_max_hp || 0) + 18;
+      this.player.bonus_max_mana = (this.player.bonus_max_mana || 0) - sealed;
+      this._recalculatePlayerStats();
+      this.player.hp = Math.min(this.player.max_hp, this.player.hp + 18);
+      sounds.playShrine();
+      this.renderer.addParticles(pact.x, pact.y, "#e2e8f0", 18);
+      this.renderer.addFloatingText("+18 MAX HP", this.player.x, this.player.y, "#e2e8f0");
+      this.ui.logMessage(`🦴 PACT OF THE GRAVE: +18 Max HP and sealed wounds knit shut; ${sealed} Max Mana is entombed.`, "loot");
+    } else {
+      const gold = 120 + this.depth * 30;
+      this.player.gold += gold;
+      sounds.playJackpot();
+      this.renderer.addJackpotExplosion(pact.x, pact.y);
+      this.renderer.addFloatingText(`+${gold} 🪙`, this.player.x, this.player.y, "#ecc94b");
+      const spots = [
+        [1, 0], [-1, 0], [0, 1], [0, -1],
+        [1, 1], [-1, 1], [1, -1], [-1, -1],
+      ];
+      let raised = 0;
+      for (const [dx, dy] of spots) {
+        if (raised >= 2) break;
+        const wx = pact.x + dx;
+        const wy = pact.y + dy;
+        if (this.dungeon.isWalkable(wx, wy) && !this._isOccupied(wx, wy)) {
+          this.monsters.push(this._spawnPactWraith(wx, wy));
+          this.renderer.addParticles(wx, wy, "#f56565", 14);
+          raised += 1;
+        }
+      }
+      this.ui.logMessage(`🪙 PACT OF AVARICE: ${gold} gold fills your purse. ${raised} Pact-Bound Wraith${raised === 1 ? "" : "s"} rise to collect the debt.`, "crit");
+    }
+
+    this.unlockLore(this.loreEvents?.pact);
+    this._recalculatePlayerStats();
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
+  }
+
+  _spawnPactWraith(x, y) {
+    const scale = 1 + (this.depth - 1) * 0.3;
+    const hp = Math.max(10, Math.floor(26 * scale));
+    return {
+      name: "Pact-Bound Wraith",
+      type: "wraith",
+      x,
+      y,
+      hp,
+      max_hp: hp,
+      attack: Math.max(4, Math.floor(8 * scale)),
+      defense: Math.max(0, Math.floor(2 * scale)),
+      xp_reward: 28,
+      gold_reward: 12,
+      loot_drop: null,
+      is_boss: false,
+      is_champion: false,
+      champion_affix: null,
+      ai_state: "idle",
+      status_effects: {},
+    };
+  }
+
   stepPlayer(dx, dy) {
-    if (this.gameOver || this.victory) return;
+    if (this.gameOver || this.victory || this.transitioning) return;
 
     const nx = this.player.x + dx;
     const ny = this.player.y + dy;
@@ -1011,6 +1139,14 @@ export class GameEngine {
     const soul = (this.dungeon.souls || []).find((s) => s.x === nx && s.y === ny && !s.resolved);
     if (soul) {
       this.ui.showSoulDialogueModal(soul, (choice) => this.resolveSoul(soul, choice));
+      this.finishPlayerTurn();
+      return;
+    }
+
+    // Black pact altar: a bargain, not loot
+    const pact = (this.dungeon.pacts || []).find((p) => p.x === nx && p.y === ny && !p.used);
+    if (pact) {
+      this.ui.showPactModal(pact, (choice) => this.resolvePact(pact, choice));
       this.finishPlayerTurn();
       return;
     }
@@ -1241,6 +1377,7 @@ export class GameEngine {
   }
 
   triggerSlotAction(slotNum) {
+    if (this.gameOver || this.victory || this.transitioning) return;
     const cls = this.heroClass || this.player?.hero_class || "paladin";
     if (slotNum === 1) {
       this.tacticalStrike();
@@ -1607,6 +1744,7 @@ export class GameEngine {
   }
 
   quickPotion() {
+    if (this.gameOver || this.victory || this.transitioning) return;
     const potIdx = this.player.inventory.findIndex((i) => i.type === "potion");
     if (potIdx >= 0) {
       this.useInventoryItem(potIdx);
@@ -1616,6 +1754,7 @@ export class GameEngine {
   }
 
   waitTurn() {
+    if (this.gameOver || this.victory || this.transitioning) return;
     if (this.player.mana < this.player.max_mana) {
       this.player.mana += 1;
     }
@@ -1624,6 +1763,7 @@ export class GameEngine {
   }
 
   useInventoryItem(idx) {
+    if (this.gameOver || this.victory || this.transitioning) return;
     if (idx < 0 || idx >= this.player.inventory.length) return;
     const item = this.player.inventory[idx];
 
@@ -1720,9 +1860,11 @@ export class GameEngine {
 
   _recalculatePlayerStats() {
     const cls = this.heroClass || this.player?.hero_class || "paladin";
+    // These bases mirror HERO_CLASSES in crawler/entities.py; a mismatch here silently
+    // rewrote a fresh paladin from 65 HP / 4 DEF to 60 HP / 3 DEF on the first turn.
     let baseAtk = 8;
-    let baseDef = 3;
-    let baseHp = 60;
+    let baseDef = 4;
+    let baseHp = 65;
     let baseMp = 30;
     let critChance = 0.15;
 
@@ -1742,8 +1884,8 @@ export class GameEngine {
 
     let atk = baseAtk + (this.player.level - 1) * 2 + (this.player.perm_attack || 0);
     let def = baseDef + (this.player.level - 1) * 1 + (this.player.perm_defense || 0);
-    let maxHpBonus = 0;
-    let maxMpBonus = 0;
+    let maxHpBonus = this.player.bonus_max_hp || 0;
+    let maxMpBonus = this.player.bonus_max_mana || 0;
 
     for (const slot of Object.values(this.player.equipped)) {
       if (slot && slot.stats) {
@@ -1765,8 +1907,8 @@ export class GameEngine {
     this.player.attack = atk;
     this.player.defense = def;
     this.player.crit_chance = critChance;
-    this.player.max_hp = baseHp + (this.player.level - 1) * 12 + maxHpBonus;
-    this.player.max_mana = baseMp + (this.player.level - 1) * 6 + maxMpBonus;
+    this.player.max_hp = Math.max(1, baseHp + (this.player.level - 1) * 12 + maxHpBonus);
+    this.player.max_mana = Math.max(0, baseMp + (this.player.level - 1) * 6 + maxMpBonus);
     this.player.hp = Math.min(this.player.hp, this.player.max_hp);
     this.player.mana = Math.min(this.player.mana, this.player.max_mana);
   }
@@ -2014,6 +2156,7 @@ export class GameEngine {
       ...(dungeon.urns || []),
       ...(dungeon.souls || []),
       ...(dungeon.sigils || []),
+      ...(dungeon.pacts || []),
     ];
     if (dungeon.vault) props.push(dungeon.vault);
     return props.some((prop) => prop.x === x && prop.y === y);
@@ -2036,8 +2179,9 @@ export class GameEngine {
          <p><strong>Gold Gathered:</strong> ${this.player.gold} 🪙</p>
        </div>
        <br>
-       <p>Click below to enter the catacombs anew.</p>`
+        <p>Click below to enter the catacombs anew.</p>`
     );
+    this.ui.btnModalClose.textContent = "Enter the Catacombs Anew";
   }
 
   handleVictory() {
@@ -2057,8 +2201,9 @@ export class GameEngine {
          <p><strong>Relics Recovered:</strong> Crown of Eternity</p>
        </div>
        <br>
-       <p>The light returns to the realm. Descend again for a new challenge?</p>`
+        <p>The light returns to the realm. Descend again for a new challenge?</p>`
     );
+    this.ui.btnModalClose.textContent = "Descend Again";
   }
 
   saveGameState() {
@@ -2096,6 +2241,7 @@ export class GameEngine {
           vault: this.dungeon.vault
             ? { x: this.dungeon.vault.x, y: this.dungeon.vault.y, opened: this.dungeon.vault.opened }
             : null,
+          pacts: (this.dungeon.pacts || []).map((p) => ({ x: p.x, y: p.y, used: p.used })),
           sconces: this.dungeon.sconces.map((sc) => [sc.x, sc.y]),
           merchants: (this.dungeon.merchants || []).map((m) => [m.x, m.y]),
         },

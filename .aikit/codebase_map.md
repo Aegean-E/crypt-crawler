@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `16`
-- **Total Classes**: `18`
-- **Total Top-Level Functions**: `24`
-- **Total Class Methods**: `100`
-- **Total Source Lines**: `3795`
+- **Total Python Modules**: `19`
+- **Total Classes**: `25`
+- **Total Top-Level Functions**: `39`
+- **Total Class Methods**: `126`
+- **Total Source Lines**: `5262`
 
 ---
 
@@ -47,7 +47,7 @@
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `418` lines (`14599` bytes)
+**Size**: `464` lines (`16674` bytes)
 
 **Classes:**
 - `class TileType`
@@ -119,7 +119,7 @@
 ### [`crawler/lore.py`](crawler/lore.py)
 > *Lore codex: the readable history of the crypt, its relics and its dead.*
 
-**Size**: `186` lines (`6842` bytes)
+**Size**: `195` lines (`7354` bytes)
 
 **Functions:**
 - `def public_entries()` - *Every entry as a fresh dict, safe to serialise to the client.*
@@ -148,7 +148,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `184` lines (`7355` bytes)
+**Size**: `194` lines (`8018` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -178,6 +178,34 @@
 > *Unit tests for Crypt-Crawler.*
 
 **Size**: `1` lines (`36` bytes)
+
+---
+
+### [`tests/test_ai_harness.py`](tests/test_ai_harness.py)
+> *Unit tests for the AI gameplay harness and the UI inventory contract.*
+
+**Size**: `155` lines (`5935` bytes)
+
+**Classes:**
+- `class TestHarnessCatalog`
+  - Method `.test_catalog_matches_shipped_classes()`
+  - Method `.test_catalog_actions_and_pacts()`
+  - Method `.test_every_class_deck_has_five_named_abilities()`
+- `class TestActionValidation`
+  - Method `.test_valid_actions()`
+  - Method `.test_invalid_actions_are_reported()`
+- `class TestScriptParsing`
+  - Method `.test_accepts_a_minimal_script()`
+  - Method `.test_rejects_bad_scripts()`
+  - Method `.test_script_limit_is_enforced()`
+- `class TestLayoutHash`
+  - Method `._state(seed, staircase)`
+  - Method `.test_hash_is_stable_and_sensitive()`
+- `class TestUiInventory`
+  - Method `.setUp()`
+  - Method `.test_inventory_names_real_controls_choices_and_handlers()`
+  - Method `.test_inventory_is_deterministic_and_deduplicated()`
+  - Method `.test_ui_contract_points_at_the_inventory_and_tests()`
 
 ---
 
@@ -216,7 +244,7 @@
 ### [`tests/test_dungeon.py`](tests/test_dungeon.py)
 > *Unit tests for procedural dungeon generation and pathfinding.*
 
-**Size**: `123` lines (`5193` bytes)
+**Size**: `152` lines (`6849` bytes)
 
 **Classes:**
 - `class TestDungeon`
@@ -227,6 +255,8 @@
   - Method `.test_biomes_and_depth_scaling()`
   - Method `.test_one_lost_soul_per_floor_in_a_walkable_spot()`
   - Method `.test_sigils_and_vault_form_a_floor_objective()`
+  - Method `.test_one_pact_altar_per_floor_in_a_walkable_spot()`
+  - Method `.test_pact_altar_still_spawns_on_a_degenerate_two_room_map()`
   - Method `.test_merchant_spawns_on_depth_2()`
 
 ---
@@ -245,7 +275,7 @@
 ### [`tests/test_lore.py`](tests/test_lore.py)
 > *Unit tests for the lore codex data and its HTTP endpoint.*
 
-**Size**: `73` lines (`2612` bytes)
+**Size**: `73` lines (`2620` bytes)
 
 **Classes:**
 - `class TestLoreData`
@@ -278,7 +308,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `120` lines (`5064` bytes)
+**Size**: `152` lines (`6748` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -291,17 +321,66 @@
   - Method `.test_find_available_server()`
   - Method `.test_floor_objective_and_soul_are_clear_of_monsters()`
   - Method `.test_monsters_never_cover_an_interactive_prop()`
+  - Method `.test_no_two_monsters_share_a_tile()`
+  - Method `.test_depth_three_boss_guards_the_stairs()`
   - Method `.test_api_new_game_with_class_and_merchant()`
+
+---
+
+### [`tools/ai_harness.py`](tools/ai_harness.py)
+> *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
+
+**Size**: `810` lines (`31767` bytes)
+
+**Classes:**
+- `class Harness` - *One server and one headless browser shared by every page the harness opens.*
+  - Method `.__init__(headless)`
+  - Method `.__enter__()`
+  - Method `.__exit__(*exc_info)`
+  - Method `.open_page(seed, depth, hero_class, rng_seed)` - *A page whose engine has started from the given seed, class and depth.*
+  - Method `.state(page)`
+  - Method `.apply(page, action)` - *Run one validated action and return the state after it.*
+
+**Functions:**
+- `def catalog()` - *Everything an agent needs to plan a run without reading the source.*
+- `def _is_int(value)`
+- `def validate_action(action)` - *Field-level problems in one action object; empty means valid.*
+- `def parse_script(raw)` - *Validated run script; raises ValueError listing every problem.*
+- `def layout_hash(state)` - *Stable fingerprint of everything the seeded generator decides.*
+- `def _deck_labels(page)` - *The five ability labels, excluding the always-present Potion and Wait buttons.*
+- `def _check(name, passed, detail)`
+- `def selftest(harness)` - *Prove the mechanics the harness claims to expose actually work.*
+- `def _write_output(payload, out)`
+- `def main(argv)`
 
 ---
 
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `821` lines (`43126` bytes)
+**Size**: `1084` lines (`59195` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`
 - `def main()`
+
+---
+
+### [`tools/ui_inventory.py`](tools/ui_inventory.py)
+> *Deterministic UI inventory for the AIKit UI guard (`.aikit/ui.json`).*
+
+**Size**: `113` lines (`4344` bytes)
+
+**Classes:**
+- `class _ControlParser` - *Collects controls, id-bearing containers and data-attribute choices.*
+  - Method `.__init__()`
+  - Method `.handle_starttag(tag, attrs)`
+
+**Functions:**
+- `def _html_entries(path)`
+- `def _script_entries(paths)`
+- `def _theme_entries(path)`
+- `def inventory(root)` - *Sorted, deduplicated inventory lines for every shipped UI surface.*
+- `def main(argv)`
 
 ---
