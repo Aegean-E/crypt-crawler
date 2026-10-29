@@ -19,6 +19,7 @@ export class DungeonRenderer {
     this.shakeDuration = 0;
     this.shakeStartTime = 0;
     this.hoverTile = null;
+    this.reducedMotion = false;
   }
 
   addJackpotExplosion(x, y) {
@@ -87,6 +88,7 @@ export class DungeonRenderer {
   }
 
   shake(intensity = 6, duration = 200) {
+    if (this.reducedMotion) return;
     this.shakeIntensity = intensity;
     this.shakeDuration = duration;
     this.shakeStartTime = performance.now();
@@ -1242,6 +1244,74 @@ export class DungeonRenderer {
       ctx.beginPath();
       ctx.moveTo(px + ts - 5, py + ts / 2 + 7);
       ctx.lineTo(px + ts - 3, py + ts / 2 - 3);
+      ctx.stroke();
+    } else if (monster.type === "archer") {
+      // Skeletal Archer: tattered hood, bone skull and a drawn bow.
+      const midX = px + ts / 2;
+      ctx.fillStyle = "#2f3b2f";
+      ctx.beginPath();
+      ctx.moveTo(midX, py + 4);
+      ctx.lineTo(px + ts - 6, py + ts - 4);
+      ctx.lineTo(px + 6, py + ts - 4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.arc(midX, py + 8, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1a202c";
+      ctx.fillRect(midX - 2, py + 6.5, 1.6, 1.6);
+      ctx.fillRect(midX + 0.4, py + 6.5, 1.6, 1.6);
+
+      ctx.strokeStyle = "#c05621";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(midX + 5, py + ts / 2, 7, -Math.PI / 3, Math.PI / 3);
+      ctx.stroke();
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(midX + 8, py + ts / 2 - 6);
+      ctx.lineTo(midX + 8, py + ts / 2 + 6);
+      ctx.stroke();
+      ctx.strokeStyle = "#f6e05e";
+      ctx.beginPath();
+      ctx.moveTo(midX + 2, py + ts / 2);
+      ctx.lineTo(midX + 10, py + ts / 2);
+      ctx.stroke();
+    } else if (monster.type === "hound") {
+      // Crypt Hound: low four-legged silhouette, red eyes and a bone collar.
+      const midX = px + ts / 2;
+      const midY = py + ts / 2;
+      ctx.fillStyle = "#4a3b2f";
+      ctx.beginPath();
+      ctx.ellipse(midX, midY + 3, ts * 0.32, ts * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(px + ts * 0.68, midY - 2, ts * 0.15, ts * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(px + ts * 0.66, midY - 8);
+      ctx.lineTo(px + ts * 0.72, midY - 13);
+      ctx.lineTo(px + ts * 0.75, midY - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(px + ts * 0.28, midY + 7, 2.5, 7);
+      ctx.fillRect(px + ts * 0.62, midY + 7, 2.5, 7);
+      ctx.strokeStyle = "#4a3b2f";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px + ts * 0.2, midY + 1);
+      ctx.quadraticCurveTo(px + ts * 0.08, midY - 4, px + ts * 0.14, midY - 8);
+      ctx.stroke();
+      ctx.fillStyle = "#f56565";
+      ctx.fillRect(px + ts * 0.68, midY - 4, 2, 2);
+      ctx.fillRect(px + ts * 0.74, midY - 4, 2, 2);
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(px + ts * 0.62, midY - 1, 4.5, 0, Math.PI * 2);
       ctx.stroke();
     } else if (monster.type === "wraith") {
       // Pact-Bound Wraith: a crimson debt given shape. It must read as a different

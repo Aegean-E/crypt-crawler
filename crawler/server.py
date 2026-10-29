@@ -86,7 +86,7 @@ class CryptCrawlerHandler(SimpleHTTPRequestHandler):
             monsters = []
             monster_types = ["skeleton", "goblin", "bat", "spider"]
             if depth >= 2:
-                monster_types.append("necromancer")
+                monster_types.extend(["necromancer", "archer", "hound"])
 
             # Every interactive prop stays clear of monsters, including the boss escorts.
             reserved = (

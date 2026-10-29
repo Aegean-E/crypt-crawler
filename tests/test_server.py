@@ -113,6 +113,20 @@ class TestServer(unittest.TestCase):
                         f"monsters stacked on one tile: {sorted(tiles)}",
                     )
 
+    def test_new_mobs_start_at_depth_two(self):
+        depth_one_types = set()
+        depth_two_types = set()
+        for seed in range(1, 41):
+            for depth, bucket in ((1, depth_one_types), (2, depth_two_types)):
+                url = f"{self.base_url}/api/new-game?seed={seed}&depth={depth}"
+                with urlopen(url, timeout=3) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                bucket.update(m["type"] for m in data["monsters"])
+        self.assertNotIn("archer", depth_one_types)
+        self.assertNotIn("hound", depth_one_types)
+        self.assertIn("archer", depth_two_types)
+        self.assertIn("hound", depth_two_types)
+
     def test_depth_three_boss_guards_the_stairs(self):
         for seed in (1, 2, 5, 7, 8, 42, 777, 1234):
             with self.subTest(seed=seed):

@@ -36,6 +36,7 @@ class TestLoreData(unittest.TestCase):
         for event in (
             "start", "depth2", "depth3", "shrine", "merchant", "soul",
             "vault", "sigil", "boss", "crown", "death", "watchers", "pact",
+            "omen", "lantern", "debt",
         ):
             with self.subTest(event=event):
                 self.assertTrue(is_valid_entry(entry_for_event(event)))

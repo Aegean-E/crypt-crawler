@@ -1086,6 +1086,40 @@ body.theme-dark {
   50% { transform: scale(1.06); box-shadow: 0 0 10px rgba(245, 101, 101, 0.8); }
 }
 
+/* Floor Omen: one persistent modifier per floor */
+.omen-pill {
+  border: 1px solid #4a5568;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+.omen-pill[data-omen="blood_moon"] {
+  border-color: #e53e3e;
+  color: #feb2b2;
+  background: rgba(229, 62, 62, 0.18);
+}
+.omen-pill[data-omen="deep_fog"] {
+  border-color: #718096;
+  color: #cbd5e0;
+  background: rgba(113, 128, 150, 0.18);
+}
+.omen-pill[data-omen="gilded_crypt"] {
+  border-color: #d69e2e;
+  color: #fbd38d;
+  background: rgba(214, 158, 46, 0.18);
+}
+.omen-pill[data-omen="restless_dead"] {
+  border-color: #805ad5;
+  color: #d6bcfa;
+  background: rgba(128, 90, 213, 0.18);
+}
+
+/* Reduced motion: the player can switch off screen shake and pulsing accents. */
+body.reduced-motion .streak-pill,
+body.reduced-motion .jackpot-banner {
+  animation: none;
+}
+
+
 /* Hall of Records & Bestiary */
 .records-stat-grid {
   display: grid;

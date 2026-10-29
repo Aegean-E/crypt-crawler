@@ -141,6 +141,42 @@ LORE_ENTRIES: List[Dict[str, str]] = [
         ),
     },
     {
+        "id": "lore_omen",
+        "title": "Signs in the Blood",
+        "category": "Whispers",
+        "text": (
+            "The crypt keeps its weather. When the moon turns red the dead "
+            "swing harder; when the fog thickens the lantern gives up two "
+            "paces; when the grave-gold glitters the dead were buried rich; "
+            "and when the stones whisper, something has followed you down. "
+            "Read the signs before you read the floor."
+        ),
+    },
+    {
+        "id": "lore_lantern",
+        "title": "The Lantern-Keeper",
+        "category": "Whispers",
+        "text": (
+            "Your father carried this lantern and a ledger of debts. The "
+            "hermit merchant recognizes the brass and will not say from "
+            "whom he bought it. He only asks that you keep the flame low in "
+            "the deep places, because the things down there remember faces "
+            "by lamplight."
+        ),
+    },
+    {
+        "id": "lore_debt",
+        "title": "The Debt of Malakor",
+        "category": "The Fallen",
+        "text": (
+            "Malakor did not conquer the crypt; he was hired to settle it. "
+            "The first debt was a king's fear of dying. The last is owed by "
+            "everyone still breathing above the stairs. When the Crown of "
+            "Eternity falls, the ledger closes, and the keeper of the "
+            "lantern can finally go home."
+        ),
+    },
+    {
         "id": "lore_death",
         "title": "The Catacombs Keep Their Own",
         "category": "Whispers",
@@ -172,6 +208,9 @@ LORE_EVENTS: Dict[str, str] = {
     "death": "lore_death",
     "watchers": "lore_watchers",
     "pact": "lore_pact",
+    "omen": "lore_omen",
+    "lantern": "lore_lantern",
+    "debt": "lore_debt",
 }
 
 

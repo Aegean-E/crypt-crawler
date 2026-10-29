@@ -8,6 +8,43 @@ import { ClientDungeon, TileType } from "./dungeon.js";
 import { DungeonRenderer } from "./renderer.js";
 import { UIController } from "./ui.js";
 
+/**
+ * Floor omens: one deterministic modifier per floor, chosen from the run seed and depth.
+ * `atkMult` scales enemy damage, `fov` replaces the lantern radius, `goldMult` scales
+ * chest/urn coin, and `extraFoe` adds one more enemy at the start of the floor.
+ */
+export const OMENS = [
+  {
+    id: "blood_moon", name: "Blood Moon", icon: "🌑",
+    desc: "The moon is red. Enemies strike 25% harder.",
+    atkMult: 1.25, fov: 7, goldMult: 1, extraFoe: 0,
+  },
+  {
+    id: "deep_fog", name: "Deep Fog", icon: "🌫️",
+    desc: "The air is thick. Your lantern reaches only 5 tiles.",
+    atkMult: 1, fov: 5, goldMult: 1, extraFoe: 0,
+  },
+  {
+    id: "gilded_crypt", name: "Gilded Crypt", icon: "💰",
+    desc: "The dead were buried rich. Chests and urns hold 50% more gold.",
+    atkMult: 1, fov: 7, goldMult: 1.5, extraFoe: 0,
+  },
+  {
+    id: "restless_dead", name: "Restless Dead", icon: "💀",
+    desc: "Something followed you down. One extra enemy stalks this floor.",
+    atkMult: 1, fov: 7, goldMult: 1, extraFoe: 1,
+  },
+];
+
+export function omenFor(seed, depth) {
+  let hash = (Number(seed) >>> 0) ^ Math.imul(Number(depth) || 1, 0x9e3779b1);
+  hash = Math.imul(hash ^ (hash >>> 15), 0x85ebca6b);
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
+  return OMENS[hash % OMENS.length];
+}
+
+
 export class GameEngine {
   constructor() {
     this.canvas = document.getElementById("gameCanvas");
@@ -36,9 +73,40 @@ export class GameEngine {
     this.musicStarted = false;
     this.transitioning = false;
     this.runToken = 0;
+    this.omen = null;
+    this.omenKey = "";
+    this.fovRadius = 7;
 
     this._setupCallbacks();
     this._setupInputListeners();
+    this._applyReducedMotion(this._loadReducedMotion(), false);
+  }
+
+  _loadReducedMotion() {
+    try {
+      return localStorage.getItem("crypt_crawler_reduced_motion") === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  _applyReducedMotion(enabled, persist = true) {
+    this.reducedMotion = Boolean(enabled);
+    this.renderer.reducedMotion = this.reducedMotion;
+    document.body.classList.toggle("reduced-motion", this.reducedMotion);
+    const btn = document.getElementById("btnMotionToggle");
+    if (btn) {
+      btn.textContent = this.reducedMotion ? "🎞️" : "✨";
+      btn.style.color = this.reducedMotion ? "#4fd1c5" : "inherit";
+      btn.title = this.reducedMotion ? "Motion effects: reduced" : "Motion effects: full";
+    }
+    if (persist) {
+      try {
+        localStorage.setItem("crypt_crawler_reduced_motion", this.reducedMotion ? "1" : "0");
+      } catch (_) {
+        /* storage is optional */
+      }
+    }
   }
 
   async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true) {
@@ -76,7 +144,8 @@ export class GameEngine {
         ]));
         this.sigilCount = Number.isFinite(saved.sigilCount) ? saved.sigilCount : 0;
         sounds.setBiome(this.dungeon.biome);
-        this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+        this._applyOmen({ announce: false, extraFoe: false });
+        this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
         this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
         this.ui.renderBounties(this.bounties);
         this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
@@ -113,7 +182,8 @@ export class GameEngine {
     sounds.setBiome(this.dungeon.biome);
 
     // Initialize FOV
-    this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+    this._applyOmen();
+    this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
 
     // Initial UI update
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
@@ -333,6 +403,24 @@ export class GameEngine {
           status_effects: {},
         },
       ];
+      if (depth >= 2) {
+        this.monsters.push(
+          {
+            name: "Crypt Hound", type: "hound",
+            x: rooms[3].center[0] + 1, y: rooms[3].center[1] + 1,
+            hp: 18, max_hp: 18, attack: 6, defense: 1,
+            xp_reward: 22, gold_reward: 12, loot_drop: "potion_health",
+            is_boss: false, is_champion: false, champion_affix: null, status_effects: {},
+          },
+          {
+            name: "Skeletal Archer", type: "archer",
+            x: rooms[4].center[0] - 1, y: rooms[4].center[1] + 1,
+            hp: 16, max_hp: 16, attack: 7, defense: 1,
+            xp_reward: 24, gold_reward: 14, loot_drop: "scroll_fireball",
+            is_boss: false, is_champion: false, champion_affix: null, status_effects: {},
+          },
+        );
+      }
     }
   }
 
@@ -360,7 +448,19 @@ export class GameEngine {
     window.addEventListener("keydown", (e) => {
       this._triggerMusicStart();
       if (this.gameOver || this.victory || this.transitioning) return;
-      if (this.ui.isModalOpen()) return;
+      if (this.ui.isModalOpen()) {
+        // QoL: Escape closes the dialog that already advertises a close button.
+        if (e.key === "Escape") {
+          e.preventDefault();
+          this.ui.btnModalClose?.click();
+        }
+        return;
+      }
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+        e.preventDefault();
+        document.getElementById("btnHelp")?.click();
+        return;
+      }
 
       // Numpad movement is read from e.code so the 1-6 deck hotkeys on the
       // number row keep working; e.key would report the same digits.
@@ -514,6 +614,11 @@ export class GameEngine {
       btnCrt.addEventListener("click", () => this.ui.toggleCrt());
     }
 
+    const btnMotion = document.getElementById("btnMotionToggle");
+    if (btnMotion) {
+      btnMotion.addEventListener("click", () => this._applyReducedMotion(!this.reducedMotion));
+    }
+
     const btnBounties = document.getElementById("btnBounties");
     if (btnBounties) {
       btnBounties.addEventListener("click", () => this.ui.showBountiesModal(this.bounties));
@@ -580,7 +685,11 @@ export class GameEngine {
            <li><strong>Traps & Sconces:</strong> Watch out for poison/spike traps; stay near wall sconces for light!</li>
          </ul>
          <br>
-         <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>`
+         <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
+         <br>
+         <p><strong>Floor Omens:</strong> every floor carries one omen — Blood Moon (enemies hit 25% harder), Deep Fog (lantern reaches 5 tiles), Gilded Crypt (+50% chest and urn gold) or Restless Dead (one extra enemy). The omen pill in the header always names the current one.</p>
+         <p><strong>Enemies:</strong> Skeletal Archers shoot across open rooms, Crypt Hounds lunge two tiles a turn, and Pact-Bound Wraiths rise from Avarice.</p>
+         <p><strong>Shortcuts:</strong> <strong>?</strong> opens this guide, <strong>Escape</strong> closes any dialog, and the 🎞️ button toggles reduced motion (persisted).</p>`
       );
     });
   }
@@ -770,7 +879,8 @@ export class GameEngine {
       }
 
       sounds.setBiome(this.dungeon.biome);
-      this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+      this._applyOmen();
+      this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
       this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
       this.ui.renderBounties(this.bounties);
       this.sigilCount = 0;
@@ -1016,6 +1126,73 @@ export class GameEngine {
     };
   }
 
+  _omenFor(seed, depth) {
+    return omenFor(seed, depth);
+  }
+
+  _applyOmen({ announce = true, extraFoe = true } = {}) {
+    if (!this.dungeon) return;
+    const seed = Number(this.dungeon.seed ?? 0);
+    const key = `${seed}:${this.depth}`;
+    const omen = omenFor(seed, this.depth);
+    this.omen = omen;
+    this.fovRadius = omen.fov;
+    this.ui.updateOmen(omen);
+    if (this.omenKey === key) return;
+    this.omenKey = key;
+    if (announce) {
+      this.unlockLore(this.loreEvents?.omen);
+      this.ui.logMessage(`${omen.icon} Omen — ${omen.name}: ${omen.desc}`, "system");
+    }
+    if (extraFoe && omen.extraFoe) this._spawnOmenFoe();
+  }
+
+  _spawnOmenFoe() {
+    const candidates = [];
+    for (const room of this.dungeon.rooms || []) {
+      for (let y = room.y + 1; y < room.y + room.h - 1; y += 1) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x += 1) {
+          if (!this.dungeon.isWalkable(x, y) || this._isOccupied(x, y)) continue;
+          if (Math.abs(x - this.player.x) + Math.abs(y - this.player.y) >= 6) {
+            candidates.push([x, y]);
+          }
+        }
+      }
+    }
+    if (!candidates.length) {
+      for (let y = 0; y < this.dungeon.height; y += 1) {
+        for (let x = 0; x < this.dungeon.width; x += 1) {
+          if (!this.dungeon.isWalkable(x, y) || this._isOccupied(x, y)) continue;
+          if (Math.abs(x - this.player.x) + Math.abs(y - this.player.y) >= 6) {
+            candidates.push([x, y]);
+          }
+        }
+      }
+    }
+    if (!candidates.length) return;
+    const [x, y] = candidates[Math.floor(Math.random() * candidates.length)];
+    const scale = 1 + (this.depth - 1) * 0.25;
+    const hp = Math.max(6, Math.floor(14 * scale));
+    this.monsters.push({
+      name: "Restless Shade",
+      type: "bat",
+      x,
+      y,
+      hp,
+      max_hp: hp,
+      attack: Math.max(2, Math.floor(5 * scale)),
+      defense: 0,
+      xp_reward: 12,
+      gold_reward: 8,
+      loot_drop: null,
+      is_boss: false,
+      is_champion: false,
+      champion_affix: null,
+      status_effects: {},
+    });
+    this.renderer.addParticles(x, y, "#9ae6b4", 10);
+  }
+
   stepPlayer(dx, dy) {
     if (this.gameOver || this.victory || this.transitioning) return;
 
@@ -1085,7 +1262,9 @@ export class GameEngine {
       sounds.playUrn();
       this.renderer.addParticles(nx, ny, "#9c4221", 10);
       const isUrnCrit = Math.random() < 0.18;
-      const baseUrnGold = 6 + Math.floor(Math.random() * 12);
+      const baseUrnGold = Math.floor(
+        (6 + Math.floor(Math.random() * 12)) * (this.omen?.goldMult || 1)
+      );
       const goldDrop = isUrnCrit ? Math.floor(baseUrnGold * 2.5) : baseUrnGold;
       this.player.gold += goldDrop;
 
@@ -1156,7 +1335,10 @@ export class GameEngine {
     if (chest) {
       chest.opened = true;
       const roll = Math.random();
-      const baseGold = 18 + Math.floor(Math.random() * 22) + (this.depth - 1) * 10;
+      const baseGold = Math.floor(
+        (18 + Math.floor(Math.random() * 22) + (this.depth - 1) * 10)
+        * (this.omen?.goldMult || 1)
+      );
       let goldFound = baseGold;
 
       if (roll < 0.22) {
@@ -1355,6 +1537,7 @@ export class GameEngine {
       this.ui.logMessage("🏆 ARCH-LICH MALAKOR HAS FALLEN! The realm is redeemed!", "level");
       this.unlockLore(this.loreEvents?.boss);
       this.unlockLore(this.loreEvents?.crown);
+      this.unlockLore(this.loreEvents?.debt);
       // Add legendary drop
       const crown = {
         id: "crown_eternity",
@@ -1566,6 +1749,7 @@ export class GameEngine {
       ];
     }
     this.unlockLore(this.loreEvents?.merchant);
+    this.unlockLore(this.loreEvents?.lantern);
     sounds.playShopBuy();
     this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (itemId) => this.buyMerchantItem(itemId));
   }
@@ -1915,7 +2099,7 @@ export class GameEngine {
 
   finishPlayerTurn() {
     this.turn += 1;
-    this.dungeon.updateFOV(this.player.x, this.player.y, 7);
+    this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius || 7);
 
     // 1. Tick Player Status Effects
     this._tickPlayerStatuses();
@@ -2049,7 +2233,7 @@ export class GameEngine {
 
       // Boss special ability: Soul Drain
       if (monster.is_boss && isVisible && dist <= 5 && Math.random() < 0.35) {
-        const drain = 12;
+        const drain = Math.max(1, Math.round(12 * (this.omen?.atkMult || 1)));
         this.player.hp = Math.max(0, this.player.hp - drain);
         monster.hp = Math.min(monster.max_hp, monster.hp + 10);
         sounds.playSpell("fireball");
@@ -2060,10 +2244,31 @@ export class GameEngine {
         continue;
       }
 
+      // Skeletal Archer: fires from a distance instead of closing to melee.
+      if (
+        monster.type === "archer" && isVisible && dist > 1 && dist <= 4
+        && this._hasLineOfSight(monster.x, monster.y, this.player.x, this.player.y)
+      ) {
+        const baseDmg = Math.max(1, monster.attack - this.player.defense);
+        const dmg = Math.max(
+          1,
+          Math.floor(baseDmg * (0.8 + Math.random() * 0.4) * (this.omen?.atkMult || 1))
+        );
+        this.player.hp = Math.max(0, this.player.hp - dmg);
+        sounds.playHit(false);
+        this.renderer.addProjectile(monster.x, monster.y, this.player.x, this.player.y, "#e2e8f0");
+        this.renderer.addFloatingText(`-${dmg}`, this.player.x, this.player.y, "#ff3333");
+        this.ui.logMessage(`${monster.name} looses a bone arrow for ${dmg} damage!`, "hit");
+        continue;
+      }
+
       // If adjacent: attack player
       if (Math.abs(monster.x - this.player.x) + Math.abs(monster.y - this.player.y) === 1) {
         const baseDmg = Math.max(1, monster.attack - this.player.defense);
-        const dmg = Math.max(1, Math.floor(baseDmg * (0.8 + Math.random() * 0.4)));
+        const dmg = Math.max(
+          1,
+          Math.floor(baseDmg * (0.8 + Math.random() * 0.4) * (this.omen?.atkMult || 1))
+        );
         this.player.hp = Math.max(0, this.player.hp - dmg);
         sounds.playHit(false);
 
@@ -2099,24 +2304,41 @@ export class GameEngine {
           this.ui.logMessage(`🪙 Sneaky Goblin stole ${stolen} gold from your coin pouch!`, "hit");
         }
       } else if (isVisible && dist <= 7) {
-        // Step toward player
-        const dx = Math.sign(this.player.x - monster.x);
-        const dy = Math.sign(this.player.y - monster.y);
-
-        let nx = monster.x + dx;
-        let ny = monster.y;
-        if (dx !== 0 && this.dungeon.isWalkable(nx, ny) && !this._isOccupied(nx, ny)) {
-          monster.x = nx;
-        } else {
-          nx = monster.x;
-          ny = monster.y + dy;
-          if (dy !== 0 && this.dungeon.isWalkable(nx, ny) && !this._isOccupied(nx, ny)) {
-            monster.y = ny;
-          }
-        }
+        // Step toward player; a hound lunges two tiles per turn.
+        this._stepToward(monster);
+        if (monster.type === "hound") this._stepToward(monster);
       }
     }
     if (newMonsters.length) this.monsters.push(...newMonsters);
+  }
+
+  _stepToward(monster) {
+    const dx = Math.sign(this.player.x - monster.x);
+    const dy = Math.sign(this.player.y - monster.y);
+    let nx = monster.x + dx;
+    let ny = monster.y;
+    if (dx !== 0 && this.dungeon.isWalkable(nx, ny) && !this._isOccupied(nx, ny)) {
+      monster.x = nx;
+      return true;
+    }
+    nx = monster.x;
+    ny = monster.y + dy;
+    if (dy !== 0 && this.dungeon.isWalkable(nx, ny) && !this._isOccupied(nx, ny)) {
+      monster.y = ny;
+      return true;
+    }
+    return false;
+  }
+
+  _hasLineOfSight(x0, y0, x1, y1) {
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    if (steps === 0) return true;
+    for (let i = 1; i < steps; i += 1) {
+      const x = Math.round(x0 + ((x1 - x0) * i) / steps);
+      const y = Math.round(y0 + ((y1 - y0) * i) / steps);
+      if (!this.dungeon.isWalkable(x, y)) return false;
+    }
+    return true;
   }
 
   _summonSkeleton(x, y) {
@@ -2201,6 +2423,7 @@ export class GameEngine {
          <p><strong>Relics Recovered:</strong> Crown of Eternity</p>
        </div>
        <br>
+        <p>The ledger closes. Somewhere above, a lantern-keeper finally sets down a flame he has carried too long — and the debt of Malakor is paid in full.</p>
         <p>The light returns to the realm. Descend again for a new challenge?</p>`
     );
     this.ui.btnModalClose.textContent = "Descend Again";

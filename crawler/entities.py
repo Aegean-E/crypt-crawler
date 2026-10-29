@@ -466,6 +466,22 @@ def spawn_monster(
         xp = 45
         gold = 40
         drop = "scroll_fireball"
+    elif monster_type == "archer":
+        base_name = "Skeletal Archer"
+        base_hp = int(16 * scale)
+        base_atk = int(7 * scale)
+        base_def = int(1 * scale)
+        xp = 24
+        gold = 14
+        drop = "scroll_fireball" if depth >= 2 else "potion_health"
+    elif monster_type == "hound":
+        base_name = "Crypt Hound"
+        base_hp = int(18 * scale)
+        base_atk = int(6 * scale)
+        base_def = int(1 * scale)
+        xp = 22
+        gold = 12
+        drop = "potion_health"
     else:  # default minion
         base_name = "Cave Bat"
         base_hp = int(9 * scale)

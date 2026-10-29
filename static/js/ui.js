@@ -13,6 +13,7 @@ export class UIController {
     this.saveIndicator = document.getElementById("saveIndicator");
     this.streakPill = document.getElementById("streakPill");
     this.streakCount = document.getElementById("streakCount");
+    this.omenPill = document.getElementById("omenPill");
 
     // Hero identity
     this.heroName = document.getElementById("heroName");
@@ -441,6 +442,18 @@ export class UIController {
     }
   }
 
+  updateOmen(omen) {
+    if (!this.omenPill) return;
+    if (!omen) {
+      this.omenPill.classList.add("hidden");
+      return;
+    }
+    this.omenPill.dataset.omen = omen.id;
+    this.omenPill.title = `${omen.name} — ${omen.desc}`;
+    this.omenPill.innerHTML = `${omen.icon} <strong>${omen.name}</strong>`;
+    this.omenPill.classList.remove("hidden");
+  }
+
   updateSigils(count = 0, need = 3) {
     if (this.sigilCount) this.sigilCount.textContent = count;
     if (this.sigilPill) {
@@ -565,6 +578,8 @@ export class UIController {
       { id: "spider", name: "Venomous Brood-Spider", icon: "🕷️", desc: "Spits debilitating neurotoxin. Cleansing prayers counteract poison.", weakness: "Fire / Cleanse" },
       { id: "necromancer", name: "Dread Necromancer", icon: "🧙‍♂️", desc: "Chants dark spells from afar. High mana shields.", weakness: "Melee Rush" },
       { id: "wraith", name: "Pact-Bound Wraith", icon: "👻", desc: "A debt given shape. Rises from a Pact of Avarice and hunts the debtor.", weakness: "Holy / Fire" },
+      { id: "archer", name: "Skeletal Archer", icon: "🏹", desc: "Keeps its distance and looses bone arrows across open rooms.", weakness: "Melee / Smoke" },
+      { id: "hound", name: "Crypt Hound", icon: "🐺", desc: "Lunges two tiles a turn and never lets the scent go.", weakness: "Fire / Stun" },
       { id: "boss_lich", name: "Arch-Lich Malakor", icon: "👑", desc: "Lord of the Sunken Crypt. Drains mortal souls to regenerate essence.", weakness: "Crown of Eternity" },
     ];
 

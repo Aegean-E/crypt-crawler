@@ -567,6 +567,163 @@ def run_inspection(
                             }
                         )
 
+                        # New mob sprites must paint, not fall back to a generic shape.
+                        new_mobs = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const d = e.dungeon;
+                                const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                                    .map(([dx, dy]) => [e.player.x + dx, e.player.y + dy])
+                                    .find(([x, y]) => d.isWalkable(x, y));
+                                if (!spot) return { skip: true };
+                                const origin = e.monsters;
+                                const results = {};
+                                const placed = [];
+                                const base = {
+                                    hp: 30, max_hp: 30, attack: 5, defense: 1,
+                                    xp_reward: 0, gold_reward: 0, loot_drop: null,
+                                    is_boss: false, is_champion: false,
+                                    champion_affix: null, status_effects: {},
+                                };
+                                for (const type of ["archer", "hound"]) {
+                                    e.monsters = origin.slice();
+                                    e.renderer.render(d, e.player, e.monsters, 1000);
+                                    const before = window.__auditSnap();
+                                    e.monsters.push({ ...base, name: type, type, x: spot[0], y: spot[1] });
+                                    e.renderer.render(d, e.player, e.monsters, 1000);
+                                    results[type] = window.__auditDiff(before, window.__auditSnap());
+                                }
+                                // Keep both on screen for the screenshot. Monsters only draw
+                                // while visible, so the capture must use in-FOV tiles.
+                                d.updateFOV(e.player.x, e.player.y, 7);
+                                const neighbours = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1]]
+                                    .map(([dx, dy]) => [e.player.x + dx, e.player.y + dy])
+                                    .filter(([x, y]) => d.isWalkable(x, y) && d.isVisible(x, y));
+                                ["archer", "hound"].forEach((type, i) => {
+                                    const at = neighbours[i] || spot;
+                                    placed.push({ ...base, name: type, type, x: at[0], y: at[1] });
+                                });
+                                e.monsters = origin.concat(placed);
+                                window.__auditMobs = placed;
+                                d.updateFOV(e.player.x, e.player.y, 7);
+                                e.renderer.render(d, e.player, e.monsters, 1000);
+                                return { skip: false, results };
+                            }"""
+                        )
+                        page.wait_for_timeout(250)
+                        page.screenshot(
+                            path=str(out_dir / f"new_mobs_{vp_name}.png"), full_page=True
+                        )
+                        # 4x nearest-neighbour crop around the player: 38px sprites are
+                        # unreadable in a full-page shot, which makes visual review noisy.
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const TS = e.renderer.tileSize;
+                                const span = 9;
+                                const size = TS * span;
+                                const zoom = document.createElement("canvas");
+                                zoom.id = "auditZoom";
+                                zoom.width = size * 4;
+                                zoom.height = size * 4;
+                                zoom.style.cssText =
+                                    "position:fixed;left:8px;top:8px;z-index:99999;"
+                                    + "border:2px solid #ecc94b;image-rendering:pixelated;"
+                                    + `width:${size * 2}px;height:${size * 2}px;`;
+                                const zctx = zoom.getContext("2d");
+                                zctx.imageSmoothingEnabled = false;
+                                // The renderer centres the player on the canvas
+                                // (camX = w/2 - player.x*ts - ts/2), so the lit area is
+                                // the canvas centre regardless of map position.
+                                const sx = Math.max(0, Math.floor((e.canvas.width - size) / 2));
+                                const sy = Math.max(0, Math.floor((e.canvas.height - size) / 2));
+                                zctx.drawImage(e.canvas, sx, sy, size, size, 0, 0,
+                                               zoom.width, zoom.height);
+                                document.body.appendChild(zoom);
+                            }"""
+                        )
+                        page.locator("#auditZoom").screenshot(
+                            path=str(out_dir / f"new_mobs_zoom_{vp_name}.png")
+                        )
+                        page.evaluate(
+                            """() => document.getElementById("auditZoom")?.remove()"""
+                        )
+                        page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                e.monsters = e.monsters.filter(
+                                    (m) => !window.__auditMobs.includes(m)
+                                );
+                                window.__auditMobs = null;
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "new_mobs_render_distinct_sprites": new_mobs.get("skip") is True
+                                or all(
+                                    new_mobs.get("results", {}).get(kind, 0) > 60
+                                    for kind in ("archer", "hound")
+                                ),
+                            }
+                        )
+
+                        # Omen QoL: the header pill names the floor omen, ? opens the guide,
+                        # Escape closes it, and the motion toggle persists.
+                        qol = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const pill = document.getElementById("omenPill");
+                                const omen = e.omen;
+                                const omenOk = Boolean(pill) && Boolean(omen)
+                                    && !pill.classList.contains("hidden")
+                                    && pill.dataset.omen === omen.id
+                                    && (pill.title || "").includes(omen.name);
+                                window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+                                const guideOpen = e.ui.isModalOpen()
+                                    && document.getElementById("modalTitle").textContent
+                                        .includes("Guide");
+                                window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+                                const guideClosed = !e.ui.isModalOpen();
+
+                                const btn = document.getElementById("btnMotionToggle");
+                                if (!btn) return { omenOk, guideOpen, guideClosed, motion: null };
+                                const before = e.reducedMotion;
+                                btn.click();
+                                const on = {
+                                    reduced: e.reducedMotion,
+                                    body: document.body.classList.contains("reduced-motion"),
+                                    renderer: e.renderer.reducedMotion === true,
+                                    stored: localStorage.getItem("crypt_crawler_reduced_motion"),
+                                };
+                                btn.click();
+                                const off = {
+                                    reduced: e.reducedMotion,
+                                    stored: localStorage.getItem("crypt_crawler_reduced_motion"),
+                                };
+                                return {
+                                    omenOk, guideOpen, guideClosed,
+                                    motion: { before, on, off },
+                                };
+                            }"""
+                        )
+                        motion = qol.get("motion") or {}
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "omen_pill_matches_floor": qol.get("omenOk") is True,
+                                "keyboard_help_and_escape": qol.get("guideOpen") is True
+                                and qol.get("guideClosed") is True,
+                                "motion_toggle_persists": bool(motion)
+                                and motion["on"]["reduced"] != motion["before"]
+                                and motion["on"]["body"] is True
+                                and motion["on"]["renderer"] is True
+                                and motion["on"]["stored"] == "1"
+                                and motion["off"]["reduced"] == motion["before"]
+                                and motion["off"]["stored"] == "0",
+                            }
+                        )
+
                         # Black pact altar: three bargains, a real cost, and lore.
                         pact_state = page.evaluate(
                             """() => {
@@ -697,10 +854,27 @@ def run_inspection(
                         boss = page.evaluate(
                             """() => {
                                 const e = window.gameEngine;
+                                const d = e.dungeon;
+                                // The summon needs two free neighbours, so place the test
+                                // boss on a genuinely open tile instead of a fixed offset
+                                // that may be a wall.
+                                let spot = null;
+                                for (let y = 1; y < d.height - 1 && !spot; y += 1) {
+                                    for (let x = 1; x < d.width - 1; x += 1) {
+                                        if (!d.isWalkable(x, y) || e._isOccupied(x, y)) continue;
+                                        const free = [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, 1]]
+                                            .filter(([dx, dy]) =>
+                                                d.isWalkable(x + dx, y + dy)
+                                                && !e._isOccupied(x + dx, y + dy)).length;
+                                        if (free >= 2) { spot = [x, y]; break; }
+                                    }
+                                }
+                                if (!spot) return { phaseTwo: false, summoned: false,
+                                                    phaseThree: false, enraged: false };
                                 const hpBefore = e.player.hp;
                                 const test = {
                                     name: "Phase Test Lich", type: "boss_lich",
-                                    x: e.player.x + 3, y: e.player.y,
+                                    x: spot[0], y: spot[1],
                                     hp: 40, max_hp: 100, attack: 10, defense: 2,
                                     xp_reward: 0, gold_reward: 0, loot_drop: null,
                                     is_boss: true, is_champion: false, champion_affix: null,

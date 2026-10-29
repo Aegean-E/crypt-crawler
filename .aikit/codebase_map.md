@@ -9,8 +9,8 @@
 - **Total Python Modules**: `19`
 - **Total Classes**: `26`
 - **Total Top-Level Functions**: `40`
-- **Total Class Methods**: `130`
-- **Total Source Lines**: `5365`
+- **Total Class Methods**: `131`
+- **Total Source Lines**: `5796`
 
 ---
 
@@ -79,7 +79,7 @@
 ### [`crawler/entities.py`](crawler/entities.py)
 > *Entities, items, inventory and stats for Crypt-Crawler.*
 
-**Size**: `734` lines (`24078` bytes)
+**Size**: `750` lines (`24590` bytes)
 
 **Classes:**
 - `class Item`
@@ -119,7 +119,7 @@
 ### [`crawler/lore.py`](crawler/lore.py)
 > *Lore codex: the readable history of the crypt, its relics and its dead.*
 
-**Size**: `195` lines (`7354` bytes)
+**Size**: `234` lines (`8903` bytes)
 
 **Functions:**
 - `def public_entries()` - *Every entry as a fresh dict, safe to serialise to the client.*
@@ -148,7 +148,7 @@
 ### [`crawler/server.py`](crawler/server.py)
 > *Lightweight HTTP server and REST dispatch for Crypt-Crawler.*
 
-**Size**: `194` lines (`8018` bytes)
+**Size**: `194` lines (`8039` bytes)
 
 **Classes:**
 - `class CryptCrawlerHandler`
@@ -280,7 +280,7 @@
 ### [`tests/test_lore.py`](tests/test_lore.py)
 > *Unit tests for the lore codex data and its HTTP endpoint.*
 
-**Size**: `73` lines (`2620` bytes)
+**Size**: `74` lines (`2659` bytes)
 
 **Classes:**
 - `class TestLoreData`
@@ -313,7 +313,7 @@
 ### [`tests/test_server.py`](tests/test_server.py)
 > *Unit tests for the Crypt-Crawler HTTP server and API endpoints.*
 
-**Size**: `152` lines (`6748` bytes)
+**Size**: `166` lines (`7450` bytes)
 
 **Classes:**
 - `class TestServer`
@@ -327,6 +327,7 @@
   - Method `.test_floor_objective_and_soul_are_clear_of_monsters()`
   - Method `.test_monsters_never_cover_an_interactive_prop()`
   - Method `.test_no_two_monsters_share_a_tile()`
+  - Method `.test_new_mobs_start_at_depth_two()`
   - Method `.test_depth_three_boss_guards_the_stairs()`
   - Method `.test_api_new_game_with_class_and_merchant()`
 
@@ -335,7 +336,7 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `885` lines (`35335` bytes)
+**Size**: `1072` lines (`42616` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*
@@ -364,7 +365,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `1084` lines (`59195` bytes)
+**Size**: `1258` lines (`70359` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

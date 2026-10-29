@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -57,6 +57,17 @@ python aikit.py ui abort crypt-crawler
 
 ### 📱 Mobile Layout
 Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.
+
+### 🎭 Floor Omens, Mobs and Story
+Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.
+
+| Enemy | From | Behaviour |
+|---|---|---|
+| Skeletal Archer | B2F | Fires a bone arrow up to 4 tiles when it has line of sight; does not close to melee |
+| Crypt Hound | B2F | Lunges two tiles per turn and never lets the scent go |
+| Pact-Bound Wraith | any | Raised in pairs by the Pact of Avarice and hunts the debtor |
+
+QoL: `?` opens the guide, `Escape` closes any dialog, and the 🎞️ header button toggles reduced motion (persisted, disables screen shake and pulsing accents). Story: three new codex entries — *Signs in the Blood*, *The Lantern-Keeper* and *The Debt of Malakor* — and a victory epilogue that closes the ledger.
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |

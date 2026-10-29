@@ -755,6 +755,193 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     ))
     checks.append(_check("no_page_errors_after_resume", not harness.errors, harness.errors))
     page.context.close()
+
+    # Floor omens: deterministic per seed+depth, all reachable, and actually applied.
+    page = harness.open_page(seed)
+    omen = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const ids = new Set();
+            for (let s = 1; s <= 60; s += 1) ids.add(e._omenFor(s, 1).id);
+            const applied = e.omen
+                ? { id: e.omen.id, fov: e.fovRadius, omenFov: e.omen.fov } : null;
+            const fogSeed = (() => {
+                for (let s = 1; s <= 300; s += 1) {
+                    if (e._omenFor(s, 1).id === "deep_fog") return s;
+                }
+                return null;
+            })();
+            let fogFov = null;
+            if (fogSeed !== null) {
+                e.dungeon.seed = fogSeed;
+                e.depth = 1;
+                e.omenKey = "";
+                e._applyOmen({ announce: false, extraFoe: false });
+                fogFov = e.fovRadius;
+            }
+            return {
+                ids: Array.from(ids).sort(),
+                deterministic: e._omenFor(7, 1).id === e._omenFor(7, 1).id,
+                applied,
+                fogSeed,
+                fogFov,
+            };
+        }"""
+    )
+    checks.append(_check("omens_are_deterministic", omen["deterministic"] is True, omen))
+    checks.append(_check(
+        "every_omen_is_reachable",
+        omen["ids"] == ["blood_moon", "deep_fog", "gilded_crypt", "restless_dead"],
+        omen["ids"],
+    ))
+    checks.append(_check(
+        "omen_pill_matches_floor_omen",
+        omen["applied"] is not None and omen["applied"]["fov"] == omen["applied"]["omenFov"],
+        omen["applied"],
+    ))
+    checks.append(_check(
+        "deep_fog_shortens_the_lantern",
+        omen["fogSeed"] is not None and omen["fogFov"] == 5,
+        {"seed": omen["fogSeed"], "fov": omen["fogFov"]},
+    ))
+    page.context.close()
+
+    # The omen modifiers must change the shipped rules, not just decorate the HUD.
+    page = harness.open_page(seed)
+    effects = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const d = e.dungeon;
+            const p = e.player;
+            const originalRandom = Math.random;
+            Math.random = () => 0.5;
+
+            // Blood Moon: enemy damage.
+            const keep = { hp: p.hp, max: p.max_hp, def: p.defense, omen: e.omen, monsters: e.monsters };
+            p.max_hp = 100;
+            p.defense = 0;
+            const dummy = () => ({
+                name: "Dummy", type: "skeleton", x: p.x + 1, y: p.y, hp: 50, max_hp: 50,
+                attack: 10, defense: 0, xp_reward: 0, gold_reward: 0, loot_drop: null,
+                is_boss: false, is_champion: false, champion_affix: null, status_effects: {},
+            });
+            const hit = (mult) => {
+                e.omen = { id: "test", name: "test", desc: "", atkMult: mult, fov: 7,
+                           goldMult: 1, extraFoe: 0 };
+                e.monsters = [dummy()];
+                const before = p.hp;
+                e.processEnemyTurns();
+                const damage = before - p.hp;
+                p.hp = before;
+                return damage;
+            };
+            const plain = hit(1);
+            const blood = hit(1.25);
+            p.hp = Math.min(keep.hp, p.max_hp);
+            p.max_hp = keep.max;
+            p.defense = keep.def;
+            e.omen = keep.omen;
+            e.monsters = keep.monsters;
+
+            // Gilded Crypt: chest gold.
+            const gilded = (() => {
+                for (let s = 1; s <= 300; s += 1) {
+                    const cand = e._omenFor(s, 1);
+                    if (cand.id === "gilded_crypt") return cand;
+                }
+                return null;
+            })();
+            const chest = d.chests.find((c) => !c.opened
+                && [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) =>
+                    d.isWalkable(c.x + dx, c.y + dy)));
+            let chestGold = null;
+            if (gilded && chest) {
+                e.monsters = [];
+                e.omen = gilded;
+                const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                    .find(([dx, dy]) => d.isWalkable(chest.x + dx, chest.y + dy));
+                p.x = chest.x + step[0];
+                p.y = chest.y + step[1];
+                const before = p.gold;
+                e.stepPlayer(-step[0], -step[1]);
+                chestGold = p.gold - before;
+            }
+            Math.random = originalRandom;
+            return { plain, blood, chestGold, chestOpened: Boolean(chest && chest.opened) };
+        }"""
+    )
+    checks.append(_check(
+        "blood_moon_raises_enemy_damage",
+        effects["plain"] == 10 and effects["blood"] == 12,
+        effects,
+    ))
+    checks.append(_check(
+        "gilded_crypt_multiplies_chest_gold",
+        effects["chestOpened"] is True and effects["chestGold"] == 43,
+        effects,
+    ))
+    page.context.close()
+
+    # New mob AI: archers fire without closing, hounds cover two tiles a turn.
+    page = harness.open_page(seed)
+    mobs = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const d = e.dungeon;
+            let run = null;
+            for (let y = 1; y < d.height - 1 && !run; y += 1) {
+                for (let x = 1; x < d.width - 5; x += 1) {
+                    let clear = true;
+                    for (let i = 0; i < 5; i += 1) {
+                        if (!d.isWalkable(x + i, y)) { clear = false; break; }
+                    }
+                    if (clear) { run = [x, y]; break; }
+                }
+            }
+            if (!run) return { found: false };
+            const [rx, ry] = run;
+            const p = e.player;
+            p.x = rx + 4;
+            p.y = ry;
+            p.hp = p.max_hp;
+            d.updateFOV(p.x, p.y, 7);
+            e.omen = { id: "calm", name: "calm", desc: "", atkMult: 1, fov: 7,
+                       goldMult: 1, extraFoe: 0 };
+            const mk = (type, x) => ({
+                name: type, type, x, y: ry, hp: 40, max_hp: 40, attack: 10, defense: 0,
+                xp_reward: 0, gold_reward: 0, loot_drop: null,
+                is_boss: false, is_champion: false, champion_affix: null, status_effects: {},
+            });
+            e.monsters = [mk("archer", rx)];
+            const before = p.hp;
+            e.processEnemyTurns();
+            const archerHit = before - p.hp;
+            const archerStayed = e.monsters[0].x === rx;
+
+            p.hp = p.max_hp;
+            e.monsters = [mk("hound", rx + 1)];
+            e.processEnemyTurns();
+            return {
+                found: true,
+                archerHit,
+                archerStayed,
+                houndX: e.monsters[0].x,
+                expectedHoundX: rx + 3,
+            };
+        }"""
+    )
+    checks.append(_check(
+        "skeletal_archer_fires_from_range",
+        mobs.get("found") is True and mobs["archerHit"] > 0 and mobs["archerStayed"] is True,
+        mobs,
+    ))
+    checks.append(_check(
+        "crypt_hound_covers_two_tiles",
+        mobs.get("found") is True and mobs["houndX"] == mobs["expectedHoundX"],
+        mobs,
+    ))
+    checks.append(_check("no_page_errors_after_mob_turns", not harness.errors, harness.errors))
+    page.context.close()
     return checks
 
 
