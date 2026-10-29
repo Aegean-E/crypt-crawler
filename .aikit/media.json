@@ -46,7 +46,7 @@
     {
       "path": "assets/screenshots/2026-10-28-index.png",
       "alt": "Crypt-Crawler interface at 2026-10-28",
-      "caption": "Crypt-Crawler interface captured from C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\static\\index.html",
+      "caption": "Crypt-Crawler interface captured from static/index.html",
       "commit": "941f16f9e7e800262912d769c3a6efd0c4fb8a65",
       "taken_at": "2026-10-28",
       "viewport": "1440x900",

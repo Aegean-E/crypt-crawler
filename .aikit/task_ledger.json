@@ -13,235 +13,6 @@
   },
   "checkpoints": [
     {
-      "task_id": "CC-012",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Integrate the AIKit UI guard and make mechanics AI-testable: ui.json contract, deterministic UI inventory, seeded JSON gameplay harness, stat-base parity fix",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793281590.0603137,
-      "timestamp_str": "2026-10-29 16:46:30",
-      "agent": "kilo:continue",
-      "impact_assessment": {
-        "why": "The project had no UI guard contract and no way for an agent to read or drive the shipped mechanics; the first harness run also proved the client rewrote a fresh paladin to 60 HP / 3 DEF while HERO_CLASSES ships 65 / 4.",
-        "benefits": "Surface-bounded UI edits with a lost-control proof, reproducible seeded mechanics for agents and tests, and server/client stat parity.",
-        "risks": "contract: additive .aikit/ui.json and new tools; dependency: Playwright only for play/selftest; concurrency: none; state: none, save schema unchanged",
-        "mitigation": "Contract validated by the AIKit loader, 12 new fast unit tests, harness selftest, three-viewport inspector and the full gate triad"
-      }
-    },
-    {
-      "task_id": "CC-012",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 1/3] Added .aikit/ui.json (game-ui surface, snapshot+fast proofs), tools/ui_inventory.py (188 stable entries), tools/ai_harness.py (catalog/play/selftest) and 12 fast unit tests; fixed client stat bases to mirror HERO_CLASSES (paladin 65 HP / 4 DEF)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793281798.9790773,
-      "timestamp_str": "2026-10-29 16:49:58",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "verify with the full suite, harness selftest, inspector and gates",
-        "evidence": "61 tests"
-      }
-    },
-    {
-      "task_id": "CC-012",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/3] 61 tests pass, harness selftest 9/9, UI inventory snapshot 188 entries, 54/54 audit checks at desktop/laptop/mobile with 0 console errors, 4/4 AIKit gates pass",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793281799.221962,
-      "timestamp_str": "2026-10-29 16:49:59",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "apply the independent code review, then re-verify"
-      }
-    },
-    {
-      "task_id": "CC-013",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Apply the independent review: token-guarded descent, full input gating, non-vacuous inspector checks, failing-first harness tests, degenerate-map altar fallback, restored 7/8/9 diagonals and modal label reset",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793285083.476584,
-      "timestamp_str": "2026-10-29 17:44:43",
-      "agent": "kilo:continue",
-      "impact_assessment": {
-        "why": "Review found descendFloor could leave a stuck movement lock, an old fetch could overwrite a new run, every non-movement action still fired during the fetch, two inspector checks passed vacuously, and neither input/descent fix had a failing-first test.",
-        "benefits": "No corrupt run state or softlock, honest gates, and regression coverage for the exact defects.",
-        "risks": "contract: none; dependency: Playwright only for the added harness checks; concurrency: runToken invalidation is browser-local; state: depth is assigned only after the map arrives",
-        "mitigation": "Failing-first harness checks, degenerate-map dungeon test, full suite, three-viewport inspector and 4/4 gates"
-      }
-    },
-    {
-      "task_id": "CC-012",
-      "phase": "superseded",
-      "phase_num": 4,
-      "description": "Superseded by 'CC-013' without --complete or --reset",
-      "status": "superseded",
-      "timestamp": 1793285083.476584,
-      "timestamp_str": "2026-10-29 17:44:43",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-013",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 1/2] Descent is token-guarded with depth assigned after the map arrives, every turn entry point is gated on transitioning, 7/8/9 diagonals restored, modal close label reset, and a fallback altar covers degenerate 20x20 maps",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793285104.8380466,
-      "timestamp_str": "2026-10-29 17:45:04",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "re-verify with the failing-first harness checks"
-      }
-    },
-    {
-      "task_id": "CC-013",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/2] Inspector render and save checks are non-vacuous (exactly one altar, real _drawPact invocation, non-empty pact list with coordinates); 62 tests, 13/13 harness checks, 54/54 inspector checks at three viewports, 0 console errors, 4/4 gates; work uncommitted",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793285126.133344,
-      "timestamp_str": "2026-10-29 17:45:26",
-      "agent": "kilo:continue",
-      "handoff": {
-        "state": "verified and ready",
-        "next": "commit on authorization",
-        "evidence": "selftest 13/13, inspect 54/54, aikit 4/4"
-      }
-    },
-    {
-      "task_id": "CC-013",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-013' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793285126.4660225,
-      "timestamp_str": "2026-10-29 17:45:26",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-014",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Verify and harden after the review: spawn uniqueness, boss on stairs, wraith sprite, prop tooltips, mechanics gate, pixel-proof audits",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793290895.452696,
-      "timestamp_str": "2026-10-29 19:21:35",
-      "agent": "kilo:continue",
-      "impact_assessment": {
-        "why": "Seeded fuzz found 325/900 floors stacking two monsters on a tile and 25/120 Depth-3 floors with the boss on a prop; Avarice raised an unrendered wraith; props explained nothing; the game had no declared mechanics contract.",
-        "benefits": "No stacked or prop-overlapping spawns, the boss fight at the stairs, a legible debt enemy, self-explaining props, and a mechanics gate in the standard gate set.",
-        "risks": "contract: additive mechanics block and four inspector checks; dependency: Playwright only for the mechanics gate; concurrency: none; state: none",
-        "mitigation": "Dungeon/server tests, 17-check harness selftest, 59-check three-viewport inspection, pixel-diff proofs and one vision review"
-      }
-    },
-    {
-      "task_id": "CC-014",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/3] 64 tests pass, mechanics gate 17/17, inspector 59/59 across three viewports with 0 console errors, 5/5 gates pass; vision review returned PASS for tooltip and wraith after the world-space tooltip fix",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793290974.633856,
-      "timestamp_str": "2026-10-29 19:22:54",
-      "agent": "kilo:continue",
-      "handoff": {
-        "next": "commit the verified work, then record the UI task"
-      }
-    },
-    {
-      "task_id": "CC-014",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 3/3] Verified work committed; UI task recorded against the committed surface; delivery gate re-run before push",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793290975.0459435,
-      "timestamp_str": "2026-10-29 19:22:55",
-      "agent": "kilo:continue",
-      "handoff": {
-        "state": "commit and UI record done",
-        "next": "push to origin/master",
-        "evidence": "5/5 gates"
-      }
-    },
-    {
-      "task_id": "CC-014",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 3/3] Committed 4982eda (game + tooling) and 7403dc2 (ui history); strict delivery passes with 5/5 gates and the game-ui task finished; pushing to origin/master",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793291223.7049513,
-      "timestamp_str": "2026-10-29 19:27:03",
-      "agent": "kilo:continue",
-      "handoff": {
-        "state": "committed and UI evidence recorded",
-        "next": "verify the pushed commit",
-        "evidence": "strict 5/5, inspect 59/59, harness 17/17"
-      }
-    },
-    {
-      "task_id": "CC-014",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-014' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793291224.1779437,
-      "timestamp_str": "2026-10-29 19:27:04",
-      "agent": "kilo:continue"
-    },
-    {
-      "task_id": "CC-015",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Harden the AI harness found while reviewing the last three commits: shell-safe action inputs, rejected-action JSON reporting, walkable teleport validation, catalog input forms and resume coverage",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793292271.2243688,
-      "timestamp_str": "2026-10-29 19:44:31",
-      "agent": "kilo:continue",
-      "impact_assessment": {
-        "why": "The documented --actions command fails in PowerShell, a rejected action crashed with a traceback and no JSON, teleport accepted walls, and the resume path was untested.",
-        "benefits": "A usable documented command on every shell, machine-readable failures, impossible debug states refused, and resume proven with pact power.",
-        "risks": "contract: additive CLI forms and output fields; dependency: none; concurrency: none; state: none",
-        "mitigation": "Unit tests for the input forms, a resume selftest check, full suite and the gate set"
-      }
-    },
-    {
-      "task_id": "CC-015",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/2] 68 tests, 19/19 harness checks including resume, 59/59 audit checks at three viewports with 0 console errors, 5/5 gates and strict delivery pass; committed c0cb2c1",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793292461.0661585,
-      "timestamp_str": "2026-10-29 19:47:41",
-      "agent": "kilo:continue",
-      "handoff": {
-        "state": "committed and verified",
-        "next": "push c0cb2c1 to origin/master",
-        "evidence": "strict 5/5, harness 19/19"
-      }
-    },
-    {
-      "task_id": "CC-015",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'CC-015' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793292461.486913,
-      "timestamp_str": "2026-10-29 19:47:41",
-      "agent": "kilo:continue"
-    },
-    {
       "task_id": "CC-016",
       "phase": "phase 2",
       "phase_num": 2,
@@ -297,6 +68,191 @@
       "timestamp": 1793296645.566763,
       "timestamp_str": "2026-10-29 20:57:25",
       "agent": "kilo:continue"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 3",
+      "phase_num": 3,
+      "description": "Reforge stage 3: window 9, 3 commit(s), 21 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296959.9346175,
+      "timestamp_str": "2026-10-29 21:02:39",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 4",
+      "phase_num": 3,
+      "description": "Reforge stage 4: window 12, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296963.8070402,
+      "timestamp_str": "2026-10-29 21:02:43",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 5",
+      "phase_num": 3,
+      "description": "Reforge stage 5: window 15, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 2 binary not analysed",
+      "files_affected": [
+        "assets/logo.jpg",
+        "assets/social-preview.jpg"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793296968.651627,
+      "timestamp_str": "2026-10-29 21:02:48",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 6",
+      "phase_num": 3,
+      "description": "Reforge stage 6: window 18, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 1 binary not analysed",
+      "files_affected": [
+        "assets/artwork.jpg"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793296972.876976,
+      "timestamp_str": "2026-10-29 21:02:52",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: window 21, 3 commit(s), 5 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296978.2753472,
+      "timestamp_str": "2026-10-29 21:02:58",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 8",
+      "phase_num": 3,
+      "description": "Reforge stage 8: window 24, 3 commit(s), 7 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296984.7620056,
+      "timestamp_str": "2026-10-29 21:03:04",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 9",
+      "phase_num": 3,
+      "description": "Reforge stage 9: window 27, 3 commit(s), 17 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793296993.3566113,
+      "timestamp_str": "2026-10-29 21:03:13",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 10",
+      "phase_num": 3,
+      "description": "Reforge stage 10: window 30, 3 commit(s), 9 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297002.8030071,
+      "timestamp_str": "2026-10-29 21:03:22",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 11",
+      "phase_num": 3,
+      "description": "Reforge stage 11: window 33, 3 commit(s), 7 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297014.1760213,
+      "timestamp_str": "2026-10-29 21:03:34",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 12",
+      "phase_num": 3,
+      "description": "Reforge stage 12: window 36, 3 commit(s), 12 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297035.39413,
+      "timestamp_str": "2026-10-29 21:03:55",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 13",
+      "phase_num": 3,
+      "description": "Reforge stage 13: window 39, 3 commit(s), 16 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297045.1975229,
+      "timestamp_str": "2026-10-29 21:04:05",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 14",
+      "phase_num": 3,
+      "description": "Reforge stage 14: window 42, 3 commit(s), 17 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297059.3156636,
+      "timestamp_str": "2026-10-29 21:04:19",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 15",
+      "phase_num": 3,
+      "description": "Reforge stage 15: window 45, 3 commit(s), 26 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297078.0665424,
+      "timestamp_str": "2026-10-29 21:04:38",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 16",
+      "phase_num": 3,
+      "description": "Reforge stage 16: window 46, 1 commit(s), 6 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297092.2981672,
+      "timestamp_str": "2026-10-29 21:04:52",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-2",
+      "phase": "reforge run",
+      "phase_num": 3,
+      "description": "run started (start=46, step=3, stop=46)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793297328.2205303,
+      "timestamp_str": "2026-10-29 21:08:48",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-2",
+      "phase": "reforge stage 1",
+      "phase_num": 3,
+      "description": "Reforge stage 1: window 46, 46 commit(s), 44 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 3 binary not analysed",
+      "files_affected": [
+        "assets/artwork.jpg",
+        "assets/logo.jpg",
+        "assets/social-preview.jpg"
+      ],
+      "status": "completed",
+      "timestamp": 1793297386.3027525,
+      "timestamp_str": "2026-10-29 21:09:46",
+      "agent": "opencode"
     }
   ]
 }

@@ -61,8 +61,8 @@ def roll_urn_reward(depth: int = 1, rng: Optional[random.Random] = None) -> Tupl
     base_gold = 6 + rng.randint(0, 10) + (depth - 1) * 4
     roll = rng.random()
 
-    # 15% Chance: Critical Urn Jackpot (2.5x)
-    if roll < 0.15:
+    # 18% Chance: Critical Urn Jackpot (2.5x)
+    if roll < 0.18:
         jackpot = int(base_gold * 2.5)
         return jackpot, f"✨ CRITICAL URN JACKPOT! (+{jackpot} Gold)!", True
 

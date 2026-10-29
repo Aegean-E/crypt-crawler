@@ -397,7 +397,7 @@ def run_inspection(
                                 const e = window.gameEngine;
                                 const pacts = e.dungeon.pacts || [];
                                 if (pacts.length !== 1) {
-                                    return { count: pacts.length, visible: false, rendered: false };
+                                    return { count: pacts.length, visible: false, rendered: false, origin: { x: e.player.x, y: e.player.y } };
                                 }
                                 const pact = pacts[0];
                                 const spot = [[0, 1], [0, -1], [1, 0], [-1, 0]]

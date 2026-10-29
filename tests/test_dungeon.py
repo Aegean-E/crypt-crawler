@@ -139,6 +139,16 @@ class TestDungeon(unittest.TestCase):
                 self.assertGreaterEqual(len(dungeon.sigils), 3)
                 self.assertIsNotNone(dungeon.vault)
 
+    def test_lost_soul_still_spawns_on_a_degenerate_two_room_map(self):
+        for seed in (20, 27, 54, 102, 118):
+            dungeon = DungeonGenerator(width=20, height=20).generate(seed=seed)
+            with self.subTest(seed=seed):
+                self.assertEqual(len(dungeon.souls), 1, "every floor must place one lost soul")
+                sx, sy = dungeon.souls[0]
+                self.assertEqual(dungeon.tiles[sy][sx], TileType.SOUL)
+                self.assertNotEqual((sx, sy), dungeon.player_spawn)
+                self.assertNotEqual((sx, sy), dungeon.stairs_pos)
+
     def test_merchant_spawns_on_depth_2(self):
         gen = DungeonGenerator(width=45, height=30, depth=2)
         dungeon = gen.generate(seed=777)

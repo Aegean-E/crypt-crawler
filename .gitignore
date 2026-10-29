@@ -5,6 +5,8 @@ __pycache__/
 .inspect/
 .tmp_*
 *.png
+!assets/*.png
+!assets/screenshots/*.png
 .DS_Store
 Thumbs.db
 # AIKit transient state
@@ -12,4 +14,6 @@ Thumbs.db
 .aikit/*.bak
 .aikit/*.tmp_*
 .aikit/*.corrupt_*
+.aikit/reforge.reviews/
+.aikit/ui_task.json
 node_modules/

@@ -166,8 +166,9 @@ def catalog() -> Dict[str, Any]:
             "chest", "trap", "shrine", "urn", "merchant", "soul", "sigil", "vault", "pact",
         ],
         "state_keys": [
-            "turn", "depth", "kills", "player", "monsters", "dungeon", "sigilCount",
-            "bounties", "loreUnlocked", "log",
+            "turn", "depth", "kills", "heroClass", "gameOver", "victory",
+            "transitioning", "modalOpen", "player", "monsters", "dungeon",
+            "sigilCount", "bounties", "loreUnlocked", "log",
         ],
     }
 
@@ -189,7 +190,7 @@ def validate_action(action: Any) -> List[str]:
             problems.append(f"{name} needs '{field}'")
     if name == "move":
         for field in ("dx", "dy"):
-            if _is_int(action.get(field)) and abs(action[field]) > 1:
+            if not _is_int(action.get(field)) or abs(action.get(field)) > 1:
                 problems.append("move dx/dy must be -1, 0 or 1")
         if action.get("dx") == 0 and action.get("dy") == 0:
             problems.append("move needs dx or dy")

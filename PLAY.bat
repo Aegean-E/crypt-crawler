@@ -49,7 +49,7 @@ for %%D in (
     "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
 ) do (
     if exist %%D (
-        set "PYTHON_EXE=%%~D"
+        set "PYTHON_EXE="%%~D""
         goto :python_ready
     )
 )

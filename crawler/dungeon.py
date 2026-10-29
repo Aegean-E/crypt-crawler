@@ -367,6 +367,27 @@ class DungeonGenerator:
                     dungeon.souls.append((sx, sy))
                     break
 
+            if not dungeon.souls:
+                # Degenerate maps can leave every room center occupied; keep the
+                # one-soul-per-floor contract by falling back to any free tile.
+                for room in dungeon.rooms:
+                    if any(room.center == m for m in dungeon.merchants):
+                        continue
+                    placed_soul = False
+                    for sy in range(room.y1 + 1, room.y2 - 1):
+                        for sx in range(room.x1 + 1, room.x2 - 1):
+                            if (sx, sy) in (dungeon.player_spawn, dungeon.stairs_pos):
+                                continue
+                            if dungeon.tiles[sy][sx] == TileType.FLOOR:
+                                dungeon.tiles[sy][sx] = TileType.SOUL
+                                dungeon.souls.append((sx, sy))
+                                placed_soul = True
+                                break
+                        if placed_soul:
+                            break
+                    if placed_soul:
+                        break
+
             # One black pact altar: a risk-for-power bargain on every floor.
             # Placed before sigils so the objective never consumes its tile.
             for room in dungeon.rooms[1:]:

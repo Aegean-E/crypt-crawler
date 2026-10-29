@@ -9,8 +9,8 @@
 - **Total Python Modules**: `19`
 - **Total Classes**: `26`
 - **Total Top-Level Functions**: `40`
-- **Total Class Methods**: `131`
-- **Total Source Lines**: `5796`
+- **Total Class Methods**: `132`
+- **Total Source Lines**: `5828`
 
 ---
 
@@ -47,7 +47,7 @@
 ### [`crawler/dungeon.py`](crawler/dungeon.py)
 > *Procedural dungeon generation and grid management for Crypt-Crawler.*
 
-**Size**: `464` lines (`16674` bytes)
+**Size**: `485` lines (`17751` bytes)
 
 **Classes:**
 - `class TileType`
@@ -249,7 +249,7 @@
 ### [`tests/test_dungeon.py`](tests/test_dungeon.py)
 > *Unit tests for procedural dungeon generation and pathfinding.*
 
-**Size**: `152` lines (`6849` bytes)
+**Size**: `162` lines (`7431` bytes)
 
 **Classes:**
 - `class TestDungeon`
@@ -262,6 +262,7 @@
   - Method `.test_sigils_and_vault_form_a_floor_objective()`
   - Method `.test_one_pact_altar_per_floor_in_a_walkable_spot()`
   - Method `.test_pact_altar_still_spawns_on_a_degenerate_two_room_map()`
+  - Method `.test_lost_soul_still_spawns_on_a_degenerate_two_room_map()`
   - Method `.test_merchant_spawns_on_depth_2()`
 
 ---
@@ -336,7 +337,7 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `1072` lines (`42616` bytes)
+**Size**: `1073` lines (`42701` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*
@@ -365,7 +366,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `1258` lines (`70359` bytes)
+**Size**: `1258` lines (`70401` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`
