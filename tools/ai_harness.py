@@ -156,6 +156,11 @@ def catalog() -> Dict[str, Any]:
         "actions": {
             name: {"fields": list(fields)} for name, fields in ACTION_KEYS.items()
         },
+        "inputs": {
+            "script": "--script run.json: {seed, depth, class, actions}",
+            "actions": "--actions '<json>' or --actions @actions.json (shell-safe)",
+            "output": "one JSON object: ok, steps, layout_hash, errors, failure, final",
+        },
         "pact_choices": list(PACT_CHOICES),
         "props": [
             "chest", "trap", "shrine", "urn", "merchant", "soul", "sigil", "vault", "pact",
@@ -337,6 +342,11 @@ class Harness:
                     case "potion": e.quickPotion(); break;
                     case "wait": e.waitTurn(); break;
                     case "teleport":
+                        // A debug pose, not a teleport spell: refuse to stand in rock, or
+                        // every later state reads as a player outside the map.
+                        if (!e.dungeon.isWalkable(action.x, action.y)) {
+                            throw new Error(`teleport target ${action.x},${action.y} is not walkable`);
+                        }
                         e.player.x = action.x; e.player.y = action.y;
                         e.dungeon.updateFOV(e.player.x, e.player.y, 7);
                         break;
@@ -712,6 +722,39 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         harness.apply(page, action)
     checks.append(_check("scripted_run_has_no_page_errors", not harness.errors, harness.errors))
     page.context.close()
+
+    # Resume is a separate code path from a fresh start: it must restore pact power and
+    # which altars were already spent, not just the raw save fields.
+    page = harness.open_page(seed)
+    resumed = page.evaluate(
+        """async () => {
+            const e = window.gameEngine;
+            e.monsters.length = 0;
+            e.resolvePact(e.dungeon.pacts[0], "wrath");
+            const before = { attack: e.player.attack, maxHp: e.player.max_hp,
+                             bonusHp: e.player.bonus_max_hp || 0 };
+            e.saveGameState();
+            await e.start(null, 1, "paladin", true);
+            return {
+                before,
+                after: { attack: e.player.attack, maxHp: e.player.max_hp,
+                         bonusHp: e.player.bonus_max_hp || 0 },
+                used: (e.dungeon.pacts || []).filter((p) => p.used).length,
+                transitioning: e.transitioning,
+            };
+        }"""
+    )
+    checks.append(_check(
+        "resume_restores_pact_power_and_spent_altars",
+        resumed["after"]["attack"] == resumed["before"]["attack"]
+        and resumed["after"]["maxHp"] == resumed["before"]["maxHp"]
+        and resumed["after"]["bonusHp"] == resumed["before"]["bonusHp"]
+        and resumed["used"] == 1
+        and resumed["transitioning"] is False,
+        resumed,
+    ))
+    checks.append(_check("no_page_errors_after_resume", not harness.errors, harness.errors))
+    page.context.close()
     return checks
 
 
@@ -723,6 +766,28 @@ def _write_output(payload: Dict[str, Any], out: Optional[Path]) -> None:
     print(text)
 
 
+def load_actions(argument: str) -> List[Any]:
+    """An action list from inline JSON, or from a file when the value starts with `@`.
+
+    PowerShell and `cmd` strip the inner double quotes of an inline JSON argument, which
+    produced a bare `[{action:wait}]` parse error with no hint. The `@path` form and the
+    explicit error message keep the documented command usable on every shell.
+    """
+    if argument.strip().startswith("@"):
+        path = Path(argument.strip()[1:])
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    try:
+        return json.loads(argument)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"--actions is not valid JSON ({exc.msg} at column {exc.colno}). "
+            + "Why: PowerShell and cmd strip the inner double quotes of a native argument. "
+            + "Fix: write the list to a file and pass --actions @actions.json, or pass the "
+            + "whole run as --script run.json."
+        ) from exc
+
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Deterministic AI harness for Crypt-Crawler.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -731,7 +796,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     play = subparsers.add_parser("play", help="run a scripted, seeded session")
     play.add_argument("--script", type=Path, help="JSON script file")
-    play.add_argument("--actions", help="inline JSON list of actions")
+    play.add_argument(
+        "--actions",
+        help="inline JSON action list, or @path to a JSON file (shell-safe)",
+    )
     play.add_argument("--seed", type=int, default=20261029)
     play.add_argument("--depth", type=int, default=1)
     play.add_argument("--class", dest="hero_class", default="paladin")
@@ -757,7 +825,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "seed": args.seed,
                     "depth": args.depth,
                     "class": args.hero_class,
-                    "actions": json.loads(args.actions) if args.actions else [],
+                    "actions": load_actions(args.actions) if args.actions else [],
                 }
             script = parse_script(raw)
         except (OSError, ValueError) as exc:
@@ -766,8 +834,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         with Harness(headless=not args.headed) as harness:
             page = harness.open_page(script["seed"], script["depth"], script["class"])
             steps: List[Dict[str, Any]] = []
+            failure = ""
             for index, action in enumerate(script["actions"]):
-                state = harness.apply(page, action)
+                try:
+                    state = harness.apply(page, action)
+                except Exception as exc:  # a rejected action is a result, not a traceback
+                    failure = f"actions[{index}] {action['action']} failed: {exc}"
+                    steps.append({"index": index, "action": action, "error": str(exc)})
+                    break
                 steps.append({
                     "index": index,
                     "action": action,
@@ -787,17 +861,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             page.context.close()
         _write_output(
             {
-                "ok": not errors,
+                "ok": not errors and not failure,
                 "seed": script["seed"],
                 "class": script["class"],
                 "steps": steps,
                 "layout_hash": layout_hash(final),
                 "errors": errors,
+                "failure": failure,
                 "final": final,
             },
             args.out,
         )
-        return 0 if not errors else 1
+        return 0 if not errors and not failure else 1
 
     with Harness(headless=not args.headed) as harness:
         checks = selftest(harness)

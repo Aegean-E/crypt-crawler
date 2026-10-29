@@ -1,33 +1,22 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-014",
-    "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793291223.7049513,
+    "task_id": "CC-015",
+    "last_phase": "phase 2",
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1793292271.2243688,
     "owner": "kilo:continue",
     "started_by": "kilo:continue",
     "continuations": [],
-    "completed_at": 1793291224.1779423
+    "impact_assessment": {
+      "why": "The documented --actions command fails in PowerShell, a rejected action crashed with a traceback and no JSON, teleport accepted walls, and the resume path was untested.",
+      "benefits": "A usable documented command on every shell, machine-readable failures, impossible debug states refused, and resume proven with pact power.",
+      "risks": "contract: additive CLI forms and output fields; dependency: none; concurrency: none; state: none",
+      "mitigation": "Unit tests for the input forms, a resume selftest check, full suite and the gate set"
+    }
   },
   "checkpoints": [
-    {
-      "task_id": "CC-010",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[milestone 2/2] Spawn and movement now reserve every interactive prop; depth-3 escorts fixed (seed 999 sigil overlap); offline fallback carries soul/sigils/vault; soul choices validated; bounty and streak XP level up immediately; 48 tests, 4/4 gates, 49/49 audit checks, 14 screenshots, 0 console errors (checklists: passed)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792961213.389987,
-      "timestamp_str": "2026-10-25 23:46:53",
-      "agent": "kilo:review",
-      "handoff": {
-        "state": "verified and ready to commit",
-        "next": "stage, commit, complete CC-010 and push",
-        "evidence": "aikit fix 4/4, inspect 49/49"
-      }
-    },
     {
       "task_id": "CC-010",
       "phase": "completed",
@@ -295,6 +284,23 @@
       "timestamp": 1793291224.1779437,
       "timestamp_str": "2026-10-29 19:27:04",
       "agent": "kilo:continue"
+    },
+    {
+      "task_id": "CC-015",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Harden the AI harness found while reviewing the last three commits: shell-safe action inputs, rejected-action JSON reporting, walkable teleport validation, catalog input forms and resume coverage",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793292271.2243688,
+      "timestamp_str": "2026-10-29 19:44:31",
+      "agent": "kilo:continue",
+      "impact_assessment": {
+        "why": "The documented --actions command fails in PowerShell, a rejected action crashed with a traceback and no JSON, teleport accepted walls, and the resume path was untested.",
+        "benefits": "A usable documented command on every shell, machine-readable failures, impossible debug states refused, and resume proven with pact power.",
+        "risks": "contract: additive CLI forms and output fields; dependency: none; concurrency: none; state: none",
+        "mitigation": "Unit tests for the input forms, a resume selftest check, full suite and the gate set"
+      }
     }
   ]
 }

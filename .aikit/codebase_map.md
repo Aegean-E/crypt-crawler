@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `19`
-- **Total Classes**: `25`
-- **Total Top-Level Functions**: `39`
-- **Total Class Methods**: `126`
-- **Total Source Lines**: `5262`
+- **Total Classes**: `26`
+- **Total Top-Level Functions**: `40`
+- **Total Class Methods**: `130`
+- **Total Source Lines**: `5365`
 
 ---
 
@@ -184,7 +184,7 @@
 ### [`tests/test_ai_harness.py`](tests/test_ai_harness.py)
 > *Unit tests for the AI gameplay harness and the UI inventory contract.*
 
-**Size**: `155` lines (`5935` bytes)
+**Size**: `183` lines (`7003` bytes)
 
 **Classes:**
 - `class TestHarnessCatalog`
@@ -198,6 +198,11 @@
   - Method `.test_accepts_a_minimal_script()`
   - Method `.test_rejects_bad_scripts()`
   - Method `.test_script_limit_is_enforced()`
+- `class TestLoadActions`
+  - Method `.test_reads_inline_json()`
+  - Method `.test_reads_a_file_through_the_at_prefix()`
+  - Method `.test_shell_stripped_quotes_get_an_actionable_error()`
+  - Method `.test_missing_file_is_an_error_not_an_empty_list()`
 - `class TestLayoutHash`
   - Method `._state(seed, staircase)`
   - Method `.test_hash_is_stable_and_sensitive()`
@@ -330,7 +335,7 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `810` lines (`31767` bytes)
+**Size**: `885` lines (`35335` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*
@@ -351,6 +356,7 @@
 - `def _check(name, passed, detail)`
 - `def selftest(harness)` - *Prove the mechanics the harness claims to expose actually work.*
 - `def _write_output(payload, out)`
+- `def load_actions(argument)` - *An action list from inline JSON, or from a file when the value starts with `@`.*
 - `def main(argv)`
 
 ---

@@ -33,7 +33,8 @@ The inspector reports every audit check and exits non-zero when any check or con
 ### 🤖 AI Mechanics Harness (deterministic, JSON in / JSON out)
 ```bash
 python tools/ai_harness.py catalog
-python tools/ai_harness.py play --seed 42 --class paladin --actions '[{"action":"wait"}]'
+python tools/ai_harness.py play --seed 42 --class paladin --actions @actions.json
+python tools/ai_harness.py play --script run.json
 python tools/ai_harness.py selftest
 ```
 `catalog` prints the classes, the five deck abilities, every action field, the pact choices and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, all three pact bargains surviving turns, boss damage, save round-trip, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
@@ -41,7 +42,7 @@ python tools/ai_harness.py selftest
 {"seed": 42, "depth": 1, "class": "rogue",
  "actions": [{"action": "move", "dx": 1, "dy": 0}, {"action": "ability", "slot": 2}]}
 ```
-Every action object is validated before a browser starts. Playwright with Edge is only needed for `play` and `selftest`; `catalog` and the unit tests run on the standard library.
+Actions come from `--script run.json` or `--actions @file`; PowerShell and `cmd` strip the inner quotes of a literal JSON argument, so the file forms are the shell-safe ones and an inline parse error says so. Every action is validated before a browser starts, a rejected action (for example `teleport` into a wall) is reported in `steps[].error` with exit 1 instead of a traceback, and an uncaught page error fails the run. Playwright with Edge is only needed for `play` and `selftest`; `catalog` and the unit tests run on the standard library.
 
 ### 🧱 UI Guard (AIKit `aikit ui`)
 `.aikit/ui.json` declares the `game-ui` surface (`static/**`), the protected paths, the fast proof (`python -m unittest discover -s tests`) and the inventory command (`python tools/ui_inventory.py`), which prints one stable line per control, choice, handler group and theme token.
@@ -52,7 +53,7 @@ python aikit.py ui verify crypt-crawler      # add --json for stable finding cod
 python aikit.py ui finish crypt-crawler --reviewed
 python aikit.py ui abort crypt-crawler
 ```
-`begin` needs a clean, green baseline; `verify` rejects edits outside the surface, protected-path changes, diff-budget overruns, a lost inventory entry, hardcoded colours outside the theme paths, and a failed proof; `finish` also records the human review. Delivery guards (`check --strict`, `publish`) refuse an open UI task, and `ui_required` can be turned on in `.aikit/project.json` once the first UI task has finished.
+`begin` needs a clean, green baseline; `verify` rejects edits outside the surface, protected-path changes, diff-budget overruns, a lost inventory entry, hardcoded colours outside the theme paths, and a failed proof; `finish` also records the human review. Delivery guards (`check --strict`, `publish`) refuse an open UI task; this project already sets `ui_required: true`, so a finished `game-ui` task is part of delivery.
 
 ### 📱 Mobile Layout
 Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.

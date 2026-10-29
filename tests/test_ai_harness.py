@@ -1,6 +1,7 @@
 """Unit tests for the AI gameplay harness and the UI inventory contract."""
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from tools.ai_harness import (
     PACT_CHOICES,
     catalog,
     layout_hash,
+    load_actions,
     parse_script,
     validate_action,
 )
@@ -34,6 +36,7 @@ class TestHarnessCatalog(unittest.TestCase):
             self.assertIn(action, data["actions"])
         self.assertEqual(data["pact_choices"], list(PACT_CHOICES))
         self.assertTrue(set(PACT_CHOICES) <= {"wrath", "ward", "avarice"})
+        self.assertIn("@actions.json", data["inputs"]["actions"])
 
     def test_every_class_deck_has_five_named_abilities(self):
         for key, slots in ABILITIES.items():
@@ -90,6 +93,31 @@ class TestScriptParsing(unittest.TestCase):
         actions = [{"action": "wait"} for _ in range(201)]
         with self.assertRaises(ValueError):
             parse_script({"seed": 1, "actions": actions})
+
+
+class TestLoadActions(unittest.TestCase):
+    def test_reads_inline_json(self):
+        self.assertEqual(
+            load_actions('[{"action": "wait"}]'),
+            [{"action": "wait"}],
+        )
+
+    def test_reads_a_file_through_the_at_prefix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "actions.json"
+            path.write_text('[{"action":"save"}]', encoding="utf-8")
+            self.assertEqual(load_actions(f"@{path}"), [{"action": "save"}])
+
+    def test_shell_stripped_quotes_get_an_actionable_error(self):
+        with self.assertRaises(ValueError) as caught:
+            load_actions("[{action:wait}]")
+        message = str(caught.exception)
+        self.assertIn("@actions.json", message)
+        self.assertIn("--script", message)
+
+    def test_missing_file_is_an_error_not_an_empty_list(self):
+        with self.assertRaises(OSError):
+            load_actions("@definitely_missing_actions_file.json")
 
 
 class TestLayoutHash(unittest.TestCase):

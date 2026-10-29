@@ -107,6 +107,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: No floor ships two monsters on one tile or a boss on a prop, the Depth-3 fight happens at the stairs as designed, Avarice's debt is a legible, killable enemy, and every interactive prop explains itself on hover. The audit is stricter: renderer and tooltip checks now compare canvas pixels, so deleting a draw path fails the gate instead of passing on a state check. `play` exits non-zero when the page logs an error.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (server/client parity and read-before-write), PRINCIPLE-014 (dungeon and server tests for both defects) and PRINCIPLE-015 (pixel-level UI proof).
 
+### ADR-015: Shell-Safe Harness Inputs, Rejected-Action Reporting and Resume Coverage
+- **Date**: 2026-10-29
+- **Status**: Accepted
+- **Context**: Reviewing the last three commits found the documented harness command was unusable in this repo's own shell: PowerShell and `cmd` strip the inner double quotes of a native argument, so `--actions '[{"action":"wait"}]'` reached the parser as `[{action:wait}]` and failed with a bare JSON error. A rejected action also crashed `play` with a traceback and no JSON reply, `teleport` accepted a wall tile and produced states with the player outside the map, and the save test proved only the raw fields — the resume path that rebuilds the run was untested.
+- **Decision**: Accept `--actions @file` alongside inline JSON, and turn a JSON parse failure into a message that names the shell quoting and both file forms. `play` now catches a rejected action, records `steps[].error` plus a top-level `failure`, and exits 1 with a complete JSON reply. `teleport` refuses a non-walkable target in the engine bridge. Add a selftest check that saves after a pact, resumes through `start(..., allowResume)`, and asserts attack, max HP, the pact bonus field, the spent altar and the cleared transition flag all survive.
+- **Consequences**: The documented command works on Windows shells, a failed action is a machine-readable result instead of a traceback, the debug pose cannot manufacture impossible states, and resume — a distinct code path from a fresh start — is covered. `catalog` now advertises the input forms so an agent does not have to read the source.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-010 (bounded CLI I/O), PRINCIPLE-011 (actionable errors) and PRINCIPLE-014 (resume regression coverage).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
