@@ -173,6 +173,7 @@ export class GameEngine {
       this.merchantStock = data.merchant_stock || [];
       this.bounties = data.bounties || this._generateOfflineBounties(this.depth);
     } catch (err) {
+      if (token !== this.runToken) return;
       console.warn("Server API fallback to offline procedural generator:", err);
       this._generateOfflineState(seed, depth, this.heroClass);
       this.bounties = this._generateOfflineBounties(this.depth);
@@ -1557,7 +1558,8 @@ export class GameEngine {
         this.player.inventory.push(crown);
         this.renderer.addFloatingItemBadge(crown.name, crown.rarity, monster.x, monster.y);
       }
-      setTimeout(() => { if (!this.gameOver && !this.victory) this.handleVictory(); }, 1500);
+      const victoryToken = this.runToken;
+      setTimeout(() => { if (victoryToken === this.runToken && !this.gameOver && !this.victory) this.handleVictory(); }, 1500);
       return;
     }
 
