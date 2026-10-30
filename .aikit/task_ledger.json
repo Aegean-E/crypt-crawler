@@ -1126,6 +1126,116 @@
       "timestamp": 1793382671.9269664,
       "timestamp_str": "2026-10-30 20:51:11",
       "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 18",
+      "phase_num": 3,
+      "description": "Reforge stage 18: window 54, 3 commit(s), 5 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382794.623761,
+      "timestamp_str": "2026-10-30 20:53:14",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 19",
+      "phase_num": 3,
+      "description": "Reforge stage 19: window 57, 3 commit(s), 9 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382829.5666842,
+      "timestamp_str": "2026-10-30 20:53:49",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 20",
+      "phase_num": 3,
+      "description": "Reforge stage 20: window 60, 3 commit(s), 9 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382866.5696077,
+      "timestamp_str": "2026-10-30 20:54:26",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 21",
+      "phase_num": 3,
+      "description": "Reforge stage 21: window 63, 3 commit(s), 12 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382915.5078158,
+      "timestamp_str": "2026-10-30 20:55:15",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 22",
+      "phase_num": 3,
+      "description": "Reforge stage 22: window 66, 3 commit(s), 18 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383050.809065,
+      "timestamp_str": "2026-10-30 20:57:30",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 23",
+      "phase_num": 3,
+      "description": "Reforge stage 23: window 69, 3 commit(s), 17 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383128.4780338,
+      "timestamp_str": "2026-10-30 20:58:48",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 23",
+      "phase_num": 3,
+      "description": "Reforge stage 23: stage 23 host review reviewed; run active; coverage 224/224",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383216.4926255,
+      "timestamp_str": "2026-10-30 21:00:16",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 24",
+      "phase_num": 3,
+      "description": "Reforge stage 24: window 72, 3 commit(s), 28 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383247.9610443,
+      "timestamp_str": "2026-10-30 21:00:47",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 24",
+      "phase_num": 3,
+      "description": "Reforge stage 24: stage 24 host review reviewed; run active; coverage 50/50",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383296.09233,
+      "timestamp_str": "2026-10-30 21:01:36",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-9",
+      "phase": "reforge stage 24",
+      "phase_num": 3,
+      "description": "Reforge stage 24: run stopped at stage 24; resume it with `reforge resume`",
+      "files_affected": [],
+      "status": "suspended",
+      "timestamp": 1793383316.7984571,
+      "timestamp_str": "2026-10-30 21:01:56",
+      "agent": "opencode"
     }
   ]
 }
