@@ -227,5 +227,19 @@
     "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
     "final_snapshot_entries": 198,
     "surface_digest": "73eb0a82203c7051d7def725f917902cbef833e80d0f445c1e58d5356c5729b4"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "3df8436c8fd153be79153926cfe8afbcabe9104d",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793382210.3898177,
+    "finished_at": 1793382273.021153,
+    "strikes": 0,
+    "reviewer": "same-seed Restless Dead restart probe (seed 1: extra shade 1 -> 1, 12 monsters each run), JS syntax check, 71 unit tests",
+    "allowed_removals": [],
+    "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
+    "final_snapshot_entries": 198,
+    "surface_digest": "25c54585a8b1dee19334a4e2ec1fc5e7eb6144ae6c22b9ea4edd45dc0452a73f"
   }
 ]

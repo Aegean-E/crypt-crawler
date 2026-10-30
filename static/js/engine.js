@@ -1203,8 +1203,9 @@ export class GameEngine {
     this.omen = omen;
     this.fovRadius = omen.fov;
     this.ui.updateOmen(omen);
-    if (this.omenKey === key) return;
+    if (this.omenKey === key && this.omenDungeon === this.dungeon) return;
     this.omenKey = key;
+    this.omenDungeon = this.dungeon;
     if (announce) {
       this.unlockLore(this.loreEvents?.omen);
       this.ui.logMessage(`${omen.icon} Omen — ${omen.name}: ${omen.desc}`, "system");
