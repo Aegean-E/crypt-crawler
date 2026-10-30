@@ -667,6 +667,91 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     checks.append(_check("no_page_errors_after_arcane_focus", not harness.errors, harness.errors))
     page.context.close()
 
+    # Status combos: Frost shatters burn, Fireball detonates poison.
+    page = harness.open_page(seed, hero_class="mage")
+    shatter = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const p = e.player;
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+            if (!step) return { skipped: true };
+            const target = {
+                name: "Frost Dummy", type: "skeleton", x: p.x + step[0], y: p.y + step[1],
+                hp: 100, max_hp: 100, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: { burn: 3 },
+            };
+            e.monsters = [target];
+            e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+            const original = Math.random;
+            Math.random = () => 0.5;
+            e.tacticalFrostNova();
+            Math.random = original;
+            return {
+                skipped: false,
+                damage: 100 - target.hp,
+                burn: target.status_effects.burn || 0,
+                stun: target.status_effects.stun || 0,
+                log: Array.from(document.querySelectorAll("#chronicleLog .log-entry"))
+                    .slice(-3).map((entry) => entry.textContent.trim()),
+            };
+        }"""
+    )
+    checks.append(_check(
+        "frost_shatters_burn_for_bonus_damage",
+        shatter.get("skipped") is not True
+        and shatter["damage"] == 40
+        and shatter["burn"] == 0
+        and shatter["stun"] >= 1
+        and any("SHATTER" in line for line in shatter["log"]),
+        shatter,
+    ))
+    checks.append(_check("no_page_errors_after_shatter", not harness.errors, harness.errors))
+    page.context.close()
+
+    page = harness.open_page(seed, hero_class="rogue")
+    toxic = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const p = e.player;
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+            if (!step) return { skipped: true };
+            const target = {
+                name: "Toxic Dummy", type: "skeleton", x: p.x + step[0], y: p.y + step[1],
+                hp: 100, max_hp: 100, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: { poison: 3 },
+            };
+            e.monsters = [target];
+            e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+            const original = Math.random;
+            Math.random = () => 0.5;
+            e.tacticalFireball();
+            Math.random = original;
+            return {
+                skipped: false,
+                damage: 100 - target.hp,
+                poison: target.status_effects.poison || 0,
+                burn: target.status_effects.burn || 0,
+                log: Array.from(document.querySelectorAll("#chronicleLog .log-entry"))
+                    .slice(-3).map((entry) => entry.textContent.trim()),
+            };
+        }"""
+    )
+    checks.append(_check(
+        "fireball_detonates_poison_for_bonus_damage",
+        toxic.get("skipped") is not True
+        and toxic["damage"] == 52
+        and toxic["poison"] == 0
+        and toxic["burn"] >= 1
+        and any("TOXIC BLAST" in line for line in toxic["log"]),
+        toxic,
+    ))
+    checks.append(_check("no_page_errors_after_toxic_blast", not harness.errors, harness.errors))
+    page.context.close()
+
     # Sconce light: Deep Fog is 5 tiles unless standing within two of a wall sconce.
     page = harness.open_page(4242)
     sconce = page.evaluate(

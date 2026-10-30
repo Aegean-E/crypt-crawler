@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, Normal/Hard difficulty, class passives, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, Normal/Hard difficulty, class passives, status combos, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -73,6 +73,14 @@ New Game offers **Normal** and **Hard**. Hard multiplies enemy max HP by 1.4, en
 | Arcane Mage | Arcane Focus | Spells deal +15% damage |
 
 The passive is printed on each class card before you choose, and the in-game guide repeats it.
+
+### 🔥 Status Combos
+| Setup | Follow-up | Effect |
+|---|---|---|
+| Burning | Frost Nova | **Shatter** for +12+3×depth, consuming burn |
+| Poisoned | Fireball or Scroll of Inferno | **Toxic Blast** for +12+3×depth, consuming poison |
+
+Combos reward sequencing: apply burn with Fireball, then shatter it with Frost; or poison with a dagger/Shadow Strike, then detonate it with fire.
 
 ### 🎭 Floor Omens, Mobs and Story
 Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles, or 7 near a wall sconce), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.

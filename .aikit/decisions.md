@@ -203,6 +203,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: Deep Fog now has a positional counterplay: crossing to a lit wall restores the full lantern, while the rest of the floor stays dark. Normal floors are unchanged because their base radius is already 7. No save field changes; the rule is derived from the existing player and sconce positions. The harness proves base 5, near-sconce 7, away 5, and a visibly larger explored area; the inspector remains green.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (the guide's promise is now true) and PRINCIPLE-014 (deterministic near/far radius coverage).
 
+### ADR-027: Status Combo Payoffs
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Burn and poison only ticked damage; no ability consumed them, so applying a status had no payoff beyond the damage-over-time and the mage/rogue kits did not interact. The combat log could not explain a deliberate setup.
+- **Decision**: Add a `_comboBonus()` of `12 + 3 * depth`. Frost Nova consumes an active burn on its target for that bonus and logs **Shatter**; Fireball and Scroll of Inferno consume active poison for the same bonus and log **Toxic Blast**. The status is deleted before the target takes damage and before the end-of-turn status tick, so the combo is one-shot and the log states the bonus. The guide and README list both pairings.
+- **Consequences**: Fireball → Frost and poison → fire become deliberate sequences; the bonus scales with depth but not with the target's HP. No new control, save field or status type is needed. The harness proves Shatter's 40 damage with burn consumed and Toxic Blast's 52 damage with poison consumed; RNG is fixed for both.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the combos and the harness drives them), PRINCIPLE-011 (the guide names both pairings) and PRINCIPLE-014 (deterministic coverage for both branches).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

@@ -26,6 +26,7 @@ export class DungeonRenderer {
     this.goldColor = "#ecc94b";
     this.healColor = "#68d391";
     this.arcaneColor = "#9f7aea";
+    this.poisonColor = "#48bb78";
   }
 
   addJackpotExplosion(x, y) {

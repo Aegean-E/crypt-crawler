@@ -10,7 +10,7 @@
 - **Total Classes**: `26`
 - **Total Top-Level Functions**: `40`
 - **Total Class Methods**: `134`
-- **Total Source Lines**: `6891`
+- **Total Source Lines**: `6976`
 
 ---
 
@@ -339,7 +339,7 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `1764` lines (`72975` bytes)
+**Size**: `1849` lines (`76642` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*

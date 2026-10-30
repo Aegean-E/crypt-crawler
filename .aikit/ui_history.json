@@ -213,5 +213,19 @@
     "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
     "final_snapshot_entries": 198,
     "surface_digest": "67636385efa871d4ccc80cbac223624ce4d81eddd6111e83b0f5e21e979853d8"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "7377ad69f96e46b7f2691a4468a8b45061898c6b",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793380108.7825801,
+    "finished_at": 1793380194.8801856,
+    "strikes": 0,
+    "reviewer": "status combo probe (Shatter 40, Toxic 52, burn/poison consumed) + guide review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
+    "final_snapshot_entries": 198,
+    "surface_digest": "73eb0a82203c7051d7def725f917902cbef833e80d0f445c1e58d5356c5729b4"
   }
 ]

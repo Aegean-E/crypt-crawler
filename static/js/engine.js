@@ -721,6 +721,7 @@ export class GameEngine {
            <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to reveal them or to disarm a revealed trap beside you for a little XP. Wall sconces within two tiles restore the lantern to 7 tiles, even in Deep Fog!</li>
            <li><strong>Gilded Mimics:</strong> Some chests are teeth in a wooden lid; open one and fight instead of looting.</li>
            <li><strong>Class Passives:</strong> Paladin Zeal restores HP/MP on a kill; Rogue Executioner hits foes below 30% HP harder; Mage Arcane Focus boosts spell damage.</li>
+           <li><strong>Status Combos:</strong> Frost on a burning foe shatters for +12+3×depth; Fireball or its scroll on a poisoned foe detonates for the same bonus, consuming the status.</li>
          </ul>
          <br>
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
@@ -1536,6 +1537,10 @@ export class GameEngine {
     return this.heroClass === "mage" ? 1.15 : 1;
   }
 
+  _comboBonus() {
+    return 12 + this.depth * 3;
+  }
+
   attackMonster(monster) {
     const atk = this.player.attack;
     const def = monster.defense;
@@ -1795,7 +1800,14 @@ export class GameEngine {
     }
 
     this.player.mana -= 6;
-    const dmg = Math.floor((18 + Math.floor(Math.random() * 8)) * this._spellMultiplier());
+    let combo = 0;
+    if (target.status_effects && target.status_effects.burn > 0) {
+      combo = this._comboBonus();
+      delete target.status_effects.burn;
+      this.renderer.addFloatingText(`SHATTER +${combo}`, target.x, target.y, this.renderer.warningColor);
+      this.ui.logMessage(`❄️ SHATTER! The burning target cracks under the frost (+${combo} damage).`, "crit");
+    }
+    const dmg = Math.floor((18 + Math.floor(Math.random() * 8)) * this._spellMultiplier()) + combo;
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playFreeze();
 
@@ -1982,7 +1994,14 @@ export class GameEngine {
     }
 
     this.player.mana -= 10;
-    const dmg = Math.floor((26 + Math.floor(Math.random() * 12)) * this._spellMultiplier());
+    let combo = 0;
+    if (target.status_effects && target.status_effects.poison > 0) {
+      combo = this._comboBonus();
+      delete target.status_effects.poison;
+      this.renderer.addFloatingText(`TOXIC +${combo}`, target.x, target.y, this.renderer.poisonColor);
+      this.ui.logMessage(`☠️ TOXIC BLAST! The poison ignites (+${combo} damage).`, "crit");
+    }
+    const dmg = Math.floor((26 + Math.floor(Math.random() * 12)) * this._spellMultiplier()) + combo;
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playSpell("fireball");
 
@@ -2204,9 +2223,16 @@ export class GameEngine {
         this.ui.logMessage("No visible enemy for the Scroll of Inferno.", "system");
         return;
       }
+      let combo = 0;
+      if (target.status_effects && target.status_effects.poison > 0) {
+        combo = this._comboBonus();
+        delete target.status_effects.poison;
+        this.renderer.addFloatingText(`TOXIC +${combo}`, target.x, target.y, this.renderer.poisonColor);
+        this.ui.logMessage(`☠️ TOXIC BLAST! The poison ignites (+${combo} damage).`, "crit");
+      }
       const damage = Math.floor(
         (item.stats?.spell_damage || 30) * this._spellMultiplier()
-      );
+      ) + combo;
       this.ui.logMessage(`📜 Read ${item.name}! ${damage} fire damage engulfs ${target.name}.`, "crit");
       sounds.playSpell("fireball");
       target.hp = Math.max(0, target.hp - damage);

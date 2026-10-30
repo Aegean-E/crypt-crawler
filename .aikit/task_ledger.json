@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-027",
+    "task_id": "CC-028",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793379488.8214452,
-    "owner": "opencode:crypt-crawler-cc027",
-    "started_by": "opencode:crypt-crawler-cc027",
+    "updated_at": 1793380365.4698956,
+    "owner": "opencode:crypt-crawler-cc028",
+    "started_by": "opencode:crypt-crawler-cc028",
     "continuations": [],
-    "completed_at": 1793379496.8561308
+    "completed_at": 1793380374.4079401
   },
   "checkpoints": [
     {
@@ -850,6 +850,49 @@
       "timestamp": 1793379750.8650672,
       "timestamp_str": "2026-10-30 20:02:30",
       "agent": "opencode"
+    },
+    {
+      "task_id": "CC-028",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Add status combos: Frost Nova consumes burn for a Shatter bonus, Fireball and Scroll of Inferno consume poison for a Toxic Blast bonus, using a flat 12 + 3*depth bonus; [2/2] prove both combos in the harness, document the rule in the guide/README and ADR-027, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793380095.467121,
+      "timestamp_str": "2026-10-30 20:08:15",
+      "agent": "opencode:crypt-crawler-cc028",
+      "impact_assessment": {
+        "why": "Burn and poison currently only tick damage; no ability consumes them, so setting up a status has no payoff beyond the damage-over-time and the two classes' kits do not interact",
+        "benefits": "Mage Fireball -> Frost and Rogue poison -> Fireball become deliberate combos, status effects gain a payoff, and the combat log explains the bonus",
+        "risks": "contract: Frost/Fireball/Scroll damage gains a combo branch and consumes the status; dependency: none; concurrency: none; state: no save change; UI: engine.js is in the game-ui surface",
+        "mitigation": "Fixed-RNG dummy tests for both combos, status consumption asserted before the turn tick, text updates, UI guard and full gates"
+      }
+    },
+    {
+      "task_id": "CC-028",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Status combos shipped: Frost Nova consumes burn for a 12+3*depth Shatter, Fireball and Scroll of Inferno consume poison for the same Toxic Blast; statuses are removed before the tick, guide/README/ADR-027 updated. Harness proves Shatter 40 and Toxic 52 with consumed statuses (60/60); inspector 75/75, 16 screenshots, 0 console errors; UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793380365.4698956,
+      "timestamp_str": "2026-10-30 20:12:45",
+      "agent": "opencode:crypt-crawler-cc028",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-028 then check --strict",
+        "evidence": "71 tests, harness 60/60, inspector 75/75, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-028",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-028' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793380374.4079416,
+      "timestamp_str": "2026-10-30 20:12:54",
+      "agent": "opencode:crypt-crawler-cc028"
     }
   ]
 }
