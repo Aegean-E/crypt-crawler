@@ -2212,6 +2212,7 @@ export class GameEngine {
       if (item.stats?.shield_wall_turns) {
         this.player.status_effects = this.player.status_effects || {};
         this.player.status_effects.shield_wall = Math.max(this.player.status_effects.shield_wall || 0, item.stats.shield_wall_turns);
+        this._recalculatePlayerStats();
         this.renderer.addFloatingText("BARRIER (+6 DEF)", this.player.x, this.player.y, "#ecc94b");
         this.ui.logMessage(`Drank ${item.name}: Raised impenetrable Divine Barrier (+6 DEF for ${item.stats.shield_wall_turns} turns)!`, "loot");
       }
