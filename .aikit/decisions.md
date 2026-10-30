@@ -171,6 +171,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: A chest now carries a real risk/reward decision, and a known seed reproduces the same mimic floor for players and tests. The offline fallback gets the rule automatically because it builds the same client dungeon. Search reveals traps, not mimics. The harness proves seed 2 selects a mimic, springing it leaves gold and inventory unchanged, pushes the player back and spawns a live mimic; the inspector pixel-diffs the new sprite.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and server/offline data feed it), PRINCIPLE-011 (one legible outcome, no prompt) and PRINCIPLE-014 (harness and inspector coverage for the new branch).
 
+### ADR-023: Trap Disarm and the Completed Search Loop
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Search revealed traps, but a player could only route around them; a revealed trap in a narrow room or a planned path stayed a permanent hazard. The trap loop stopped at information and had no payoff for spending a second turn.
+- **Decision**: Add a `disarmed` flag to the client trap model. If `searchForTraps` finds a discovered, untriggered trap orthogonally adjacent to the player, it disarms that trap instead of scanning: the flag is set, the turn finishes, a grey crossed grille is drawn, the minimap marker turns grey, the hover card says it is safe, and the player gains `4 + depth * 2` XP. A disarmed trap is skipped by the trigger check and serialized in saves; old saves default to false. The Search button title and guide explain the second use.
+- **Consequences**: The reveal now has a follow-up decision: pay a second turn for XP and a permanently safe tile, or route around it. No new control or hotkey is needed because the same Search action is context-sensitive when adjacent. The harness proves reveal, disarm, XP, and safe crossing; the inspector pixel-diffs the disarmed grille.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns both trap branches and the harness drives them), PRINCIPLE-011 (one Search button, no prompt) and PRINCIPLE-014 (browser-level coverage for the disarm branch).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

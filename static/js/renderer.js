@@ -240,7 +240,7 @@ export class DungeonRenderer {
       }
     }
     for (const trap of dungeon.traps) {
-      if (dungeon.isVisible(trap.x, trap.y) && (trap.discovered || trap.triggered)) {
+      if (dungeon.isVisible(trap.x, trap.y) && (trap.discovered || trap.triggered || trap.disarmed)) {
         this._drawTrap(ctx, trap, ts);
       }
     }
@@ -503,11 +503,12 @@ export class DungeonRenderer {
     const px = trap.x * ts + 4;
     const py = trap.y * ts + 4;
     const size = ts - 8;
-    const armed = !trap.triggered;
+    const disarmed = Boolean(trap.disarmed);
+    const armed = !trap.triggered && !disarmed;
 
     ctx.save();
     // Iron floor grille; a revealed trap keeps a dashed amber warning border.
-    ctx.strokeStyle = armed ? "#d69e2e" : "#4a5568";
+    ctx.strokeStyle = disarmed ? "#718096" : (armed ? "#d69e2e" : "#4a5568");
     ctx.lineWidth = 1.5;
     if (armed) ctx.setLineDash([4, 3]);
     ctx.strokeRect(px, py, size, size);
@@ -521,7 +522,17 @@ export class DungeonRenderer {
     ctx.lineTo(px + size / 2, py + size);
     ctx.stroke();
 
-    if (armed) {
+    if (disarmed) {
+      // The mechanism is broken: a crossed-out grille, safe to cross.
+      ctx.strokeStyle = "#a0aec0";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px + 5, py + 5);
+      ctx.lineTo(px + size - 5, py + size - 5);
+      ctx.moveTo(px + size - 5, py + 5);
+      ctx.lineTo(px + 5, py + size - 5);
+      ctx.stroke();
+    } else if (armed) {
       // Revealed but not sprung: a warning core, not the spike burst.
       const cx = px + size / 2;
       const cy = py + size / 2;
@@ -1964,11 +1975,11 @@ export class DungeonRenderer {
     }
 
     // Revealed traps
-    ctx.fillStyle = "#d69e2e";
     for (const trap of dungeon.traps || []) {
-      if (trap.discovered && !trap.triggered) {
-        ctx.fillRect(mx + trap.x * scaleX, my + trap.y * scaleY, 2, 2);
-      }
+      if (trap.disarmed) ctx.fillStyle = "#718096";
+      else if (trap.discovered && !trap.triggered) ctx.fillStyle = "#d69e2e";
+      else continue;
+      ctx.fillRect(mx + trap.x * scaleX, my + trap.y * scaleY, 2, 2);
     }
 
     // Visible monsters
@@ -2139,10 +2150,12 @@ export class DungeonRenderer {
     const trap = (dungeon.traps || []).find((t) => at(t) && t.discovered && !t.triggered);
     if (trap) {
       return {
-        title: "⚠️ Revealed Spike Trap",
-        border: "#d69e2e",
-        color: "#f6ad55",
-        lines: ["It is armed and waiting.", "Step around it; it still triggers."],
+        title: trap.disarmed ? "🔧 Disarmed Spike Trap" : "⚠️ Revealed Spike Trap",
+        border: trap.disarmed ? "#4a5568" : "#d69e2e",
+        color: trap.disarmed ? "#a0aec0" : "#f6ad55",
+        lines: trap.disarmed
+          ? ["The mechanism is broken.", "Safe to cross."]
+          : ["It is armed and waiting.", "Step around it; it still triggers."],
       };
     }
     const pact = (dungeon.pacts || []).find((p) => at(p) && !p.used);

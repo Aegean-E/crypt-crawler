@@ -59,6 +59,7 @@ export class ClientDungeon {
       ...point(t),
       triggered: Array.isArray(t) ? false : Boolean(t.triggered),
       discovered: Array.isArray(t) ? false : Boolean(t.discovered),
+      disarmed: Array.isArray(t) ? false : Boolean(t.disarmed),
     }));
     this.shrines = (data.shrines || []).map((s) => ({
       ...point(s),

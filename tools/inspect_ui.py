@@ -787,6 +787,23 @@ def run_inspection(
                                 const painted = window.__auditDiff(before, window.__auditSnap());
                                 const label = button.querySelector(".deck-label")?.textContent || "";
                                 const hotkey = button.querySelector(".deck-hotkey")?.textContent || "";
+                                const beforeDisarmTurn = e.turn;
+                                const beforeDisarmXp = p.xp;
+                                const beforeDisarmLevel = p.level;
+                                const beforeDisarmHp = p.hp;
+                                e.renderer.render(e.dungeon, p, e.monsters, 1000);
+                                const beforeDisarm = window.__auditSnap();
+                                button.click();
+                                const disarmEntries = Array.from(
+                                    document.querySelectorAll("#chronicleLog .log-entry")
+                                );
+                                const disarmLog = disarmEntries.length
+                                    ? disarmEntries[disarmEntries.length - 1].textContent.trim()
+                                    : "";
+                                e.renderer.render(e.dungeon, p, e.monsters, 1000);
+                                const paintedDisarm = window.__auditDiff(
+                                    beforeDisarm, window.__auditSnap()
+                                );
                                 return {
                                     skip: false,
                                     button: true,
@@ -798,6 +815,13 @@ def run_inspection(
                                     hpUnchanged: p.hp === beforeHp,
                                     log,
                                     painted,
+                                    disarmed: trap.disarmed,
+                                    disarmedTriggered: trap.triggered,
+                                    disarmTurnAdvanced: e.turn > beforeDisarmTurn,
+                                    disarmGained: p.xp > beforeDisarmXp || p.level > beforeDisarmLevel,
+                                    disarmHpUnchanged: p.hp === beforeDisarmHp,
+                                    disarmLog,
+                                    paintedDisarm,
                                 };
                             }"""
                         )
@@ -825,6 +849,22 @@ def run_inspection(
                                     and search_state.get("hpUnchanged") is True
                                     and "reveal 1 trap" in search_state.get("log", "")
                                     and search_state.get("painted", 0) > 60
+                                ),
+                            }
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "search_button_disarms_a_trap": search_state.get("skip") is True
+                                or (
+                                    search_state.get("button") is True
+                                    and search_state.get("disarmed") is True
+                                    and search_state.get("disarmedTriggered") is False
+                                    and search_state.get("disarmTurnAdvanced") is True
+                                    and search_state.get("disarmGained") is True
+                                    and search_state.get("disarmHpUnchanged") is True
+                                    and "disarm" in search_state.get("disarmLog", "")
+                                    and search_state.get("paintedDisarm", 0) > 60
                                 ),
                             }
                         )

@@ -152,5 +152,24 @@
     "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
     "final_snapshot_entries": 196,
     "surface_digest": "ca4e8ae11b8a5b0429c27a2b14821049a65d6635871c8cd3ae1e39e4d6e7c2e4"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "9bf4ff85f3eb10f77fb4f19d99dd402d21c6e89f",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793376852.937472,
+    "finished_at": 1793377015.0962193,
+    "strikes": 1,
+    "reviewer": "headless disarm probe (XP 0->6, one turn, safe crossing, crossed grille) + Search tooltip/guide review",
+    "allowed_removals": [
+      {
+        "pattern": "control button#btnActionSearch*",
+        "reason": "the Search title now also documents the adjacent disarm action"
+      }
+    ],
+    "final_snapshot_digest": "0d3ade71fd18ca2acaa5ff819f6246863ef73c9f75eeb7a017c0962d644caf4b",
+    "final_snapshot_entries": 196,
+    "surface_digest": "54d7432d44bb341fd2ea35538b428f22f0dabe79c01ad1152444f7afa3dabde2"
   }
 ]

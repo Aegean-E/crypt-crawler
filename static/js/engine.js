@@ -702,7 +702,7 @@ export class GameEngine {
            <li><strong>Journal:</strong> Every discovery is recorded in the codex and survives death.</li>
            <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
-           <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to search and reveal them, or stay near wall sconces for light!</li>
+           <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to reveal them or to disarm a revealed trap beside you for a little XP, or stay near wall sconces for light!</li>
            <li><strong>Gilded Mimics:</strong> Some chests are teeth in a wooden lid; open one and fight instead of looting.</li>
          </ul>
          <br>
@@ -1440,7 +1440,7 @@ export class GameEngine {
     }
 
     // Check trap
-    const trap = this.dungeon.traps.find((t) => t.x === nx && t.y === ny && !t.triggered);
+    const trap = this.dungeon.traps.find((t) => t.x === nx && t.y === ny && !t.triggered && !t.disarmed);
     if (trap) {
       trap.triggered = true;
       trap.discovered = true;
@@ -2046,6 +2046,20 @@ export class GameEngine {
 
   searchForTraps() {
     if (this.gameOver || this.victory || this.transitioning) return;
+    const adjacent = (this.dungeon.traps || []).find((trap) =>
+      trap.discovered && !trap.triggered && !trap.disarmed
+      && Math.abs(trap.x - this.player.x) + Math.abs(trap.y - this.player.y) === 1
+    );
+    if (adjacent) {
+      adjacent.disarmed = true;
+      sounds.playShrine();
+      this.renderer.addFloatingText("DISARMED", adjacent.x, adjacent.y, this.renderer.warningColor);
+      this.renderer.addParticles(adjacent.x, adjacent.y, this.renderer.trapColor, 10);
+      this.ui.logMessage("🔧 You disarm the revealed spike trap and recover its mechanism.", "loot");
+      this._grantXp(4 + this.depth * 2);
+      this.finishPlayerTurn();
+      return;
+    }
     const radius = 3;
     const found = [];
     for (const trap of this.dungeon.traps || []) {
@@ -2599,7 +2613,11 @@ export class GameEngine {
           rooms: this.dungeon.rooms,
           chests: this.dungeon.chests.map((c) => ({ x: c.x, y: c.y, opened: c.opened })),
           traps: this.dungeon.traps.map((t) => ({
-            x: t.x, y: t.y, triggered: t.triggered, discovered: Boolean(t.discovered),
+            x: t.x,
+            y: t.y,
+            triggered: t.triggered,
+            discovered: Boolean(t.discovered),
+            disarmed: Boolean(t.disarmed),
           })),
           shrines: this.dungeon.shrines.map((s) => ({ x: s.x, y: s.y, activated: s.activated })),
           urns: this.dungeon.urns.map((u) => ({ x: u.x, y: u.y, broken: u.broken })),

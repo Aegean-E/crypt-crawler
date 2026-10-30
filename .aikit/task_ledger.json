@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-023",
+    "task_id": "CC-024",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793376411.5124128,
-    "owner": "opencode:crypt-crawler-cc023",
-    "started_by": "opencode:crypt-crawler-cc023",
+    "updated_at": 1793377307.3033786,
+    "owner": "opencode:crypt-crawler-cc024",
+    "started_by": "opencode:crypt-crawler-cc024",
     "continuations": [],
-    "completed_at": 1793376418.2638857
+    "completed_at": 1793377328.1952338
   },
   "checkpoints": [
     {
@@ -656,6 +656,49 @@
       "timestamp": 1793376535.7823393,
       "timestamp_str": "2026-10-30 19:08:55",
       "agent": "opencode"
+    },
+    {
+      "task_id": "CC-024",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add disarmed trap state and a search-again disarm for an adjacent revealed trap, with a small XP reward and trigger skip; [2/3] render disarmed traps on the map/minimap/hover card and update the Search tooltip/guide; [3/3] prove reveal->disarm->safe crossing and save round-trip in the harness, add an inspector pixel proof, document README/ADR-023, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793376832.4310079,
+      "timestamp_str": "2026-10-30 19:13:52",
+      "agent": "opencode:crypt-crawler-cc024",
+      "impact_assessment": {
+        "why": "Search only reveals traps; a player can route around them but cannot clear a chokepoint or finish the mechanic. A second Search beside a revealed trap should disarm it, turning the reveal into a real turn-cost choice with a modest XP reward",
+        "benefits": "Players can secure a path, earn a little XP for the risk, and the revealed-trap state becomes a complete loop; the disarmed state survives saves and old saves default safely",
+        "risks": "contract: traps gain disarmed, Search gains an adjacent-disarm branch, no new control; dependency: none; concurrency: none; state: additive disarmed flag, trigger skips it; UI: engine.js, dungeon.js and renderer.js are in the game-ui surface",
+        "mitigation": "Harness proves reveal, disarm, no trigger on crossing and XP; inspector pixel-diffs the disarmed sprite; save round-trip and old-save default; UI guard plus the full gate set"
+      }
+    },
+    {
+      "task_id": "CC-024",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Trap disarm shipped: a second Search beside a revealed trap disarms it, grants 4+depth*2 XP, skips the trigger, persists in saves, and renders a grey crossed grille/minimap/hover card. Harness proves reveal->disarm->XP->safe crossing (43/43); inspector proves reveal and disarm with pixel diffs (73/73, 16 screenshots, 0 console errors); UI guard verified and finished with the Search title removal allowed. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793377307.3033786,
+      "timestamp_str": "2026-10-30 19:21:47",
+      "agent": "opencode:crypt-crawler-cc024",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-024 then check --strict",
+        "evidence": "71 tests, harness 43/43, inspector 73/73, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-024",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-024' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793377328.1952355,
+      "timestamp_str": "2026-10-30 19:22:08",
+      "agent": "opencode:crypt-crawler-cc024"
     }
   ]
 }

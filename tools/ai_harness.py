@@ -130,7 +130,10 @@ STATE_JS = """
       pacts: (e.dungeon.pacts || []).map((a) => ({ ...point(a), used: a.used })),
       merchants: (e.dungeon.merchants || []).map(point),
       traps: (e.dungeon.traps || []).map((t) => ({
-        ...point(t), triggered: t.triggered, discovered: Boolean(t.discovered),
+        ...point(t),
+        triggered: t.triggered,
+        discovered: Boolean(t.discovered),
+        disarmed: Boolean(t.disarmed),
       })),
       sconces: (e.dungeon.sconces || []).map(point),
       rooms: (e.dungeon.rooms || []).map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h })),
@@ -815,6 +818,25 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
             ),
             {},
         )
+        beforeDisarm = harness.state(page)
+        disarmedState = harness.apply(page, {"action": "search"})
+        disarmedTrap = next(
+            (
+                entry for entry in disarmedState["dungeon"]["traps"]
+                if entry["x"] == search_setup["x"] and entry["y"] == search_setup["y"]
+            ),
+            {},
+        )
+        step_dx = search_setup["x"] - before["player"]["x"]
+        step_dy = search_setup["y"] - before["player"]["y"]
+        stepped = harness.apply(page, {"action": "move", "dx": step_dx, "dy": step_dy})
+        steppedTrap = next(
+            (
+                entry for entry in stepped["dungeon"]["traps"]
+                if entry["x"] == search_setup["x"] and entry["y"] == search_setup["y"]
+            ),
+            {},
+        )
         search = {
             "discovered": trap.get("discovered"),
             "triggered": trap.get("triggered"),
@@ -823,6 +845,21 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
             "beforeHp": before["player"]["hp"],
             "afterHp": after["player"]["hp"],
             "log": after["log"],
+            "disarm": {
+                "disarmed": disarmedTrap.get("disarmed"),
+                "triggered": disarmedTrap.get("triggered"),
+                "turnBefore": beforeDisarm["turn"],
+                "turnAfter": disarmedState["turn"],
+                "xpBefore": beforeDisarm["player"]["xp"],
+                "xpAfter": disarmedState["player"]["xp"],
+                "levelBefore": beforeDisarm["player"]["level"],
+                "levelAfter": disarmedState["player"]["level"],
+                "hpBeforeStep": beforeDisarm["player"]["hp"],
+                "hpAfterStep": stepped["player"]["hp"],
+                "stepTriggered": steppedTrap.get("triggered"),
+                "steppedOnTrap": stepped["player"]["x"] == search_setup["x"]
+                and stepped["player"]["y"] == search_setup["y"],
+            },
         }
     checks.append(_check(
         "search_reveals_a_trap_without_triggering_it",
@@ -832,6 +869,21 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         and search["afterTurn"] == search["beforeTurn"] + 1
         and search["afterHp"] == search["beforeHp"]
         and any("reveal 1 trap" in line for line in search["log"]),
+        search,
+    ))
+    checks.append(_check(
+        "search_disarms_an_adjacent_revealed_trap",
+        search_setup.get("skipped") is not True
+        and search["disarm"]["disarmed"] is True
+        and search["disarm"]["triggered"] is False
+        and search["disarm"]["turnAfter"] == search["disarm"]["turnBefore"] + 1
+        and (
+            search["disarm"]["xpAfter"] > search["disarm"]["xpBefore"]
+            or search["disarm"]["levelAfter"] > search["disarm"]["levelBefore"]
+        )
+        and search["disarm"]["hpAfterStep"] == search["disarm"]["hpBeforeStep"]
+        and search["disarm"]["stepTriggered"] is False
+        and search["disarm"]["steppedOnTrap"] is True,
         search,
     ))
     checks.append(_check("no_page_errors_after_search", not harness.errors, harness.errors))
