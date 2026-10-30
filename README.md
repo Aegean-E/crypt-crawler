@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, a two-way merchant, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -72,6 +72,9 @@ QoL: `?` opens the guide, `R` searches for traps, `Escape` closes any dialog, an
 
 ### 🔍 Trap Search
 Press `R` or the deck's **Search** button to spend a turn revealing armed traps within three visible tiles. A revealed trap gets a dashed amber grille and a hover card, but it still triggers if stepped on: the search buys information, not safety. The revealed state survives saves; each new floor starts with fresh hidden traps. Deep Fog shortens the search because it uses the same line of sight as the lantern.
+
+### 🧳 Merchant
+Hermit Grimbold opens a two-tab shop on B2F and deeper. **Buy** spends gold on potions, gear and relics; **Sell** converts outclassed backpack loot into gold at a rarity-based price (common 10, rare 30, epic 60). The shop stays open after a sale, so a full 12-slot backpack can be cleared in one visit, and selling is refused once the shop is closed.
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |

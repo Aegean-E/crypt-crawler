@@ -854,6 +854,67 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     checks.append(_check("no_page_errors_after_offline_trap", not harness.errors, harness.errors))
     page.context.close()
 
+    # The merchant's Sell tab must convert one backpack item into gold and keep
+    # the shop open for the next sale; a closed shop must refuse the same call.
+    page = harness.open_page(seed, depth=2)
+    sale = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            e.monsters = [];
+            e.openMerchantShop();
+            const before = {
+                gold: e.player.gold,
+                count: e.player.inventory.length,
+                shopOpen: e.ui.shopOpen,
+                sellButtons: document.querySelectorAll(".btn-sell").length,
+            };
+            const tab = document.querySelector('[data-shop-tab="sell"]');
+            if (!tab) return { skipped: true, before };
+            tab.click();
+            const btn = document.querySelector(".btn-sell");
+            if (!btn) return { skipped: true, before, tab: e.ui.shopTab };
+            btn.click();
+            const entries = Array.from(document.querySelectorAll("#chronicleLog .log-entry"));
+            const after = {
+                gold: e.player.gold,
+                count: e.player.inventory.length,
+                shopOpen: e.ui.shopOpen,
+                tab: e.ui.shopTab,
+                sellPaneHidden: document.querySelector('[data-shop-pane="sell"]').classList.contains("hidden"),
+                sellButtons: document.querySelectorAll(".btn-sell").length,
+                log: entries.length ? entries[entries.length - 1].textContent.trim() : "",
+            };
+            e.ui.closeModal();
+            const closed = { shopOpen: e.ui.shopOpen, modalOpen: e.ui.isModalOpen() };
+            const guardGold = e.player.gold;
+            const guardCount = e.player.inventory.length;
+            e.sellInventoryItem(0);
+            const guarded = {
+                unchanged: e.player.gold === guardGold
+                    && e.player.inventory.length === guardCount,
+            };
+            return { skipped: false, before, after, closed, guarded };
+        }"""
+    )
+    checks.append(_check(
+        "merchant_sells_a_backpack_item",
+        sale.get("skipped") is not True
+        and sale["before"]["shopOpen"] is True
+        and sale["after"]["gold"] > sale["before"]["gold"]
+        and sale["after"]["count"] == sale["before"]["count"] - 1
+        and sale["after"]["sellButtons"] == sale["before"]["sellButtons"] - 1
+        and sale["after"]["shopOpen"] is True
+        and sale["after"]["tab"] == "sell"
+        and sale["after"]["sellPaneHidden"] is False
+        and "Sold" in sale["after"]["log"]
+        and sale["closed"]["shopOpen"] is False
+        and sale["closed"]["modalOpen"] is False
+        and sale["guarded"]["unchanged"] is True,
+        sale,
+    ))
+    checks.append(_check("no_page_errors_after_sell", not harness.errors, harness.errors))
+    page.context.close()
+
     # A short scripted run must not throw: the harness is only useful if a green
     # result means the engine actually ran.
     page = harness.open_page(seed)

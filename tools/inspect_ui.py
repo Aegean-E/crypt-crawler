@@ -1137,6 +1137,61 @@ def run_inspection(
                                 "merchant_shows_epic_rarity": epic_pills >= 3,
                             }
                         )
+
+                        # The Sell tab must convert one backpack item into gold and keep
+                        # the shop open, not merely render a button.
+                        sale = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const before = {
+                                    gold: e.player.gold,
+                                    count: e.player.inventory.length,
+                                    sellButtons: document.querySelectorAll(".btn-sell").length,
+                                };
+                                const tab = document.querySelector('[data-shop-tab="sell"]');
+                                if (!tab) return { skip: false, hasTab: false, before };
+                                tab.click();
+                                const btn = document.querySelector(".btn-sell");
+                                if (!btn) return { skip: true, hasTab: true, before, tab: e.ui.shopTab };
+                                btn.click();
+                                return {
+                                    skip: false,
+                                    hasTab: true,
+                                    before,
+                                    gold: e.player.gold,
+                                    count: e.player.inventory.length,
+                                    shopOpen: e.ui.shopOpen,
+                                    tab: e.ui.shopTab,
+                                    sellPaneHidden: document.querySelector('[data-shop-pane="sell"]').classList.contains("hidden"),
+                                    sellButtons: document.querySelectorAll(".btn-sell").length,
+                                };
+                            }"""
+                        )
+                        page.screenshot(
+                            path=str(out_dir / f"merchant_sell_tab_{vp_name}.png"), full_page=True
+                        )
+                        report["screenshots"].append(
+                            {
+                                "viewport": vp_name,
+                                "scenario": "shop-sell",
+                                "file": str(out_dir / f"merchant_sell_tab_{vp_name}.png"),
+                            }
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "merchant_sells_backpack_loot": sale.get("skip") is True
+                                or (
+                                    sale.get("hasTab") is True
+                                    and sale.get("gold", 0) > sale.get("before", {}).get("gold", 0)
+                                    and sale.get("count") == sale.get("before", {}).get("count", 0) - 1
+                                    and sale.get("sellButtons") == sale.get("before", {}).get("sellButtons", 0) - 1
+                                    and sale.get("shopOpen") is True
+                                    and sale.get("tab") == "sell"
+                                    and sale.get("sellPaneHidden") is False
+                                ),
+                            }
+                        )
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 

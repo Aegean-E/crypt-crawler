@@ -963,6 +963,82 @@ body.theme-dark {
   cursor: not-allowed;
 }
 
+.shop-section-title {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.shop-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #a0aec0;
+}
+
+.shop-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.shop-gold {
+  color: var(--color-gold);
+}
+
+.shop-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.shop-tab {
+  flex: 1;
+  padding: 6px 8px;
+  background: #171d28;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  color: #a0aec0;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.shop-tab:hover {
+  border-color: var(--border-gold);
+}
+
+.shop-tab.active {
+  background: #2d3748;
+  border-color: var(--border-gold);
+  color: var(--color-gold);
+}
+
+.shop-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-sell {
+  background: #2f855a;
+  color: #f0fff4;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-sell:hover {
+  background: #38a169;
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
   .game-main {

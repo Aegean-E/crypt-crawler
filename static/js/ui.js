@@ -94,6 +94,8 @@ export class UIController {
     this.onUnequip = null;
     this.onModalClose = null;
     this.onJournal = null;
+    this.shopOpen = false;
+    this.shopTab = "buy";
 
     this._bindEvents();
   }
@@ -324,7 +326,7 @@ export class UIController {
     });
   }
 
-  showMerchantShopModal(merchantStock, playerGold, onBuy) {
+  showMerchantShopModal(merchantStock, playerGold, onBuy, sellable = [], onSell = null, activeTab = "buy") {
     let itemsHtml = "";
     for (const entry of merchantStock) {
       const item = entry.item;
@@ -352,17 +354,58 @@ export class UIController {
       `;
     }
 
+    let sellHtml = "";
+    for (const entry of sellable) {
+      const item = entry.item;
+      const icon = this._getItemIcon(item);
+      const rarity = item.rarity || "common";
+      sellHtml += `
+        <div class="shop-item-row">
+          <div class="shop-item-info">
+            <span class="shop-item-icon">${icon}</span>
+            <div class="shop-item-text">
+              <h4>${item.name} <span class="rarity-pill pill-${rarity}">${rarity}</span></h4>
+              <p>${item.description}</p>
+            </div>
+          </div>
+          <div class="shop-buy-action">
+            <span class="shop-price-tag">+ ${entry.price} Gold</span>
+            <button class="btn-sell" data-sell-index="${entry.index}">
+              Sell
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    if (!sellHtml) {
+      sellHtml = `<p class="shop-empty">Your backpack is empty.</p>`;
+    }
+    this.shopTab = activeTab;
+
     const html = `
       <div class="shop-container">
         <div class="shop-balance-bar">
           <span>Hermit Grimbold's Wares</span>
-          <span>Your Gold: <strong style="color: #ecc94b;">🪙 ${playerGold}</strong></span>
+          <span>Your Gold: <strong class="shop-gold">🪙 ${playerGold}</strong></span>
         </div>
-        ${itemsHtml}
+        <div class="shop-tabs" role="tablist">
+          <button class="shop-tab${activeTab === "buy" ? " active" : ""}" data-shop-tab="buy" type="button">Buy</button>
+          <button class="shop-tab${activeTab === "sell" ? " active" : ""}" data-shop-tab="sell" type="button">Sell</button>
+        </div>
+        <div class="shop-pane${activeTab === "buy" ? "" : " hidden"}" data-shop-pane="buy">
+          <h3 class="shop-section-title">Wares for Sale</h3>
+          ${itemsHtml}
+        </div>
+        <div class="shop-pane${activeTab === "sell" ? "" : " hidden"}" data-shop-pane="sell">
+          <h3 class="shop-section-title">Sell from Backpack</h3>
+          <p class="shop-hint">Grimbold pays a fair price for loot you no longer need.</p>
+          ${sellHtml}
+        </div>
       </div>
     `;
 
     this.showModal("Grimbold the Wandering Hermit", html);
+    this.shopOpen = true;
     this.btnModalClose.textContent = "Leave Shop";
 
     const buyBtns = this.modalBody.querySelectorAll(".btn-buy");
@@ -370,6 +413,27 @@ export class UIController {
       btn.addEventListener("click", () => {
         const itemId = btn.getAttribute("data-item-id");
         if (onBuy) onBuy(itemId);
+      });
+    });
+
+    const sellBtns = this.modalBody.querySelectorAll(".btn-sell");
+    sellBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.getAttribute("data-sell-index"));
+        if (onSell) onSell(index);
+      });
+    });
+
+    this.modalBody.querySelectorAll(".shop-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const target = tab.getAttribute("data-shop-tab");
+        this.shopTab = target;
+        this.modalBody.querySelectorAll(".shop-tab").forEach((other) => {
+          other.classList.toggle("active", other === tab);
+        });
+        this.modalBody.querySelectorAll(".shop-pane").forEach((pane) => {
+          pane.classList.toggle("hidden", pane.getAttribute("data-shop-pane") !== target);
+        });
       });
     });
   }
@@ -903,12 +967,14 @@ export class UIController {
   }
 
   showModal(title, contentHtml) {
+    this.shopOpen = false;
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = contentHtml;
     this.modalOverlay.classList.remove("hidden");
   }
 
   closeModal() {
+    this.shopOpen = false;
     this.modalOverlay.classList.add("hidden");
   }
 }

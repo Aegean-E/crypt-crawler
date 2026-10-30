@@ -1771,7 +1771,28 @@ export class GameEngine {
     this.unlockLore(this.loreEvents?.merchant);
     this.unlockLore(this.loreEvents?.lantern);
     sounds.playShopBuy();
-    this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (itemId) => this.buyMerchantItem(itemId));
+    this._refreshMerchantShop();
+  }
+
+  _sellPrice(item) {
+    const base = { common: 10, rare: 30, epic: 60, legendary: 100 }[item?.rarity] || 10;
+    return base;
+  }
+
+  _refreshMerchantShop(activeTab = "buy") {
+    const sellable = this.player.inventory.map((item, index) => ({
+      item,
+      index,
+      price: this._sellPrice(item),
+    }));
+    this.ui.showMerchantShopModal(
+      this.merchantStock,
+      this.player.gold,
+      (itemId) => this.buyMerchantItem(itemId),
+      sellable,
+      (index) => this.sellInventoryItem(index),
+      activeTab,
+    );
   }
 
   buyMerchantItem(itemId) {
@@ -1792,7 +1813,24 @@ export class GameEngine {
     this.ui.logMessage(`Purchased ${entry.item.name} from Hermit Grimbold for ${entry.price} Gold.`, "loot");
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
     this.saveGameState();
-    this.ui.showMerchantShopModal(this.merchantStock, this.player.gold, (id) => this.buyMerchantItem(id));
+    this._refreshMerchantShop();
+  }
+
+  sellInventoryItem(index) {
+    if (!this.ui.shopOpen) return;
+    if (this.gameOver || this.victory || this.transitioning) return;
+    if (index < 0 || index >= this.player.inventory.length) return;
+    const item = this.player.inventory[index];
+    const price = this._sellPrice(item);
+    this.player.inventory.splice(index, 1);
+    this.player.gold += price;
+    sounds.playShopBuy();
+    this.renderer.addFloatingText(`+🪙${price}`, this.player.x, this.player.y, this.renderer.goldColor);
+    this.ui.logMessage(`Sold ${item.name} to Hermit Grimbold for ${price} Gold.`, "loot");
+    this.ui.clearItemSelection();
+    this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
+    this.saveGameState();
+    this._refreshMerchantShop("sell");
   }
 
   tacticalStrike() {

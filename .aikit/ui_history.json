@@ -96,5 +96,19 @@
     "final_snapshot_digest": "55128675cf76fed6cf58a6eb1810223d74e0b4e495b4c92ab265ea3cdf09afba",
     "final_snapshot_entries": 193,
     "surface_digest": "2fa89f130c3d99de367e21c92b0cd452a8a00f94972b5bbba2b343bfcaf5f800"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "34f85ee7437b064d2960ae3662488d85d57e9ae4",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793373243.4379659,
+    "finished_at": 1793373581.003403,
+    "strikes": 0,
+    "reviewer": "headless shop probe (Sell tab, gold 25->35, inventory 3->2, closed-shop guard) + three-viewport audit",
+    "allowed_removals": [],
+    "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
+    "final_snapshot_entries": 196,
+    "surface_digest": "943abd09dd7ff988291481ba082fbe66b158e85da8bebea688af3942cf9278bb"
   }
 ]

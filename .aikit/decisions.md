@@ -139,6 +139,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: Searching is a real turn-cost decision: it buys route information but not safety, and Deep Fog shortens its effective range because it shares the lantern's line of sight. Hidden traps still surprise a player who does not search, while a revealed trap is legible and avoidable. The server needs no change because it sends coordinates and the client owns discovery state. The harness grows to 32 checks and the full inspector audit to 67 checks.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one visible button and one hotkey, no prompt), PRINCIPLE-014 (harness, unit and save coverage) and PRINCIPLE-015 (three-viewport browser proof with a screenshot).
 
+### ADR-019: Two-Way Merchant and Rarity-Based Selling
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Hermit Grimbold could only sell to the player. Outclassed loot filled the 12-slot backpack and could only be dropped, so gold had no outlet after the main upgrades and unwanted gear had no value. The merchant modal was also a single long list, which left no room for a second action without adding an undiscoverable section below the stock.
+- **Decision**: Give the merchant modal **Buy** and **Sell** tabs. The Sell pane lists every backpack item with a rarity-based price (common 10, rare 30, epic 60, legendary 100), and `sellInventoryItem` refuses to run unless `UIController.shopOpen` is true, so the rule cannot be triggered from a closed modal. A sale removes the item, adds gold, clears any inventory selection, saves the run, and reopens the modal on the Sell tab so several items can be sold in a row. Buying keeps the existing stock flow and reopens on the Buy tab.
+- **Consequences**: The economy now has both a source and a sink: players can clear a full backpack without discarding value, and the price table keeps selling below the merchant's buy prices. No save field changes because gold and inventory already persist. The harness proves a real Sell-tab click (gold up, inventory down, tab preserved, closed-shop call refused), and the inspector adds the same sale to the shop scenario.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one clearly labelled tab, no prompt) and PRINCIPLE-014 (browser-level regression coverage for the new branch).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
