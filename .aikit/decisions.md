@@ -179,6 +179,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: The reveal now has a follow-up decision: pay a second turn for XP and a permanently safe tile, or route around it. No new control or hotkey is needed because the same Search action is context-sensitive when adjacent. The harness proves reveal, disarm, XP, and safe crossing; the inspector pixel-diffs the disarmed grille.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns both trap branches and the harness drives them), PRINCIPLE-011 (one Search button, no prompt) and PRINCIPLE-014 (browser-level coverage for the disarm branch).
 
+### ADR-024: Normal/Hard Difficulty Profiles
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The game had one challenge level. Seed and class made a run reproducible but not adjustable, so an experienced player had no harder replay and the seed contract could not express a difficulty choice.
+- **Decision**: Add client-owned `DIFFICULTIES` profiles: **Normal** leaves generated data untouched; **Hard** multiplies enemy max HP by 1.4, attack by 1.25, and XP/gold rewards by 1.15. A `difficulty_scaled` guard scales each monster exactly once; floor data, offline generation, pact wraiths, the omen shade, mimics and boss summons all pass through `_scaleMonster`. Save `difficulty` with the run, default old saves to Normal, and show a HARD badge in the header. The class-selection modal adds Normal/Hard buttons, restarts preserve the chosen difficulty, and the harness accepts `--difficulty` or a script field while `catalog` lists the keys.
+- **Consequences**: Players can choose a tougher run with slightly richer rewards, and seed + class + difficulty fully reproduces a challenge. The server needs no change because the client owns difficulty. Resuming a Hard save does not double-scale because the guard travels with the saved monsters; new runs and descents scale exactly once.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one selector, no prompt) and PRINCIPLE-014 (normal/hard, dynamic-spawn and resume coverage).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

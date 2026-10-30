@@ -19,6 +19,7 @@ export class UIController {
     this.heroName = document.getElementById("heroName");
     this.heroClass = document.getElementById("heroClass");
     this.heroAvatar = document.getElementById("heroAvatar");
+    this.difficultyBadge = document.getElementById("difficultyBadge");
 
     // Gauges
     this.hpBar = document.getElementById("hpBar");
@@ -272,6 +273,12 @@ export class UIController {
         <label class="seed-label" for="seedInput">Run seed <span>(optional positive integer; blank is random)</span></label>
         <input class="seed-input" id="seedInput" type="number" min="1" step="1" inputmode="numeric" placeholder="Random">
       </div>
+      <div class="difficulty-row">
+        <span class="difficulty-label">Difficulty</span>
+        <button class="difficulty-btn active" data-difficulty="normal" type="button">Normal</button>
+        <button class="difficulty-btn" data-difficulty="hard" type="button">Hard</button>
+      </div>
+      <p class="difficulty-note">Hard raises enemy health and damage; rewards rise a little too.</p>
       <div class="class-grid">
         <div class="class-card" data-class="paladin">
           <div class="class-avatar-badge">🛡️</div>
@@ -327,8 +334,18 @@ export class UIController {
         const raw = (this.modalBody.querySelector("#seedInput")?.value || "").trim();
         const parsed = Number(raw);
         const seed = raw !== "" && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+        const difficulty = this.modalBody.querySelector(".difficulty-btn.active")
+          ?.getAttribute("data-difficulty") || "normal";
         this.closeModal();
-        if (onSelect) onSelect(cls, seed);
+        if (onSelect) onSelect(cls, seed, difficulty);
+      });
+    });
+
+    this.modalBody.querySelectorAll(".difficulty-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.modalBody.querySelectorAll(".difficulty-btn").forEach((other) => {
+          other.classList.toggle("active", other === btn);
+        });
       });
     });
   }
@@ -514,6 +531,13 @@ export class UIController {
     } else {
       this.streakPill.classList.add("hidden");
     }
+  }
+
+  updateDifficulty(difficulty) {
+    if (!this.difficultyBadge) return;
+    const hard = difficulty === "hard";
+    this.difficultyBadge.textContent = hard ? "HARD" : "";
+    this.difficultyBadge.classList.toggle("hidden", !hard);
   }
 
   updateOmen(omen) {

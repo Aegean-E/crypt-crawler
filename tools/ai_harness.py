@@ -42,6 +42,7 @@ ABILITIES: Dict[str, Dict[int, str]] = {
     "mage": {1: "Strike", 2: "Fireball", 3: "Frost", 4: "Nova", 5: "Barrier"},
 }
 PACT_CHOICES = ("wrath", "ward", "avarice")
+DIFFICULTY_KEYS = ("normal", "hard")
 ACTION_KEYS: Dict[str, tuple] = {
     "move": ("dx", "dy"),
     "ability": ("slot",),
@@ -81,6 +82,7 @@ STATE_JS = """
     depth: e.depth,
     kills: e.kills,
     heroClass: e.heroClass,
+    difficulty: e.difficulty,
     gameOver: e.gameOver,
     victory: e.victory,
     transitioning: Boolean(e.transitioning),
@@ -104,6 +106,8 @@ STATE_JS = """
         name: m.name, type: m.type, x: m.x, y: m.y, hp: m.hp, max_hp: m.max_hp,
         attack: m.attack, defense: m.defense, is_boss: Boolean(m.is_boss),
         is_champion: Boolean(m.is_champion),
+        xp_reward: m.xp_reward, gold_reward: m.gold_reward,
+        difficulty_scaled: Boolean(m.difficulty_scaled),
         status_effects: m.status_effects || {},
       })),
     dungeon: {
@@ -176,6 +180,7 @@ def catalog() -> Dict[str, Any]:
             "output": "one JSON object: ok, steps, layout_hash, errors, failure, final",
         },
         "pact_choices": list(PACT_CHOICES),
+        "difficulties": list(DIFFICULTY_KEYS),
         "props": [
             "chest", "trap", "shrine", "urn", "merchant", "soul", "sigil", "vault", "pact",
         ],
@@ -240,6 +245,9 @@ def parse_script(raw: Any) -> Dict[str, Any]:
     hero_class = raw.get("class", "paladin")
     if hero_class not in HERO_CLASSES:
         problems.append(f"class must be one of {sorted(HERO_CLASSES)}")
+    difficulty = raw.get("difficulty", "normal")
+    if difficulty not in DIFFICULTY_KEYS:
+        problems.append(f"difficulty must be one of {list(DIFFICULTY_KEYS)}")
     actions = raw.get("actions", [])
     if not isinstance(actions, list):
         problems.append("actions must be a list")
@@ -254,6 +262,7 @@ def parse_script(raw: Any) -> Dict[str, Any]:
         "seed": seed,
         "depth": depth,
         "class": hero_class,
+        "difficulty": difficulty,
         "actions": actions,
     }
 
@@ -323,9 +332,10 @@ class Harness:
             self._server.server_close()
 
     def open_page(
-        self, seed: int, depth: int = 1, hero_class: str = "paladin", rng_seed: Optional[int] = None
+        self, seed: int, depth: int = 1, hero_class: str = "paladin",
+        rng_seed: Optional[int] = None, difficulty: str = "normal",
     ) -> Any:
-        """A page whose engine has started from the given seed, class and depth."""
+        """A page whose engine has started from the given seed, class, depth and difficulty."""
         self.errors = []
         context = self._browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
@@ -340,12 +350,12 @@ class Harness:
         page.goto(f"http://127.0.0.1:{self.port}/", wait_until="domcontentloaded")
         page.wait_for_function("window.gameEngine && window.gameEngine.player", timeout=15000)
         page.evaluate(
-            """async ({ seed, depth, heroClass }) => {
+            """async ({ seed, depth, heroClass, difficulty }) => {
                 const e = window.gameEngine;
                 e.clearSavedRun();
-                await e.start(seed, depth, heroClass, false);
+                await e.start(seed, depth, heroClass, false, difficulty);
             }""",
-            {"seed": seed, "depth": depth, "heroClass": hero_class},
+            {"seed": seed, "depth": depth, "heroClass": hero_class, "difficulty": difficulty},
         )
         page.evaluate("() => window.gameEngine._startRenderLoop()")
         return page
@@ -439,6 +449,115 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
             {"expected": expected, "actual": labels},
         ))
         page.context.close()
+
+    # Difficulty is client-side and must scale every floor monster exactly once.
+    normal_page = harness.open_page(seed)
+    hard_page = harness.open_page(seed, difficulty="hard")
+    normal = harness.state(normal_page)
+    hard = harness.state(hard_page)
+    normal_stats = {
+        (m["type"], m["x"], m["y"]): (m["max_hp"], m["attack"], m["xp_reward"], m["gold_reward"])
+        for m in normal["monsters"]
+    }
+    hard_stats = {
+        (m["type"], m["x"], m["y"]): (m["max_hp"], m["attack"], m["xp_reward"], m["gold_reward"])
+        for m in hard["monsters"]
+    }
+    checks.append(_check(
+        "difficulty_scales_enemy_stats",
+        hard["difficulty"] == "hard"
+        and normal["difficulty"] == "normal"
+        and set(normal_stats) == set(hard_stats)
+        and all(
+            hard_stats[key][0] >= normal_stats[key][0]
+            and hard_stats[key][1] >= normal_stats[key][1]
+            and hard_stats[key][2] >= normal_stats[key][2]
+            and hard_stats[key][3] >= normal_stats[key][3]
+            for key in normal_stats
+        )
+        and any(hard_stats[key][0] > normal_stats[key][0] for key in normal_stats)
+        and any(hard_stats[key][2] > normal_stats[key][2] for key in normal_stats)
+        and all(m["difficulty_scaled"] is True for m in hard["monsters"])
+        and all(m["difficulty_scaled"] is False for m in normal["monsters"]),
+        {
+            "normal": [[list(key), list(value)] for key, value in sorted(normal_stats.items())],
+            "hard": [[list(key), list(value)] for key, value in sorted(hard_stats.items())],
+        },
+    ))
+    hard_page.evaluate("() => window.gameEngine.saveGameState()")
+    hard_page.evaluate("() => window.gameEngine.start(null, 1, 'paladin', true)")
+    hard_page.wait_for_function("window.gameEngine?.difficulty === 'hard'", timeout=15000)
+    resumed = harness.state(hard_page)
+    resumed_stats = {
+        (m["type"], m["x"], m["y"]): m["max_hp"]
+        for m in resumed["monsters"]
+    }
+    checks.append(_check(
+        "difficulty_survives_resume_without_double_scaling",
+        resumed["difficulty"] == "hard"
+        and resumed_stats == {key: value[0] for key, value in hard_stats.items()}
+        and all(m["difficulty_scaled"] is True for m in resumed["monsters"]),
+        {
+            "difficulty": resumed["difficulty"],
+            "stats": [[list(key), value] for key, value in sorted(resumed_stats.items())],
+        },
+    ))
+    checks.append(_check(
+        "no_page_errors_after_difficulty",
+        not harness.errors,
+        harness.errors,
+    ))
+    normal_page.context.close()
+    hard_page.context.close()
+
+    # Dynamic spawns (pact, mimic, omen, boss summon) take the same difficulty scaling.
+    spawn_page = harness.open_page(seed, difficulty="hard")
+    spawns = spawn_page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            e.monsters = [];
+            e.resolvePact(e.dungeon.pacts[0], "avarice");
+            const wraith = e.monsters.find((m) => m.type === "wraith");
+            e.monsters = [];
+            const mimic = e._spawnMimic(1, 1);
+            e.monsters = [];
+            e._spawnOmenFoe();
+            const omen = e.monsters[0];
+            const skeleton = e._summonSkeleton(1, 1);
+            return {
+                wraith: wraith
+                    ? { hp: wraith.max_hp, attack: wraith.attack, scaled: wraith.difficulty_scaled }
+                    : null,
+                mimic: { hp: mimic.max_hp, attack: mimic.attack, scaled: mimic.difficulty_scaled },
+                omen: omen
+                    ? { hp: omen.max_hp, attack: omen.attack, scaled: omen.difficulty_scaled }
+                    : null,
+                skeleton: {
+                    hp: skeleton.max_hp, attack: skeleton.attack, scaled: skeleton.difficulty_scaled,
+                },
+            };
+        }"""
+    )
+    checks.append(_check(
+        "difficulty_scales_dynamic_spawns",
+        spawns["wraith"] is not None
+        and spawns["wraith"]["scaled"] is True
+        and spawns["wraith"]["hp"] == 36
+        and spawns["wraith"]["attack"] == 10
+        and spawns["mimic"]["scaled"] is True
+        and spawns["mimic"]["hp"] == 45
+        and spawns["mimic"]["attack"] == 10
+        and spawns["omen"] is not None
+        and spawns["omen"]["scaled"] is True
+        and spawns["omen"]["hp"] == 20
+        and spawns["omen"]["attack"] == 6
+        and spawns["skeleton"]["scaled"] is True
+        and spawns["skeleton"]["hp"] == 28
+        and spawns["skeleton"]["attack"] == 8,
+        spawns,
+    ))
+    checks.append(_check("no_page_errors_after_dynamic_spawns", not harness.errors, harness.errors))
+    spawn_page.context.close()
 
     page = harness.open_page(seed)
     before = harness.state(page)
@@ -1398,6 +1517,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     play.add_argument("--seed", type=int, default=20261029)
     play.add_argument("--depth", type=int, default=1)
     play.add_argument("--class", dest="hero_class", default="paladin")
+    play.add_argument("--difficulty", choices=DIFFICULTY_KEYS, default="normal")
     play.add_argument("--out", type=Path, help="write the JSON reply to this file")
     play.add_argument("--headed", action="store_true", help="show the browser window")
 
@@ -1420,6 +1540,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "seed": args.seed,
                     "depth": args.depth,
                     "class": args.hero_class,
+                    "difficulty": args.difficulty,
                     "actions": load_actions(args.actions) if args.actions else [],
                 }
             script = parse_script(raw)
@@ -1427,7 +1548,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             _write_output({"ok": False, "error": f"invalid script: {exc}"}, args.out)
             return 2
         with Harness(headless=not args.headed) as harness:
-            page = harness.open_page(script["seed"], script["depth"], script["class"])
+            page = harness.open_page(
+                script["seed"], script["depth"], script["class"],
+                difficulty=script["difficulty"],
+            )
             steps: List[Dict[str, Any]] = []
             failure = ""
             for index, action in enumerate(script["actions"]):
@@ -1459,6 +1583,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "ok": not errors and not failure,
                 "seed": script["seed"],
                 "class": script["class"],
+                "difficulty": script["difficulty"],
                 "steps": steps,
                 "layout_hash": layout_hash(final),
                 "errors": errors,

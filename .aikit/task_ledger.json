@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-024",
+    "task_id": "CC-025",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793377307.3033786,
-    "owner": "opencode:crypt-crawler-cc024",
-    "started_by": "opencode:crypt-crawler-cc024",
+    "updated_at": 1793378209.0075467,
+    "owner": "opencode:crypt-crawler-cc025",
+    "started_by": "opencode:crypt-crawler-cc025",
     "continuations": [],
-    "completed_at": 1793377328.1952338
+    "completed_at": 1793378219.3482788
   },
   "checkpoints": [
     {
@@ -699,6 +699,49 @@
       "timestamp": 1793377328.1952355,
       "timestamp_str": "2026-10-30 19:22:08",
       "agent": "opencode:crypt-crawler-cc024"
+    },
+    {
+      "task_id": "CC-025",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add Normal/Hard difficulty profiles and scale floor, boss, omen, mimic, pact and summon monsters exactly once, with save/resume; [2/3] add the difficulty selector to class selection, a HARD header badge and restart/difficulty preservation; [3/3] expose difficulty in the harness script/catalog, prove normal-vs-hard and resume in the selftest, add an inspector check, document README/ADR-024, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793377579.4136596,
+      "timestamp_str": "2026-10-30 19:26:19",
+      "agent": "opencode:crypt-crawler-cc025",
+      "impact_assessment": {
+        "why": "The game has one challenge level; the seed and class selectors make runs reproducible but not adjustable, so experienced players have no harder replay and the new seed feature cannot express a difficulty contract",
+        "benefits": "Players can choose a harder run with scaled enemies and slightly richer rewards, a HARD badge makes the choice visible, and seed + class + difficulty reproduces the same challenge for sharing and tests",
+        "risks": "contract: start gains a difficulty argument, the harness script/catalog gains difficulty, the save gains an additive difficulty field, and monster stats/rewards scale once; dependency: none; concurrency: none; state: additive difficulty field, old saves default to normal, monsters scale once; UI: engine.js, ui.js, index.html and style.css are in the game-ui surface",
+        "mitigation": "Pure profile table plus a difficulty_scaled guard; scale floor data and every dynamic spawn; selftest compares normal/hard stats and resume; inspector checks the selector/badge; UI guard and full gates"
+      }
+    },
+    {
+      "task_id": "CC-025",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Normal/Hard difficulty shipped: Hard scales enemy HP 1.4x, attack 1.25x and XP/gold 1.15x once per monster across floors, offline, pact wraiths, omen shades, mimics and boss summons; selector, HARD badge, save/resume and restart preservation. Harness proves normal-vs-hard, dynamic spawns and no double-scaling (48/48); inspector checks selector/badge (74/74, 16 screenshots, 0 console errors); UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793378209.0075467,
+      "timestamp_str": "2026-10-30 19:36:49",
+      "agent": "opencode:crypt-crawler-cc025",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-025 then check --strict",
+        "evidence": "71 tests, harness 48/48, inspector 74/74, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-025",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-025' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793378219.3482804,
+      "timestamp_str": "2026-10-30 19:36:59",
+      "agent": "opencode:crypt-crawler-cc025"
     }
   ]
 }

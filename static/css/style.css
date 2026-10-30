@@ -95,6 +95,18 @@ body.theme-dark {
   text-transform: uppercase;
 }
 
+.difficulty-badge {
+  background: #742a2a;
+  color: #feb2b2;
+  border: 1px solid #e53e3e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .header-metrics {
   display: flex;
   align-items: center;
@@ -840,6 +852,48 @@ body.theme-dark {
   flex-direction: column;
   gap: 10px;
   margin-top: 8px;
+}
+
+.difficulty-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.difficulty-label {
+  font-size: 0.78rem;
+  color: #cbd5e0;
+  margin-right: 2px;
+}
+
+.difficulty-btn {
+  flex: 1;
+  padding: 5px 8px;
+  background: #171d28;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  color: #a0aec0;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.difficulty-btn:hover {
+  border-color: var(--border-gold);
+}
+
+.difficulty-btn.active {
+  background: #2d3748;
+  border-color: var(--border-gold);
+  color: var(--color-gold);
+}
+
+.difficulty-note {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  color: #a0aec0;
 }
 
 .class-card {

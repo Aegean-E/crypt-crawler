@@ -1404,17 +1404,32 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "classes", "file": str(class_shot)}
                         )
                         print(f"      Saved screenshot: {class_shot.name}")
-                        # Pick Rogue with an explicit seed, then descend to B2F Caverns.
+                        # Pick Rogue with an explicit seed and Hard difficulty, then
+                        # descend to B2F Caverns.
+                        page.click(".difficulty-btn[data-difficulty='hard']")
                         page.fill("#seedInput", "424242")
                         page.click(".class-card[data-class='rogue']")
                         page.wait_for_function(
                             "window.gameEngine?.dungeon?.seed === 424242", timeout=15000
                         )
                         seeded = page.evaluate("() => window.gameEngine.dungeon.seed")
+                        hard_state = page.evaluate(
+                            """() => {
+                                const badge = document.getElementById("difficultyBadge");
+                                return {
+                                    difficulty: window.gameEngine.difficulty,
+                                    badge: badge ? badge.textContent.trim() : "",
+                                    hidden: badge ? badge.classList.contains("hidden") : true,
+                                };
+                            }"""
+                        )
                         report["audit_checks"].append(
                             {
                                 "viewport": vp_name,
                                 "class_select_seed_is_applied": seeded == 424242,
+                                "class_select_difficulty_is_applied": hard_state["difficulty"] == "hard"
+                                and hard_state["badge"] == "HARD"
+                                and hard_state["hidden"] is False,
                             }
                         )
                         time.sleep(0.4)

@@ -171,5 +171,19 @@
     "final_snapshot_digest": "0d3ade71fd18ca2acaa5ff819f6246863ef73c9f75eeb7a017c0962d644caf4b",
     "final_snapshot_entries": 196,
     "surface_digest": "54d7432d44bb341fd2ea35538b428f22f0dabe79c01ad1152444f7afa3dabde2"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "5d5c8c2947cbb9071fd26b238e10c09c1f6af1fe",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793377589.1730576,
+    "finished_at": 1793377946.0115128,
+    "strikes": 1,
+    "reviewer": "difficulty selector visual review + 73/73 audit with 0 console errors",
+    "allowed_removals": [],
+    "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
+    "final_snapshot_entries": 198,
+    "surface_digest": "9d93bd47bb144eb1d4bfe4531f9f5efe6e25c1d0c1bf39aa1efe75a79ea3bda2"
   }
 ]

@@ -10,7 +10,7 @@
 - **Total Classes**: `26`
 - **Total Top-Level Functions**: `40`
 - **Total Class Methods**: `134`
-- **Total Source Lines**: `6571`
+- **Total Source Lines**: `6711`
 
 ---
 
@@ -339,14 +339,14 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `1480` lines (`60839` bytes)
+**Size**: `1605` lines (`66354` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*
   - Method `.__init__(headless)`
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
-  - Method `.open_page(seed, depth, hero_class, rng_seed)` - *A page whose engine has started from the given seed, class and depth.*
+  - Method `.open_page(seed, depth, hero_class, rng_seed, difficulty)` - *A page whose engine has started from the given seed, class, depth and difficulty.*
   - Method `.state(page)`
   - Method `.apply(page, action)` - *Run one validated action and return the state after it.*
 
@@ -368,7 +368,7 @@
 ### [`tools/inspect_ui.py`](tools/inspect_ui.py)
 > *Headless browser visual inspection and UI auditing tool for Crypt-Crawler.*
 
-**Size**: `1548` lines (`88832` bytes)
+**Size**: `1563` lines (`89765` bytes)
 
 **Functions:**
 - `def run_inspection(viewports, scenarios, out_dir)`

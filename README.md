@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, Normal/Hard difficulty, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -33,13 +33,13 @@ The inspector runs the full interactive audit, reports every audit check and exi
 ### 🤖 AI Mechanics Harness (deterministic, JSON in / JSON out)
 ```bash
 python tools/ai_harness.py catalog
-python tools/ai_harness.py play --seed 42 --class paladin --actions @actions.json
+python tools/ai_harness.py play --seed 42 --class paladin --difficulty hard --actions @actions.json
 python tools/ai_harness.py play --script run.json
 python tools/ai_harness.py selftest
 ```
-`catalog` prints the classes, the five deck abilities, every action field, the pact choices and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
+`catalog` prints the classes, the five deck abilities, every action field, the pact choices, the difficulty keys and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed, class, difficulty and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, difficulty scaling and resume, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
 ```json
-{"seed": 42, "depth": 1, "class": "rogue",
+{"seed": 42, "depth": 1, "class": "rogue", "difficulty": "hard",
  "actions": [{"action": "move", "dx": 1, "dy": 0}, {"action": "ability", "slot": 2}]}
 ```
 `use_item` takes a zero-based backpack index; `player.inventory` in the reply is in the same order, and an index shifts after a consumable is removed.
@@ -60,7 +60,10 @@ python aikit.py ui abort crypt-crawler
 Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.
 
 ### 🎲 Seeds
-The class-selection screen accepts an optional positive run seed; leave it blank for a random run. The same seed and class reproduce the same dungeon, and the Records modal shows the current seed with a **Copy Seed** button so a run can be replayed or shared.
+The class-selection screen accepts an optional positive run seed; leave it blank for a random run. The same seed, class and difficulty reproduce the same dungeon, and the Records modal shows the current seed with a **Copy Seed** button so a run can be replayed or shared.
+
+### ⚔️ Difficulty
+New Game offers **Normal** and **Hard**. Hard multiplies enemy max HP by 1.4, enemy attack by 1.25, and enemy XP and gold by 1.15; a **HARD** badge in the header marks the run. The choice survives saves and restarts, and seed plus class plus difficulty is the full reproducibility contract. The harness exposes the same choice through `--difficulty` or the script's `difficulty` field.
 
 ### 🎭 Floor Omens, Mobs and Story
 Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.

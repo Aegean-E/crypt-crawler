@@ -44,6 +44,15 @@ export function omenFor(seed, depth) {
   return OMENS[hash % OMENS.length];
 }
 
+/**
+ * Difficulty profiles scale enemy health, damage and rewards exactly once per monster.
+ * Normal leaves the generated data untouched; Hard trades a tougher floor for richer drops.
+ */
+export const DIFFICULTIES = {
+  normal: { id: "normal", name: "Normal", hp: 1, attack: 1, reward: 1 },
+  hard: { id: "hard", name: "Hard", hp: 1.4, attack: 1.25, reward: 1.15 },
+};
+
 
 export class GameEngine {
   constructor() {
@@ -67,6 +76,7 @@ export class GameEngine {
     this.killStreak = 0;
     this.turnsSinceKill = 0;
     this.heroClass = "paladin";
+    this.difficulty = "normal";
     this.gameOver = false;
     this.victory = false;
     this.animFrameId = null;
@@ -109,7 +119,7 @@ export class GameEngine {
     }
   }
 
-  async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true) {
+  async start(seed = null, depth = 1, heroClass = "paladin", allowResume = true, difficulty = "normal") {
     // A new run invalidates any in-flight floor descent: the pending fetch must not
     // overwrite this run's dungeon, and the flag must not stick true.
     this.runToken = (this.runToken || 0) + 1;
@@ -122,6 +132,7 @@ export class GameEngine {
     this.gameOver = false;
     this.victory = false;
     this.heroClass = heroClass || "paladin";
+    this.difficulty = DIFFICULTIES[difficulty] ? difficulty : "normal";
     await this._loadLore();
     if (token !== this.runToken) return;
     const loreArchive = this.loadLoreArchive();
@@ -139,6 +150,7 @@ export class GameEngine {
         this.kills = saved.kills;
         this.merchantStock = saved.merchantStock || [];
         this.heroClass = saved.heroClass || this.player.hero_class || "paladin";
+        this.difficulty = DIFFICULTIES[saved.difficulty] ? saved.difficulty : "normal";
         this.bounties = saved.bounties || this._generateOfflineBounties(this.depth);
         this.loreUnlocked = Array.from(new Set([
           ...(this.loreStart || []),
@@ -153,6 +165,7 @@ export class GameEngine {
         this.ui.renderBounties(this.bounties);
         this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
         this.updateSigils();
+        this.ui.updateDifficulty(this.difficulty);
         this.ui.logMessage("⚔️ Resumed your ongoing dungeon run from crystal memory.", "system");
         this._startRenderLoop();
         return;
@@ -179,6 +192,8 @@ export class GameEngine {
       this.bounties = this._generateOfflineBounties(this.depth);
     }
 
+    this._applyDifficulty();
+    this.ui.updateDifficulty(this.difficulty);
     this.loreUnlocked = Array.from(new Set([
       ...(this.loreStart || []),
       ...loreArchive,
@@ -430,6 +445,7 @@ export class GameEngine {
         );
       }
     }
+    this._applyDifficulty();
   }
 
   _setupCallbacks() {
@@ -440,7 +456,7 @@ export class GameEngine {
     this.ui.onModalClose = () => {
       if (this.gameOver || this.victory) {
         this.clearSavedRun();
-        this.start(Date.now() % 1000000, 1, this.heroClass, false);
+        this.start(Date.now() % 1000000, 1, this.heroClass, false, this.difficulty);
       }
     };
   }
@@ -667,12 +683,12 @@ export class GameEngine {
     });
 
     document.getElementById("btnRestart").addEventListener("click", () => {
-      this.ui.showClassSelectModal((chosenClass, chosenSeed) => {
+      this.ui.showClassSelectModal((chosenClass, chosenSeed, chosenDifficulty) => {
         this.clearSavedRun();
         const seed = Number.isInteger(chosenSeed) && chosenSeed > 0
           ? chosenSeed
           : Date.now() % 1000000;
-        this.start(seed, 1, chosenClass, false);
+        this.start(seed, 1, chosenClass, false, chosenDifficulty);
       });
     });
 
@@ -898,6 +914,7 @@ export class GameEngine {
         prevPlayer.y = this.dungeon.playerSpawn[1];
         this.player = prevPlayer;
       }
+      this._applyDifficulty();
 
       sounds.setBiome(this.dungeon.biome);
       this._applyOmen();
@@ -1127,7 +1144,7 @@ export class GameEngine {
   _spawnPactWraith(x, y) {
     const scale = 1 + (this.depth - 1) * 0.3;
     const hp = Math.max(10, Math.floor(26 * scale));
-    return {
+    return this._scaleMonster({
       name: "Pact-Bound Wraith",
       type: "wraith",
       x,
@@ -1144,7 +1161,23 @@ export class GameEngine {
       champion_affix: null,
       ai_state: "idle",
       status_effects: {},
-    };
+    });
+  }
+
+  _scaleMonster(monster) {
+    if (!monster || monster.difficulty_scaled || this.difficulty === "normal") return monster;
+    const profile = DIFFICULTIES[this.difficulty] || DIFFICULTIES.normal;
+    monster.max_hp = Math.max(1, Math.round((monster.max_hp || monster.hp || 1) * profile.hp));
+    monster.hp = monster.max_hp;
+    monster.attack = Math.max(1, Math.round((monster.attack || 0) * profile.attack));
+    monster.xp_reward = Math.round((monster.xp_reward || 0) * profile.reward);
+    monster.gold_reward = Math.round((monster.gold_reward || 0) * profile.reward);
+    monster.difficulty_scaled = true;
+    return monster;
+  }
+
+  _applyDifficulty() {
+    for (const monster of this.monsters || []) this._scaleMonster(monster);
   }
 
   _omenFor(seed, depth) {
@@ -1195,7 +1228,7 @@ export class GameEngine {
     const [x, y] = candidates[Math.floor(Math.random() * candidates.length)];
     const scale = 1 + (this.depth - 1) * 0.25;
     const hp = Math.max(6, Math.floor(14 * scale));
-    this.monsters.push({
+    this.monsters.push(this._scaleMonster({
       name: "Restless Shade",
       type: "bat",
       x,
@@ -1211,14 +1244,14 @@ export class GameEngine {
       is_champion: false,
       champion_affix: null,
       status_effects: {},
-    });
+    }));
     this.renderer.addParticles(x, y, "#9ae6b4", 10);
   }
 
   _spawnMimic(x, y) {
     const scale = 1 + (this.depth - 1) * 0.35;
     const hp = Math.max(18, Math.floor(32 * scale));
-    this.monsters.push({
+    this.monsters.push(this._scaleMonster({
       name: "Gilded Mimic",
       type: "mimic",
       x,
@@ -1234,7 +1267,7 @@ export class GameEngine {
       is_champion: false,
       champion_affix: null,
       status_effects: {},
-    });
+    }));
     return this.monsters[this.monsters.length - 1];
   }
 
@@ -2498,7 +2531,7 @@ export class GameEngine {
   _summonSkeleton(x, y) {
     const scale = 1 + (this.depth - 1) * 0.25;
     const hp = Math.max(1, Math.floor(20 * scale));
-    return {
+    return this._scaleMonster({
       name: "Risen Skeleton",
       type: "skeleton",
       x,
@@ -2515,7 +2548,7 @@ export class GameEngine {
       champion_affix: null,
       ai_state: "idle",
       status_effects: {},
-    };
+    });
   }
 
   _isOccupied(x, y) {
@@ -2596,6 +2629,7 @@ export class GameEngine {
         kills: this.kills,
         sigilCount: this.sigilCount,
         heroClass: this.heroClass,
+        difficulty: this.difficulty,
         player: this.player,
         monsters: this.monsters,
         merchantStock: this.merchantStock,
