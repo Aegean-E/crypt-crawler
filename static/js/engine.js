@@ -262,6 +262,8 @@ export class GameEngine {
     souls.forEach(([sx, sy]) => { tiles[sy][sx] = TileType.SOUL; });
     const pacts = [[rooms[2].center[0] + 1, rooms[2].center[1] + 1]];
     pacts.forEach(([px, py]) => { tiles[py][px] = TileType.PACT; });
+    const traps = [[rooms[1].center[0] - 1, rooms[1].center[1] + 1]];
+    traps.forEach(([tx, ty]) => { tiles[ty][tx] = TileType.TRAP; });
 
     this.dungeon = new ClientDungeon({
       width: w,
@@ -273,7 +275,7 @@ export class GameEngine {
       stairs_pos: stairs,
       rooms: rooms,
       chests: [[rooms[1].center[0] + 1, rooms[1].center[1] + 1]],
-      traps: [],
+      traps: traps,
       shrines: [[rooms[2].center[0], rooms[2].center[1]]],
       urns: [[rooms[3].center[0], rooms[3].center[1]]],
       souls: souls,

@@ -71,7 +71,7 @@ Every floor carries one omen chosen deterministically from the seed: **Blood Moo
 QoL: `?` opens the guide, `R` searches for traps, `Escape` closes any dialog, and the 🎞️ header button toggles reduced motion (persisted, disables screen shake and pulsing accents). Story: three new codex entries — *Signs in the Blood*, *The Lantern-Keeper* and *The Debt of Malakor* — and a victory epilogue that closes the ledger.
 
 ### 🔍 Trap Search
-Press `R` or the deck's **Search** button to spend a turn revealing armed traps within three visible tiles. A revealed trap gets a dashed amber grille and a hover card, but it still triggers if stepped on: the search buys information, not safety. The revealed state survives saves and floor transitions, and Deep Fog shortens the search because it uses the same line of sight as the lantern.
+Press `R` or the deck's **Search** button to spend a turn revealing armed traps within three visible tiles. A revealed trap gets a dashed amber grille and a hover card, but it still triggers if stepped on: the search buys information, not safety. The revealed state survives saves; each new floor starts with fresh hidden traps. Deep Fog shortens the search because it uses the same line of sight as the lantern.
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |

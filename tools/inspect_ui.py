@@ -1007,6 +1007,7 @@ def run_inspection(
                                     sigils: e.dungeon.sigils.length,
                                     vault: Boolean(e.dungeon.vault),
                                     pacts: e.dungeon.pacts.length,
+                                    traps: e.dungeon.traps.length,
                                     blockedSigil: e._isOccupied(
                                         e.dungeon.sigils[0].x, e.dungeon.sigils[0].y
                                     ),
@@ -1031,7 +1032,8 @@ def run_inspection(
                                 "offline_fallback_has_objective": offline["souls"] == 1
                                 and offline["sigils"] == 3
                                 and offline["vault"]
-                                and offline["pacts"] == 1,
+                                and offline["pacts"] == 1
+                                and offline["traps"] >= 1,
                                 "monsters_never_cover_props": offline["blockedSigil"]
                                 and not offline["monstersOnProps"],
                             }

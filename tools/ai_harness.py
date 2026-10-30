@@ -833,6 +833,27 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     checks.append(_check("no_page_errors_after_search", not harness.errors, harness.errors))
     page.context.close()
 
+    # The offline fallback must carry the trap the new Search action looks for.
+    page = harness.open_page(seed)
+    offline_trap = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            e._generateOfflineState(7, 2, "rogue");
+            const trap = (e.dungeon.traps || [])[0] || null;
+            return {
+                count: (e.dungeon.traps || []).length,
+                hidden: trap ? !trap.discovered && !trap.triggered : false,
+            };
+        }"""
+    )
+    checks.append(_check(
+        "offline_fallback_has_a_searchable_trap",
+        offline_trap["count"] >= 1 and offline_trap["hidden"] is True,
+        offline_trap,
+    ))
+    checks.append(_check("no_page_errors_after_offline_trap", not harness.errors, harness.errors))
+    page.context.close()
+
     # A short scripted run must not throw: the harness is only useful if a green
     # result means the engine actually ran.
     page = harness.open_page(seed)

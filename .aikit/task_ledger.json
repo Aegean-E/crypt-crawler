@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-018",
+    "task_id": "CC-019",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793372186.1713104,
-    "owner": "opencode:crypt-crawler-cc018",
-    "started_by": "opencode:crypt-crawler-cc018",
+    "updated_at": 1793372953.0524592,
+    "owner": "opencode:crypt-crawler-cc019",
+    "started_by": "opencode:crypt-crawler-cc019",
     "continuations": [],
-    "completed_at": 1793372204.1023161
+    "completed_at": 1793372960.8813314
   },
   "checkpoints": [
     {
@@ -397,6 +397,49 @@
       "timestamp": 1793372407.2967553,
       "timestamp_str": "2026-10-30 18:00:07",
       "agent": "opencode"
+    },
+    {
+      "task_id": "CC-019",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Correct the README floor-transition claim and add one armed trap to the offline fallback; [2/2] prove the offline trap in the harness and inspector, run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793372721.095118,
+      "timestamp_str": "2026-10-30 18:05:21",
+      "agent": "opencode:crypt-crawler-cc019",
+      "impact_assessment": {
+        "why": "The run-4 review found that README promises revealed traps survive floor transitions (they do not; each floor is fresh), and the offline fallback still ships traps: [] so the new Search action is inert whenever /api/new-game fails",
+        "benefits": "The docs match the per-floor save behavior, and trap search works in the supported offline path instead of silently finding nothing",
+        "risks": "contract: the offline dungeon gains one trap; dependency: none; concurrency: none; state: additive coordinates, no save format change; UI: engine.js is in the game-ui surface",
+        "mitigation": "Inspector offline check asserts the fallback carries a trap; harness selftest proves the fallback trap exists; UI guard plus the full unit, mechanics and gate set"
+      }
+    },
+    {
+      "task_id": "CC-019",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] README now says each floor starts with fresh hidden traps; offline fallback carries one armed trap (tile 12,8) and the harness proves it hidden (34/34); inspector offline objective check includes traps (67/67 all, 0 console errors); UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793372953.0524592,
+      "timestamp_str": "2026-10-30 18:09:13",
+      "agent": "opencode:crypt-crawler-cc019",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-019 then check --strict",
+        "evidence": "71 tests, harness 34/34, inspector 67/67, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-019",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-019' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793372960.8813338,
+      "timestamp_str": "2026-10-30 18:09:20",
+      "agent": "opencode:crypt-crawler-cc019"
     }
   ]
 }
