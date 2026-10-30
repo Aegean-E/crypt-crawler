@@ -185,5 +185,19 @@
     "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
     "final_snapshot_entries": 198,
     "surface_digest": "9d93bd47bb144eb1d4bfe4531f9f5efe6e25c1d0c1bf39aa1efe75a79ea3bda2"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "ec1817c9172cc105a59d9bd082b02cd6066ef0c4",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793378447.7293253,
+    "finished_at": 1793378708.2555273,
+    "strikes": 1,
+    "reviewer": "class passive cards visual review + 74/74 audit, 0 console errors",
+    "allowed_removals": [],
+    "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
+    "final_snapshot_entries": 198,
+    "surface_digest": "e6978a8d99a4d3344f623e71a2e320dce314aebcb66a43250c72716759e99384"
   }
 ]

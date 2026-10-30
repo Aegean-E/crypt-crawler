@@ -720,6 +720,7 @@ export class GameEngine {
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
            <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to reveal them or to disarm a revealed trap beside you for a little XP, or stay near wall sconces for light!</li>
            <li><strong>Gilded Mimics:</strong> Some chests are teeth in a wooden lid; open one and fight instead of looting.</li>
+           <li><strong>Class Passives:</strong> Paladin Zeal restores HP/MP on a kill; Rogue Executioner hits foes below 30% HP harder; Mage Arcane Focus boosts spell damage.</li>
          </ul>
          <br>
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
@@ -1514,13 +1515,26 @@ export class GameEngine {
     this.finishPlayerTurn();
   }
 
+  _classAttackMultiplier(target) {
+    if (this.heroClass === "rogue" && target && target.max_hp > 0
+        && target.hp <= target.max_hp * 0.3) {
+      return 1.25;
+    }
+    return 1;
+  }
+
+  _spellMultiplier() {
+    return this.heroClass === "mage" ? 1.15 : 1;
+  }
+
   attackMonster(monster) {
     const atk = this.player.attack;
     const def = monster.defense;
     const baseDmg = Math.max(1, atk - def);
     const critChance = this.player.crit_chance || (this.heroClass === "rogue" ? 0.30 : (this.heroClass === "mage" ? 0.10 : 0.15));
     const isCrit = Math.random() < critChance;
-    const dmg = Math.floor(baseDmg * (isCrit ? 1.5 : (0.85 + Math.random() * 0.3)));
+    let dmg = Math.floor(baseDmg * (isCrit ? 1.5 : (0.85 + Math.random() * 0.3)));
+    dmg = Math.floor(dmg * this._classAttackMultiplier(monster));
 
     monster.hp = Math.max(0, monster.hp - dmg);
     sounds.playHit(isCrit);
@@ -1576,6 +1590,20 @@ export class GameEngine {
 
     // Bestiary recording
     this.recordMonsterDefeat(monster.type);
+
+    // Paladin passive: Zeal restores a little health and mana on a kill.
+    if (this.heroClass === "paladin" && !monster.is_boss) {
+      const hpBefore = this.player.hp;
+      const manaBefore = this.player.mana;
+      this.player.hp = Math.min(this.player.max_hp, this.player.hp + 3);
+      this.player.mana = Math.min(this.player.max_mana, this.player.mana + 1);
+      const healed = this.player.hp - hpBefore;
+      const mana = this.player.mana - manaBefore;
+      if (healed > 0 || mana > 0) {
+        this.renderer.addFloatingText(`+${healed} HP +${mana} MP`, this.player.x, this.player.y, this.renderer.healColor);
+        this.ui.logMessage(`Zeal: the kill restores ${healed} HP and ${mana} MP.`, "heal");
+      }
+    }
 
     // Champion Elite Defeat
     if (monster.is_champion) {
@@ -1690,7 +1718,8 @@ export class GameEngine {
     this.player.mana -= 4;
     const isCrit = Math.random() < Math.min(0.95, (this.player.crit_chance || 0.30) + 0.40);
     const baseDmg = Math.max(3, this.player.attack - target.defense);
-    const dmg = Math.floor(baseDmg * (isCrit ? 1.9 : 1.3));
+    let dmg = Math.floor(baseDmg * (isCrit ? 1.9 : 1.3));
+    dmg = Math.floor(dmg * this._classAttackMultiplier(target));
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playHit(isCrit);
 
@@ -1757,7 +1786,7 @@ export class GameEngine {
     }
 
     this.player.mana -= 6;
-    const dmg = 18 + Math.floor(Math.random() * 8);
+    const dmg = Math.floor((18 + Math.floor(Math.random() * 8)) * this._spellMultiplier());
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playFreeze();
 
@@ -1789,7 +1818,7 @@ export class GameEngine {
     let count = 0;
     for (const m of this.monsters) {
       if (m.hp > 0 && Math.hypot(m.x - this.player.x, m.y - this.player.y) <= 3.8) {
-        const dmg = 22 + Math.floor(Math.random() * 10);
+        const dmg = Math.floor((22 + Math.floor(Math.random() * 10)) * this._spellMultiplier());
         m.hp = Math.max(0, m.hp - dmg);
         this.renderer.addFloatingText(`🔮 -${dmg}`, m.x, m.y, "#b794f4");
         this.renderer.addParticles(m.x, m.y, "#9f7aea", 12);
@@ -1944,7 +1973,7 @@ export class GameEngine {
     }
 
     this.player.mana -= 10;
-    const dmg = 26 + Math.floor(Math.random() * 12);
+    const dmg = Math.floor((26 + Math.floor(Math.random() * 12)) * this._spellMultiplier());
     target.hp = Math.max(0, target.hp - dmg);
     sounds.playSpell("fireball");
 
@@ -2166,7 +2195,9 @@ export class GameEngine {
         this.ui.logMessage("No visible enemy for the Scroll of Inferno.", "system");
         return;
       }
-      const damage = item.stats?.spell_damage || 30;
+      const damage = Math.floor(
+        (item.stats?.spell_damage || 30) * this._spellMultiplier()
+      );
       this.ui.logMessage(`📜 Read ${item.name}! ${damage} fire damage engulfs ${target.name}.`, "crit");
       sounds.playSpell("fireball");
       target.hp = Math.max(0, target.hp - damage);
@@ -2180,10 +2211,11 @@ export class GameEngine {
       // Arcane Nova scroll: deals 24 damage to all visible enemies
       this.ui.logMessage("📜 Read Scroll of Arcane Nova! Blinding magical shockwaves explode!", "crit");
       sounds.playSpell("fireball");
+      const novaDamage = Math.floor(24 * this._spellMultiplier());
       for (const m of this.monsters) {
         if (m.hp > 0 && this.dungeon.isVisible(m.x, m.y)) {
-          m.hp = Math.max(0, m.hp - 24);
-          this.renderer.addFloatingText("-24 NOVA", m.x, m.y, "#9f7aea");
+          m.hp = Math.max(0, m.hp - novaDamage);
+          this.renderer.addFloatingText(`-${novaDamage} NOVA`, m.x, m.y, this.renderer.arcaneColor);
           this.renderer.addParticles(m.x, m.y, "#b794f4", 10);
           if (m.hp <= 0) this._handleMonsterDefeat(m);
         }

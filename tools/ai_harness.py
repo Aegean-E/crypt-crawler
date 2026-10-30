@@ -43,6 +43,11 @@ ABILITIES: Dict[str, Dict[int, str]] = {
 }
 PACT_CHOICES = ("wrath", "ward", "avarice")
 DIFFICULTY_KEYS = ("normal", "hard")
+CLASS_PASSIVES = {
+    "paladin": "Zeal: kills restore 3 HP and 1 MP.",
+    "rogue": "Executioner: +25% attack damage to foes below 30% HP.",
+    "mage": "Arcane Focus: spells deal +15% damage.",
+}
 ACTION_KEYS: Dict[str, tuple] = {
     "move": ("dx", "dy"),
     "ability": ("slot",),
@@ -167,6 +172,7 @@ def catalog() -> Dict[str, Any]:
                 "attack": value["attack"],
                 "defense": value["defense"],
                 "crit_chance": value["crit_chance"],
+                "passive": CLASS_PASSIVES[key],
                 "abilities": {str(slot): name for slot, name in ABILITIES.get(key, {}).items()},
             }
             for key, value in HERO_CLASSES.items()
@@ -558,6 +564,108 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     ))
     checks.append(_check("no_page_errors_after_dynamic_spawns", not harness.errors, harness.errors))
     spawn_page.context.close()
+
+    # Paladin Zeal: a kill restores 3 HP and 1 MP.
+    page = harness.open_page(seed, hero_class="paladin")
+    zeal = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            e.player.hp = e.player.max_hp - 10;
+            e.player.mana = e.player.max_mana - 5;
+            const before = { hp: e.player.hp, mana: e.player.mana };
+            const dummy = {
+                name: "Dummy", type: "skeleton", x: e.player.x + 1, y: e.player.y,
+                hp: 1, max_hp: 20, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: {},
+            };
+            e.monsters = [dummy];
+            e.attackMonster(dummy);
+            return { before, after: { hp: e.player.hp, mana: e.player.mana }, dead: dummy.hp <= 0 };
+        }"""
+    )
+    checks.append(_check(
+        "paladin_zeal_heals_on_kill",
+        zeal["dead"] is True
+        and zeal["after"]["hp"] == zeal["before"]["hp"] + 3
+        and zeal["after"]["mana"] == zeal["before"]["mana"] + 1,
+        zeal,
+    ))
+    checks.append(_check("no_page_errors_after_zeal", not harness.errors, harness.errors))
+    page.context.close()
+
+    # Rogue Executioner: the same hit deals +25% to a target below 30% HP.
+    page = harness.open_page(seed, hero_class="rogue")
+    executioner = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const original = Math.random;
+            Math.random = () => 0.5;
+            const make = (hp) => ({
+                name: "Dummy", type: "skeleton", x: e.player.x + 1, y: e.player.y,
+                hp, max_hp: 100, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: {},
+            });
+            const normal = make(100);
+            e.monsters = [normal];
+            e.attackMonster(normal);
+            const normalDamage = 100 - normal.hp;
+            const low = make(20);
+            e.monsters = [low];
+            e.attackMonster(low);
+            const lowDamage = 20 - low.hp;
+            Math.random = original;
+            return {
+                normalDamage, lowDamage,
+                expectedLow: Math.floor(normalDamage * 1.25),
+            };
+        }"""
+    )
+    checks.append(_check(
+        "rogue_executioner_boosts_low_hp_targets",
+        executioner["normalDamage"] > 0
+        and executioner["lowDamage"] == executioner["expectedLow"]
+        and executioner["lowDamage"] > executioner["normalDamage"],
+        executioner,
+    ))
+    checks.append(_check("no_page_errors_after_executioner", not harness.errors, harness.errors))
+    page.context.close()
+
+    # Mage Arcane Focus: the helper and a real Fireball carry the 1.15 multiplier.
+    page = harness.open_page(seed, hero_class="mage")
+    arcane = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const p = e.player;
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+            if (!step) return { skipped: true };
+            const original = Math.random;
+            Math.random = () => 0.5;
+            const dummy = {
+                name: "Dummy", type: "skeleton", x: p.x + step[0], y: p.y + step[1],
+                hp: 100, max_hp: 100, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: {},
+            };
+            e.monsters = [dummy];
+            e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+            const before = dummy.hp;
+            e.tacticalFireball();
+            Math.random = original;
+            return { skipped: false, multiplier: e._spellMultiplier(), damage: before - dummy.hp };
+        }"""
+    )
+    checks.append(_check(
+        "mage_arcane_focus_boosts_spells",
+        arcane.get("skipped") is not True
+        and arcane["multiplier"] == 1.15
+        and arcane["damage"] >= 36,
+        arcane,
+    ))
+    checks.append(_check("no_page_errors_after_arcane_focus", not harness.errors, harness.errors))
+    page.context.close()
 
     page = harness.open_page(seed)
     before = harness.state(page)

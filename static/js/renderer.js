@@ -24,6 +24,8 @@ export class DungeonRenderer {
     this.trapColor = "#d69e2e";
     this.warningColor = "#f6ad55";
     this.goldColor = "#ecc94b";
+    this.healColor = "#68d391";
+    this.arcaneColor = "#9f7aea";
   }
 
   addJackpotExplosion(x, y) {

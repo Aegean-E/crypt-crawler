@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-025",
+    "task_id": "CC-026",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793378209.0075467,
-    "owner": "opencode:crypt-crawler-cc025",
-    "started_by": "opencode:crypt-crawler-cc025",
+    "updated_at": 1793378975.5013907,
+    "owner": "opencode:crypt-crawler-cc026",
+    "started_by": "opencode:crypt-crawler-cc026",
     "continuations": [],
-    "completed_at": 1793378219.3482788
+    "completed_at": 1793378985.2003958
   },
   "checkpoints": [
     {
@@ -742,6 +742,49 @@
       "timestamp": 1793378219.3482804,
       "timestamp_str": "2026-10-30 19:36:59",
       "agent": "opencode:crypt-crawler-cc025"
+    },
+    {
+      "task_id": "CC-026",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add Paladin Zeal (kill restores 3 HP/1 MP), Rogue Executioner (+25% attack damage below 30% HP) and Mage Arcane Focus (+15% spell damage) in the shipped combat paths; [2/3] show each passive on its class card and in the guide; [3/3] prove all three in the harness/catalog, add an inspector class-card check, document README/ADR-025, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793378433.2810237,
+      "timestamp_str": "2026-10-30 19:40:33",
+      "agent": "opencode:crypt-crawler-cc026",
+      "impact_assessment": {
+        "why": "The three classes differ mainly by stat lines and ability labels; their play does not express a distinct rule, so the class choice is mostly a numbers choice",
+        "benefits": "Each archetype gains a legible combat identity: sustain on kills, a finisher window, or stronger spells; players can choose a rule that matches their plan and the harness can prove it",
+        "risks": "contract: combat hooks gain class checks and the class catalog gains passive text; dependency: none; concurrency: none; state: no save change; UI: engine.js, ui.js and style.css are in the game-ui surface",
+        "mitigation": "Deterministic dummy tests for each passive, helper multipliers kept in one place, inspector class-card text check, UI guard and full gates"
+      }
+    },
+    {
+      "task_id": "CC-026",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Class passives shipped: Paladin Zeal (+3 HP/+1 MP on non-boss kill), Rogue Executioner (+25% attack damage below 30% HP) and Mage Arcane Focus (+15% spell damage, including scrolls); class cards, guide, catalog and helpers updated. Harness proves all three deterministically (54/54); inspector checks passive cards (75/75, 16 screenshots, 0 console errors); UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793378975.5013907,
+      "timestamp_str": "2026-10-30 19:49:35",
+      "agent": "opencode:crypt-crawler-cc026",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-026 then check --strict",
+        "evidence": "71 tests, harness 54/54, inspector 75/75, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-026",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-026' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793378985.200399,
+      "timestamp_str": "2026-10-30 19:49:45",
+      "agent": "opencode:crypt-crawler-cc026"
     }
   ]
 }

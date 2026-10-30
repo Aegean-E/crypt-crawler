@@ -187,6 +187,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: Players can choose a tougher run with slightly richer rewards, and seed + class + difficulty fully reproduces a challenge. The server needs no change because the client owns difficulty. Resuming a Hard save does not double-scale because the guard travels with the saved monsters; new runs and descents scale exactly once.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one selector, no prompt) and PRINCIPLE-014 (normal/hard, dynamic-spawn and resume coverage).
 
+### ADR-025: Class Passives and Combat Identity
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The three archetypes differed mainly by stat lines and ability labels. The class choice changed numbers, not a rule, so two runs of the same class felt interchangeable and the class cards had no identity beyond flavor text.
+- **Decision**: Give each class one always-on passive. **Zeal** (Paladin) restores 3 HP and 1 MP on a non-boss kill. **Executioner** (Rogue) multiplies attack damage by 1.25 against a target at or below 30% of its max HP, applied to melee and Shadow Strike. **Arcane Focus** (Mage) multiplies Fireball, Frost Nova, Arcane Nova, Scroll of Inferno and Scroll of Arcane Nova damage by 1.15. Show the passive on each class card, repeat it in the guide, and expose it in the harness `catalog`. Keep the multipliers in one pair of helpers so every damage path stays consistent.
+- **Consequences**: Class choice now changes how a run is played, not only how its numbers look. The passives are additive rules and do not change the save format. The harness proves Zeal's heal, Executioner's threshold multiplier and Arcane Focus's multiplier plus a real Fireball; the inspector checks all three class cards print a passive.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns each rule and the harness drives it), PRINCIPLE-011 (one passive line on the class card, no prompt) and PRINCIPLE-014 (deterministic coverage for all three passives).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

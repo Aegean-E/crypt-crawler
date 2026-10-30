@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, Normal/Hard difficulty, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, Normal/Hard difficulty, class passives, per-floor omens, a turn-cost trap search and disarm, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -37,7 +37,7 @@ python tools/ai_harness.py play --seed 42 --class paladin --difficulty hard --ac
 python tools/ai_harness.py play --script run.json
 python tools/ai_harness.py selftest
 ```
-`catalog` prints the classes, the five deck abilities, every action field, the pact choices, the difficulty keys and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed, class, difficulty and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, difficulty scaling and resume, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
+`catalog` prints the classes, their passives, the five deck abilities, every action field, the pact choices, the difficulty keys and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed, class, difficulty and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, class passives, difficulty scaling and resume, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
 ```json
 {"seed": 42, "depth": 1, "class": "rogue", "difficulty": "hard",
  "actions": [{"action": "move", "dx": 1, "dy": 0}, {"action": "ability", "slot": 2}]}
@@ -64,6 +64,15 @@ The class-selection screen accepts an optional positive run seed; leave it blank
 
 ### ⚔️ Difficulty
 New Game offers **Normal** and **Hard**. Hard multiplies enemy max HP by 1.4, enemy attack by 1.25, and enemy XP and gold by 1.15; a **HARD** badge in the header marks the run. The choice survives saves and restarts, and seed plus class plus difficulty is the full reproducibility contract. The harness exposes the same choice through `--difficulty` or the script's `difficulty` field.
+
+### 🧬 Class Passives
+| Class | Passive | Rule |
+|---|---|---|
+| Crusader Paladin | Zeal | Slaying a foe restores 3 HP and 1 MP |
+| Shadow Rogue | Executioner | +25% attack damage to foes below 30% HP |
+| Arcane Mage | Arcane Focus | Spells deal +15% damage |
+
+The passive is printed on each class card before you choose, and the in-game guide repeats it.
 
 ### 🎭 Floor Omens, Mobs and Story
 Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.

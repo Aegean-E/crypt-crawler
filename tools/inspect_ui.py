@@ -1404,6 +1404,25 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "classes", "file": str(class_shot)}
                         )
                         print(f"      Saved screenshot: {class_shot.name}")
+                        passives = page.evaluate(
+                            """() => {
+                                const cards = Array.from(document.querySelectorAll(".class-card"));
+                                return {
+                                    count: cards.length,
+                                    all: cards.every((card) => card.textContent.includes("Passive")),
+                                    names: cards.map(
+                                        (card) => card.querySelector(".class-passive")?.textContent.trim() || ""
+                                    ),
+                                };
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "class_cards_show_passives": passives["count"] == 3
+                                and passives["all"] is True,
+                            }
+                        )
                         # Pick Rogue with an explicit seed and Hard difficulty, then
                         # descend to B2F Caverns.
                         page.click(".difficulty-btn[data-difficulty='hard']")

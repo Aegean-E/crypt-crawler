@@ -9,6 +9,7 @@ from pathlib import Path
 from crawler.entities import HERO_CLASSES
 from tools.ai_harness import (
     ABILITIES,
+    CLASS_PASSIVES,
     PACT_CHOICES,
     catalog,
     layout_hash,
@@ -29,6 +30,7 @@ class TestHarnessCatalog(unittest.TestCase):
             self.assertEqual(hero["hp"], HERO_CLASSES[key]["hp"])
             self.assertEqual(hero["mana"], HERO_CLASSES[key]["mana"])
             self.assertEqual(hero["defense"], HERO_CLASSES[key]["defense"])
+            self.assertEqual(hero["passive"], CLASS_PASSIVES[key])
             self.assertEqual(len(hero["abilities"]), 5)
 
     def test_catalog_actions_and_pacts(self):

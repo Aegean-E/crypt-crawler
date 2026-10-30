@@ -908,6 +908,12 @@ body.theme-dark {
   transition: all 0.2s ease;
 }
 
+.class-passive {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: #f6ad55;
+}
+
 .class-card:hover {
   border-color: var(--border-gold);
   background: rgba(30, 41, 59, 0.95);

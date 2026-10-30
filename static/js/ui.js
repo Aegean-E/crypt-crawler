@@ -285,6 +285,7 @@ export class UIController {
           <div class="class-details">
             <h3>Crusader Paladin</h3>
             <p>Holy knight with supreme defense, crushing shield stuns, and restorative prayers.</p>
+            <p class="class-passive"><strong>Passive — Zeal:</strong> kills restore 3 HP and 1 MP.</p>
             <div class="class-stats-row">
               <span>HP: <strong>65</strong></span>
               <span>MP: <strong>30</strong></span>
@@ -299,6 +300,7 @@ export class UIController {
           <div class="class-details">
             <h3>Shadow Rogue</h3>
             <p>Lethal assassin with 30% base crit, venomous daggers, and blinding smoke bombs.</p>
+            <p class="class-passive"><strong>Passive — Executioner:</strong> +25% attack damage to foes below 30% HP.</p>
             <div class="class-stats-row">
               <span>HP: <strong>48</strong></span>
               <span>MP: <strong>25</strong></span>
@@ -313,6 +315,7 @@ export class UIController {
           <div class="class-details">
             <h3>Arcane Mage</h3>
             <p>Forbidden scholar commanding devastating fireballs, freezing frost, and arcane novas.</p>
+            <p class="class-passive"><strong>Passive — Arcane Focus:</strong> spells deal +15% damage.</p>
             <div class="class-stats-row">
               <span>HP: <strong>42</strong></span>
               <span>MP: <strong>55</strong></span>
