@@ -1,5 +1,6 @@
 """Unit tests for the AI gameplay harness and the UI inventory contract."""
 
+import copy
 import json
 import tempfile
 import unittest
@@ -32,8 +33,12 @@ class TestHarnessCatalog(unittest.TestCase):
 
     def test_catalog_actions_and_pacts(self):
         data = catalog()
-        for action in ("move", "ability", "potion", "wait", "teleport", "pact", "descend", "save"):
+        for action in (
+            "move", "ability", "potion", "use_item", "wait", "teleport", "pact",
+            "descend", "save",
+        ):
             self.assertIn(action, data["actions"])
+        self.assertEqual(data["actions"]["use_item"]["fields"], ["index"])
         self.assertEqual(data["pact_choices"], list(PACT_CHOICES))
         self.assertTrue(set(PACT_CHOICES) <= {"wrath", "ward", "avarice"})
         self.assertIn("@actions.json", data["inputs"]["actions"])
@@ -50,6 +55,7 @@ class TestActionValidation(unittest.TestCase):
         for action in (
             {"action": "move", "dx": 1, "dy": 0},
             {"action": "ability", "slot": 3},
+            {"action": "use_item", "index": 0},
             {"action": "teleport", "x": 4, "y": 9},
             {"action": "pact", "choice": "ward"},
             {"action": "wait"},
@@ -64,6 +70,9 @@ class TestActionValidation(unittest.TestCase):
         self.assertTrue(validate_action({"action": "move", "dx": 0, "dy": 0}))
         self.assertTrue(validate_action({"action": "move", "dx": 2, "dy": 0}))
         self.assertTrue(validate_action({"action": "ability", "slot": 9}))
+        self.assertTrue(validate_action({"action": "use_item"}))
+        self.assertTrue(validate_action({"action": "use_item", "index": -1}))
+        self.assertTrue(validate_action({"action": "use_item", "index": "0"}))
         self.assertTrue(validate_action({"action": "pact", "choice": "bogus"}))
         self.assertTrue(validate_action({"action": "teleport", "x": "a", "y": 1}))
 
@@ -126,6 +135,8 @@ class TestLayoutHash(unittest.TestCase):
             "dungeon": {
                 "seed": seed,
                 "depth": 1,
+                "biome": "catacombs",
+                "rooms": [{"x": 1, "y": 1, "w": 5, "h": 4}],
                 "spawn": {"x": 1, "y": 1},
                 "stairs": {"x": staircase[0], "y": staircase[1]},
                 "chests": [{"x": 5, "y": 6}],
@@ -135,9 +146,20 @@ class TestLayoutHash(unittest.TestCase):
                 "sigils": [],
                 "vault": None,
                 "pacts": [],
+                "merchants": [],
+                "traps": [{"x": 6, "y": 7}],
+                "sconces": [{"x": 2, "y": 0}],
             },
             "monsters": [{"type": "skeleton", "x": 2, "y": 2}],
         }
+
+    def _with(self, key, value):
+        state = copy.deepcopy(self._state())
+        if key == "monsters":
+            state["monsters"] = value
+        else:
+            state["dungeon"][key] = value
+        return state
 
     def test_hash_is_stable_and_sensitive(self):
         self.assertEqual(layout_hash(self._state()), layout_hash(self._state()))
@@ -145,6 +167,29 @@ class TestLayoutHash(unittest.TestCase):
         self.assertNotEqual(
             layout_hash(self._state()), layout_hash(self._state(staircase=(9, 9)))
         )
+
+    def test_hash_tracks_every_seeded_layout_element(self):
+        base = layout_hash(self._state())
+        variants = [
+            ("biome", "ossuary"),
+            ("rooms", [{"x": 1, "y": 1, "w": 4, "h": 4}]),
+            ("spawn", {"x": 2, "y": 2}),
+            ("stairs", {"x": 9, "y": 9}),
+            ("monsters", [{"type": "bat", "x": 2, "y": 2}]),
+            ("chests", [{"x": 5, "y": 7}]),
+            ("shrines", [{"x": 6, "y": 6}]),
+            ("urns", [{"x": 4, "y": 4}]),
+            ("souls", [{"x": 3, "y": 5}]),
+            ("sigils", [{"x": 2, "y": 6}]),
+            ("vault", {"x": 8, "y": 2, "opened": False}),
+            ("pacts", [{"x": 7, "y": 7, "used": False}]),
+            ("merchants", [{"x": 9, "y": 1}]),
+            ("traps", [{"x": 4, "y": 8}]),
+            ("sconces", [{"x": 3, "y": 0}]),
+        ]
+        for key, value in variants:
+            with self.subTest(key=key):
+                self.assertNotEqual(base, layout_hash(self._with(key, value)))
 
 
 class TestUiInventory(unittest.TestCase):

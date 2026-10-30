@@ -46,6 +46,7 @@ ACTION_KEYS: Dict[str, tuple] = {
     "move": ("dx", "dy"),
     "ability": ("slot",),
     "potion": (),
+    "use_item": ("index",),
     "wait": (),
     "teleport": ("x", "y"),
     "pact": ("choice",),
@@ -123,6 +124,9 @@ STATE_JS = """
         : null,
       pacts: (e.dungeon.pacts || []).map((a) => ({ ...point(a), used: a.used })),
       merchants: (e.dungeon.merchants || []).map(point),
+      traps: (e.dungeon.traps || []).map((t) => ({ ...point(t), triggered: t.triggered })),
+      sconces: (e.dungeon.sconces || []).map(point),
+      rooms: (e.dungeon.rooms || []).map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h })),
     },
     sigilCount: e.sigilCount,
     bounties: (e.bounties || []).map((b) => ({
@@ -198,6 +202,10 @@ def validate_action(action: Any) -> List[str]:
         slot = action.get("slot")
         if not _is_int(slot) or slot not in (1, 2, 3, 4, 5):
             problems.append("ability slot must be 1-5")
+    elif name == "use_item":
+        index = action.get("index")
+        if not _is_int(index) or index < 0:
+            problems.append("use_item index must be a non-negative integer")
     elif name == "teleport":
         for field in ("x", "y"):
             if not _is_int(action.get(field)):
@@ -247,6 +255,8 @@ def layout_hash(state: Dict[str, Any]) -> str:
     material = {
         "seed": dungeon["seed"],
         "depth": dungeon["depth"],
+        "biome": dungeon["biome"],
+        "rooms": [(r["x"], r["y"], r["w"], r["h"]) for r in dungeon["rooms"]],
         "spawn": dungeon["spawn"],
         "stairs": dungeon["stairs"],
         "monsters": monsters,
@@ -257,6 +267,9 @@ def layout_hash(state: Dict[str, Any]) -> str:
         "sigils": [(s["x"], s["y"]) for s in dungeon["sigils"]],
         "vault": dungeon["vault"],
         "pacts": [(p["x"], p["y"]) for p in dungeon["pacts"]],
+        "merchants": [(m["x"], m["y"]) for m in dungeon["merchants"]],
+        "traps": [(t["x"], t["y"]) for t in dungeon["traps"]],
+        "sconces": [(s["x"], s["y"]) for s in dungeon["sconces"]],
     }
     encoded = json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()[:16]
@@ -341,6 +354,12 @@ class Harness:
                     case "move": e.stepPlayer(action.dx, action.dy); break;
                     case "ability": e.triggerSlotAction(action.slot); break;
                     case "potion": e.quickPotion(); break;
+                    case "use_item":
+                        if (action.index >= e.player.inventory.length) {
+                            throw new Error(`use_item index ${action.index} is outside the ${e.player.inventory.length}-item backpack`);
+                        }
+                        e.useInventoryItem(action.index);
+                        break;
                     case "wait": e.waitTurn(); break;
                     case "teleport":
                         // A debug pose, not a teleport spell: refuse to stand in rock, or
@@ -708,6 +727,56 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         growth,
     ))
     checks.append(_check("no_page_errors_after_pact_growth", not harness.errors, harness.errors))
+    page.context.close()
+
+    # The Scroll of Inferno is a one-shot consumable: through the public use_item
+    # action it must damage a visible enemy, disappear from the pack and spend the turn.
+    page = harness.open_page(seed)
+    setup = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const p = e.player;
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+            if (!step) return { skipped: true };
+            e.monsters = [{
+                name: "Scroll Dummy", type: "skeleton", x: p.x + step[0], y: p.y + step[1],
+                hp: 100, max_hp: 100, attack: 0, defense: 0, xp_reward: 0, gold_reward: 0,
+                loot_drop: null, is_boss: false, is_champion: false, champion_affix: null,
+                status_effects: {},
+            }];
+            e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+            p.inventory.push({
+                id: "scroll_fireball", name: "Scroll of Inferno", type: "scroll",
+                rarity: "common", description: "", stats: { spell_damage: 30 },
+            });
+            return { skipped: false, index: p.inventory.length - 1 };
+        }"""
+    )
+    if setup.get("skipped") is True:
+        scroll = setup
+    else:
+        before = harness.state(page)
+        after = harness.apply(page, {"action": "use_item", "index": setup["index"]})
+        scroll = {
+            "index": setup["index"],
+            "beforeHp": before["monsters"][0]["hp"] if before["monsters"] else None,
+            "afterHp": after["monsters"][0]["hp"] if after["monsters"] else None,
+            "beforeCount": len(before["player"]["inventory"]),
+            "afterCount": len(after["player"]["inventory"]),
+            "beforeTurn": before["turn"],
+            "afterTurn": after["turn"],
+        }
+    checks.append(_check(
+        "scroll_of_inferno_damages_and_consumes",
+        setup.get("skipped") is not True
+        and scroll["beforeHp"] == 100
+        and scroll["afterHp"] == 70
+        and scroll["afterCount"] == scroll["beforeCount"] - 1
+        and scroll["afterTurn"] == scroll["beforeTurn"] + 1,
+        scroll,
+    ))
+    checks.append(_check("no_page_errors_after_scroll", not harness.errors, harness.errors))
     page.context.close()
 
     # A short scripted run must not throw: the harness is only useful if a green

@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-016",
+    "task_id": "CC-017",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793296645.072835,
-    "owner": "kilo:continue",
-    "started_by": "kilo:continue",
+    "updated_at": 1793370117.6900938,
+    "owner": "opencode:crypt-crawler-cc017",
+    "started_by": "opencode:crypt-crawler-cc017",
     "continuations": [],
-    "completed_at": 1793296645.5667617
+    "completed_at": 1793371051.7796404
   },
   "checkpoints": [
     {
@@ -256,6 +256,82 @@
       "timestamp": 1793303275.304083,
       "timestamp_str": "2026-10-29 22:47:55",
       "agent": "opencode"
+    },
+    {
+      "task_id": "CC-017",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Make layout_hash fingerprint every seeded prop (merchants, traps, sconces, rooms, biome) and add unit tests; [2/2] add a harness selftest that reads a Scroll of Inferno on a visible enemy and asserts damage, consumption and a turn advance (closes reforge run-3 findings)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793363815.8710556,
+      "timestamp_str": "2026-10-30 15:36:55",
+      "agent": "opencode:crypt-crawler-cc017",
+      "impact_assessment": {
+        "why": "The last reforge review left two open findings: layout_hash claims to fingerprint everything the seeded generator decides but omits merchants, traps and sconces, and the shipped Scroll of Inferno branch has no browser test, so deleting it would pass the suite",
+        "benefits": "An agent can trust layout_hash to detect any seeded layout change, and the scroll branch is proven through the shipped engine instead of only by reading the source",
+        "risks": "contract: the harness state gains traps, sconces and rooms; layout_hash values change once; dependency: none; concurrency: none; state: read-only harness, no game save change",
+        "mitigation": "Unit tests mutate each seeded prop and require a different hash; the scroll check drives the real engine in headless Edge and asserts damage, item consumption and turn advance; full unit, harness and inspector gates"
+      }
+    },
+    {
+      "task_id": "CC-017",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] layout_hash now covers biome, rooms, merchants, traps and sconces with a mutation test; selftest reads Scroll of Inferno (30 damage, consumed, one turn spent); ADR-017. Phase 4 green: 71 unit tests, harness 30/30, inspector 24/24 at three viewports with 0 console errors, aikit check 5/5. checklists: passed. Uncommitted: commit not authorized (PRINCIPLE-018 R1)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793364031.8395476,
+      "timestamp_str": "2026-10-30 15:40:31",
+      "agent": "opencode:crypt-crawler-cc017",
+      "handoff": {
+        "state": "uncommitted and green",
+        "next": "commit CC-017 then run check --strict",
+        "evidence": "71 tests, harness 30/30, inspector 24/24, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-017",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Re-plan: expose a validated public use_item action; [2/3] dispatch it to the shipped useInventoryItem with an out-of-range error; [3/3] move the Scroll of Inferno selftest onto the public action, document the index contract and run the gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793369882.1775408,
+      "timestamp_str": "2026-10-30 17:18:02",
+      "agent": "opencode:crypt-crawler-cc017",
+      "impact_assessment": {
+        "why": "The new scroll check calls useInventoryItem directly, so an agent driving the documented play command still cannot use a potion, scroll or piece of gear; the public harness has no action for the branch it now proves",
+        "benefits": "Agents can equip loot, drink potions and read scrolls through the same validated JSON action path as movement and abilities; the scroll proof exercises that path instead of an internal call",
+        "risks": "contract: the action catalog gains use_item with a zero-based index; dependency: none; concurrency: none; state: the action reads the existing inventory and writes no save format change",
+        "mitigation": "Unit tests reject a missing, negative or non-integer index; the dispatch throws a clear error for an out-of-range index; the selftest drives the scroll through Harness.apply and asserts damage, consumption and a turn"
+      }
+    },
+    {
+      "task_id": "CC-017",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Public use_item action with a zero-based index and an out-of-range error; the Scroll of Inferno selftest now runs through Harness.apply; CLI play consumed a Health Elixir (turn 1->2, inventory 3->2) and rejected index 99 with exit 1. Phase 4 green: 71 unit tests, harness 30/30, inspector 24/24 on unchanged UI, aikit check 5/5. checklists: passed. Uncommitted: commit not authorized (PRINCIPLE-018 R1)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793370117.6900938,
+      "timestamp_str": "2026-10-30 17:21:57",
+      "agent": "opencode:crypt-crawler-cc017",
+      "handoff": {
+        "state": "uncommitted and green",
+        "next": "commit CC-017 then run check --strict",
+        "evidence": "71 tests, harness 30/30, CLI use_item ok and rejected index 99, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-017",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-017' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793371051.7796416,
+      "timestamp_str": "2026-10-30 17:37:31",
+      "agent": "opencode:crypt-crawler-cc017"
     }
   ]
 }

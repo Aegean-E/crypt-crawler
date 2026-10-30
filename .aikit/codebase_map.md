@@ -9,8 +9,8 @@
 - **Total Python Modules**: `19`
 - **Total Classes**: `26`
 - **Total Top-Level Functions**: `40`
-- **Total Class Methods**: `132`
-- **Total Source Lines**: `5828`
+- **Total Class Methods**: `134`
+- **Total Source Lines**: `5942`
 
 ---
 
@@ -184,7 +184,7 @@
 ### [`tests/test_ai_harness.py`](tests/test_ai_harness.py)
 > *Unit tests for the AI gameplay harness and the UI inventory contract.*
 
-**Size**: `183` lines (`7003` bytes)
+**Size**: `228` lines (`8850` bytes)
 
 **Classes:**
 - `class TestHarnessCatalog`
@@ -205,7 +205,9 @@
   - Method `.test_missing_file_is_an_error_not_an_empty_list()`
 - `class TestLayoutHash`
   - Method `._state(seed, staircase)`
+  - Method `._with(key, value)`
   - Method `.test_hash_is_stable_and_sensitive()`
+  - Method `.test_hash_tracks_every_seeded_layout_element()`
 - `class TestUiInventory`
   - Method `.setUp()`
   - Method `.test_inventory_names_real_controls_choices_and_handlers()`
@@ -337,7 +339,7 @@
 ### [`tools/ai_harness.py`](tools/ai_harness.py)
 > *AI gameplay harness for Crypt-Crawler: a stable, deterministic way for an agent (or a*
 
-**Size**: `1073` lines (`42701` bytes)
+**Size**: `1142` lines (`46137` bytes)
 
 **Classes:**
 - `class Harness` - *One server and one headless browser shared by every page the harness opens.*
