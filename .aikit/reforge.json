@@ -1,8 +1,8 @@
 {
   "schema": 2,
-  "next_run_id": 5,
+  "next_run_id": 6,
   "active_run": null,
-  "last_run": "run-4",
+  "last_run": "run-5",
   "runs": [
     {
       "id": "run-1",
@@ -6766,52 +6766,376 @@
           "dirty_targets": []
         }
       ]
+    },
+    {
+      "id": "run-5",
+      "start": 2,
+      "step": 2,
+      "stop": 2,
+      "stage": 1,
+      "window": 2,
+      "audited_commits": [
+        "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+        "34f85ee7437b064d2960ae3662488d85d57e9ae4"
+      ],
+      "status": "completed",
+      "created": "2026-10-30T18:25:14",
+      "updated": "2026-10-30T18:25:22",
+      "last_audit": {
+        "run": "run-5",
+        "stage": 1,
+        "window": 2,
+        "commits": [
+          "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+          "34f85ee7437b064d2960ae3662488d85d57e9ae4"
+        ],
+        "new_commits": [
+          "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+          "34f85ee7437b064d2960ae3662488d85d57e9ae4"
+        ],
+        "prior_commits": [],
+        "findings": [
+          {
+            "code": "review-sellable-crown-quest-relic",
+            "category": "review",
+            "severity": "medium",
+            "path": "static/js/engine.js",
+            "line": 1783,
+            "message": "The Sell list includes the Crown of Eternity, the legendary boss-drop quest reward. The victory modal is delayed by 1.5s, so a fast player can reach a nearby merchant and sell the one relic the ending checks, for 100 gold; the victory text then reports the crown left on the altar. Filter crown_eternity (or all quest items) out of the sellable list.",
+            "evidence": "const sellable = this.player.inventory.map((item, index) => ({",
+            "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+            "hunk": "22c2fb9a0c9d:static/js/engine.js#1",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          },
+          {
+            "code": "review-shop-tabs-missing-aria",
+            "category": "improvement",
+            "severity": "low",
+            "path": "static/js/ui.js",
+            "line": 391,
+            "message": "The shop declares role=tablist but its Buy/Sell buttons have no role=tab or aria-selected, and the panes have no role=tabpanel or aria-labelledby. A screen reader sees two ordinary buttons inside a tablist and cannot tell which pane is active. Add the tab/tabpanel roles, bind each tab to its pane, and update aria-selected with the active class.",
+            "evidence": "<div class=\"shop-tabs\" role=\"tablist\">",
+            "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+            "hunk": "22c2fb9a0c9d:static/js/ui.js#3",
+            "symbol": "",
+            "introduced": true,
+            "reproducible": false,
+            "fixable": false,
+            "interaction": "",
+            "repaired": false,
+            "source": "review",
+            "patch_old": "",
+            "patch_new": ""
+          }
+        ],
+        "repairs": [],
+        "counts": {
+          "review": 1,
+          "improvement": 1
+        },
+        "reviewed": 10,
+        "review": {
+          "status": "reviewed",
+          "rejected": [],
+          "files": [
+            ".aikit/codebase_map.md",
+            ".aikit/decisions.md",
+            ".aikit/ui_history.json",
+            "README.md",
+            "static/css/style.css",
+            "static/js/engine.js",
+            "static/js/renderer.js",
+            "static/js/ui.js",
+            "tools/ai_harness.py",
+            "tools/inspect_ui.py"
+          ],
+          "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-5-1-22c2fb9a0c9d.md",
+          "redacted": 0,
+          "reason": "",
+          "coverage": {
+            "reported": 7,
+            "total": 28,
+            "missing": [
+              "22c2fb9a0c9d:.aikit/codebase_map.md#1",
+              "22c2fb9a0c9d:.aikit/codebase_map.md#2",
+              "22c2fb9a0c9d:.aikit/codebase_map.md#3",
+              "22c2fb9a0c9d:.aikit/decisions.md#1",
+              "22c2fb9a0c9d:.aikit/ui_history.json#1",
+              "22c2fb9a0c9d:README.md#1",
+              "22c2fb9a0c9d:README.md#2",
+              "22c2fb9a0c9d:static/css/style.css#1",
+              "22c2fb9a0c9d:static/js/renderer.js#1",
+              "22c2fb9a0c9d:static/js/ui.js#1",
+              "22c2fb9a0c9d:static/js/ui.js#2",
+              "34f85ee7437b:.aikit/codebase_map.md#1",
+              "34f85ee7437b:.aikit/codebase_map.md#2",
+              "34f85ee7437b:.aikit/codebase_map.md#3",
+              "34f85ee7437b:.aikit/ui_history.json#1",
+              "34f85ee7437b:README.md#1",
+              "34f85ee7437b:static/js/engine.js#1",
+              "34f85ee7437b:static/js/engine.js#2",
+              "34f85ee7437b:tools/ai_harness.py#1",
+              "34f85ee7437b:tools/inspect_ui.py#1",
+              "34f85ee7437b:tools/inspect_ui.py#2"
+            ],
+            "unknown": []
+          },
+          "findings": [
+            {
+              "code": "review-sellable-crown-quest-relic",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 1783,
+              "message": "The Sell list includes the Crown of Eternity, the legendary boss-drop quest reward. The victory modal is delayed by 1.5s, so a fast player can reach a nearby merchant and sell the one relic the ending checks, for 100 gold; the victory text then reports the crown left on the altar. Filter crown_eternity (or all quest items) out of the sellable list.",
+              "evidence": "const sellable = this.player.inventory.map((item, index) => ({",
+              "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+              "hunk": "22c2fb9a0c9d:static/js/engine.js#1",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            },
+            {
+              "code": "review-shop-tabs-missing-aria",
+              "category": "improvement",
+              "severity": "low",
+              "path": "static/js/ui.js",
+              "line": 391,
+              "message": "The shop declares role=tablist but its Buy/Sell buttons have no role=tab or aria-selected, and the panes have no role=tabpanel or aria-labelledby. A screen reader sees two ordinary buttons inside a tablist and cannot tell which pane is active. Add the tab/tabpanel roles, bind each tab to its pane, and update aria-selected with the active class.",
+              "evidence": "<div class=\"shop-tabs\" role=\"tablist\">",
+              "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+              "hunk": "22c2fb9a0c9d:static/js/ui.js#3",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            }
+          ]
+        },
+        "skipped": [],
+        "tests": {},
+        "gates": {},
+        "timestamp": "2026-10-30T18:25:22",
+        "dirty_targets": []
+      },
+      "history": [
+        {
+          "run": "run-5",
+          "stage": 1,
+          "window": 2,
+          "commits": [
+            "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+            "34f85ee7437b064d2960ae3662488d85d57e9ae4"
+          ],
+          "new_commits": [
+            "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+            "34f85ee7437b064d2960ae3662488d85d57e9ae4"
+          ],
+          "prior_commits": [],
+          "findings": [
+            {
+              "code": "review-sellable-crown-quest-relic",
+              "category": "review",
+              "severity": "medium",
+              "path": "static/js/engine.js",
+              "line": 1783,
+              "message": "The Sell list includes the Crown of Eternity, the legendary boss-drop quest reward. The victory modal is delayed by 1.5s, so a fast player can reach a nearby merchant and sell the one relic the ending checks, for 100 gold; the victory text then reports the crown left on the altar. Filter crown_eternity (or all quest items) out of the sellable list.",
+              "evidence": "const sellable = this.player.inventory.map((item, index) => ({",
+              "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+              "hunk": "22c2fb9a0c9d:static/js/engine.js#1",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            },
+            {
+              "code": "review-shop-tabs-missing-aria",
+              "category": "improvement",
+              "severity": "low",
+              "path": "static/js/ui.js",
+              "line": 391,
+              "message": "The shop declares role=tablist but its Buy/Sell buttons have no role=tab or aria-selected, and the panes have no role=tabpanel or aria-labelledby. A screen reader sees two ordinary buttons inside a tablist and cannot tell which pane is active. Add the tab/tabpanel roles, bind each tab to its pane, and update aria-selected with the active class.",
+              "evidence": "<div class=\"shop-tabs\" role=\"tablist\">",
+              "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+              "hunk": "22c2fb9a0c9d:static/js/ui.js#3",
+              "symbol": "",
+              "introduced": true,
+              "reproducible": false,
+              "fixable": false,
+              "interaction": "",
+              "repaired": false,
+              "source": "review",
+              "patch_old": "",
+              "patch_new": ""
+            }
+          ],
+          "repairs": [],
+          "counts": {
+            "review": 1,
+            "improvement": 1
+          },
+          "reviewed": 10,
+          "review": {
+            "status": "reviewed",
+            "rejected": [],
+            "files": [
+              ".aikit/codebase_map.md",
+              ".aikit/decisions.md",
+              ".aikit/ui_history.json",
+              "README.md",
+              "static/css/style.css",
+              "static/js/engine.js",
+              "static/js/renderer.js",
+              "static/js/ui.js",
+              "tools/ai_harness.py",
+              "tools/inspect_ui.py"
+            ],
+            "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-5-1-22c2fb9a0c9d.md",
+            "redacted": 0,
+            "reason": "",
+            "coverage": {
+              "reported": 7,
+              "total": 28,
+              "missing": [
+                "22c2fb9a0c9d:.aikit/codebase_map.md#1",
+                "22c2fb9a0c9d:.aikit/codebase_map.md#2",
+                "22c2fb9a0c9d:.aikit/codebase_map.md#3",
+                "22c2fb9a0c9d:.aikit/decisions.md#1",
+                "22c2fb9a0c9d:.aikit/ui_history.json#1",
+                "22c2fb9a0c9d:README.md#1",
+                "22c2fb9a0c9d:README.md#2",
+                "22c2fb9a0c9d:static/css/style.css#1",
+                "22c2fb9a0c9d:static/js/renderer.js#1",
+                "22c2fb9a0c9d:static/js/ui.js#1",
+                "22c2fb9a0c9d:static/js/ui.js#2",
+                "34f85ee7437b:.aikit/codebase_map.md#1",
+                "34f85ee7437b:.aikit/codebase_map.md#2",
+                "34f85ee7437b:.aikit/codebase_map.md#3",
+                "34f85ee7437b:.aikit/ui_history.json#1",
+                "34f85ee7437b:README.md#1",
+                "34f85ee7437b:static/js/engine.js#1",
+                "34f85ee7437b:static/js/engine.js#2",
+                "34f85ee7437b:tools/ai_harness.py#1",
+                "34f85ee7437b:tools/inspect_ui.py#1",
+                "34f85ee7437b:tools/inspect_ui.py#2"
+              ],
+              "unknown": []
+            },
+            "findings": [
+              {
+                "code": "review-sellable-crown-quest-relic",
+                "category": "review",
+                "severity": "medium",
+                "path": "static/js/engine.js",
+                "line": 1783,
+                "message": "The Sell list includes the Crown of Eternity, the legendary boss-drop quest reward. The victory modal is delayed by 1.5s, so a fast player can reach a nearby merchant and sell the one relic the ending checks, for 100 gold; the victory text then reports the crown left on the altar. Filter crown_eternity (or all quest items) out of the sellable list.",
+                "evidence": "const sellable = this.player.inventory.map((item, index) => ({",
+                "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+                "hunk": "22c2fb9a0c9d:static/js/engine.js#1",
+                "symbol": "",
+                "introduced": true,
+                "reproducible": false,
+                "fixable": false,
+                "interaction": "",
+                "repaired": false,
+                "source": "review",
+                "patch_old": "",
+                "patch_new": ""
+              },
+              {
+                "code": "review-shop-tabs-missing-aria",
+                "category": "improvement",
+                "severity": "low",
+                "path": "static/js/ui.js",
+                "line": 391,
+                "message": "The shop declares role=tablist but its Buy/Sell buttons have no role=tab or aria-selected, and the panes have no role=tabpanel or aria-labelledby. A screen reader sees two ordinary buttons inside a tablist and cannot tell which pane is active. Add the tab/tabpanel roles, bind each tab to its pane, and update aria-selected with the active class.",
+                "evidence": "<div class=\"shop-tabs\" role=\"tablist\">",
+                "commit": "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+                "hunk": "22c2fb9a0c9d:static/js/ui.js#3",
+                "symbol": "",
+                "introduced": true,
+                "reproducible": false,
+                "fixable": false,
+                "interaction": "",
+                "repaired": false,
+                "source": "review",
+                "patch_old": "",
+                "patch_new": ""
+              }
+            ]
+          },
+          "skipped": [],
+          "tests": {},
+          "gates": {},
+          "timestamp": "2026-10-30T18:25:22",
+          "dirty_targets": []
+        }
+      ]
     }
   ],
   "stage": 1,
-  "window": 3,
+  "window": 2,
   "audited_commits": [
-    "a6af208e7ef77e016633d0a0f2144b9a104c8dba",
-    "d32c47399a63f8ebfb493bd242189420025ea462",
-    "fa07f1afb313c2e371106d3871d17cbb259ce269"
+    "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+    "34f85ee7437b064d2960ae3662488d85d57e9ae4"
   ],
   "last_audit": {
-    "run": "run-4",
+    "run": "run-5",
     "stage": 1,
-    "window": 3,
+    "window": 2,
     "commits": [
-      "a6af208e7ef77e016633d0a0f2144b9a104c8dba",
-      "d32c47399a63f8ebfb493bd242189420025ea462",
-      "fa07f1afb313c2e371106d3871d17cbb259ce269"
+      "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+      "34f85ee7437b064d2960ae3662488d85d57e9ae4"
     ],
     "new_commits": [
-      "a6af208e7ef77e016633d0a0f2144b9a104c8dba",
-      "d32c47399a63f8ebfb493bd242189420025ea462",
-      "fa07f1afb313c2e371106d3871d17cbb259ce269"
+      "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+      "34f85ee7437b064d2960ae3662488d85d57e9ae4"
     ],
     "prior_commits": [],
     "findings": [],
     "repairs": [],
     "counts": {},
-    "reviewed": 12,
+    "reviewed": 10,
     "review": {
       "status": "unreviewed",
       "rejected": [],
       "files": [
         ".aikit/codebase_map.md",
         ".aikit/decisions.md",
-        ".aikit/project.json",
         ".aikit/ui_history.json",
         "README.md",
-        "static/index.html",
-        "static/js/dungeon.js",
+        "static/css/style.css",
         "static/js/engine.js",
         "static/js/renderer.js",
-        "tests/test_ai_harness.py",
+        "static/js/ui.js",
         "tools/ai_harness.py",
         "tools/inspect_ui.py"
       ],
-      "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-4-1-a6af208e7ef7.md",
+      "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-5-1-22c2fb9a0c9d.md",
       "redacted": 0,
       "reason": "awaiting the reviewer's findings",
       "findings": []
@@ -6819,47 +7143,43 @@
     "skipped": [],
     "tests": {},
     "gates": {},
-    "timestamp": "2026-10-30T18:00:07",
+    "timestamp": "2026-10-30T18:25:22",
     "dirty_targets": []
   },
   "history": [
     {
-      "run": "run-4",
+      "run": "run-5",
       "stage": 1,
-      "window": 3,
+      "window": 2,
       "commits": [
-        "a6af208e7ef77e016633d0a0f2144b9a104c8dba",
-        "d32c47399a63f8ebfb493bd242189420025ea462",
-        "fa07f1afb313c2e371106d3871d17cbb259ce269"
+        "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+        "34f85ee7437b064d2960ae3662488d85d57e9ae4"
       ],
       "new_commits": [
-        "a6af208e7ef77e016633d0a0f2144b9a104c8dba",
-        "d32c47399a63f8ebfb493bd242189420025ea462",
-        "fa07f1afb313c2e371106d3871d17cbb259ce269"
+        "22c2fb9a0c9de465ce9c3ebb23d69e7c5a4e7f62",
+        "34f85ee7437b064d2960ae3662488d85d57e9ae4"
       ],
       "prior_commits": [],
       "findings": [],
       "repairs": [],
       "counts": {},
-      "reviewed": 12,
+      "reviewed": 10,
       "review": {
         "status": "unreviewed",
         "rejected": [],
         "files": [
           ".aikit/codebase_map.md",
           ".aikit/decisions.md",
-          ".aikit/project.json",
           ".aikit/ui_history.json",
           "README.md",
-          "static/index.html",
-          "static/js/dungeon.js",
+          "static/css/style.css",
           "static/js/engine.js",
           "static/js/renderer.js",
-          "tests/test_ai_harness.py",
+          "static/js/ui.js",
           "tools/ai_harness.py",
           "tools/inspect_ui.py"
         ],
-        "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-4-1-a6af208e7ef7.md",
+        "packet": "C:\\Users\\Yunus-Emre\\Desktop\\portable_agent_kit\\projects\\crypt-crawler\\.aikit\\reforge.reviews\\stage-run-5-1-22c2fb9a0c9d.md",
         "redacted": 0,
         "reason": "awaiting the reviewer's findings",
         "findings": []
@@ -6867,7 +7187,7 @@
       "skipped": [],
       "tests": {},
       "gates": {},
-      "timestamp": "2026-10-30T18:00:07",
+      "timestamp": "2026-10-30T18:25:22",
       "dirty_targets": []
     }
   ]
