@@ -861,18 +861,36 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         """() => {
             const e = window.gameEngine;
             e.monsters = [];
+            e.player.inventory.push({
+                id: "crown_eternity", name: "Crown of Eternity", type: "ring",
+                rarity: "legendary", description: "", stats: {},
+            });
             e.openMerchantShop();
+            const tabs = Array.from(document.querySelectorAll(".shop-tab"));
+            const panes = Array.from(document.querySelectorAll(".shop-pane"));
+            const sellRows = Array.from(
+                document.querySelectorAll('[data-shop-pane="sell"] .shop-item-row')
+            );
             const before = {
                 gold: e.player.gold,
                 count: e.player.inventory.length,
                 shopOpen: e.ui.shopOpen,
                 sellButtons: document.querySelectorAll(".btn-sell").length,
+                crownInSellRows: sellRows.some((row) => row.textContent.includes("Crown of Eternity")),
+                tabRoles: tabs.map((tab) => tab.getAttribute("role")),
+                tabSelected: tabs.map((tab) => tab.getAttribute("aria-selected")),
+                paneRoles: panes.map((pane) => pane.getAttribute("role")),
+                paneLabelledBy: panes.map((pane) => pane.getAttribute("aria-labelledby")),
             };
             const tab = document.querySelector('[data-shop-tab="sell"]');
             if (!tab) return { skipped: true, before };
             tab.click();
+            const afterTab = {
+                selected: tabs.map((tab) => tab.getAttribute("aria-selected")),
+                active: tabs.map((tab) => tab.classList.contains("active")),
+            };
             const btn = document.querySelector(".btn-sell");
-            if (!btn) return { skipped: true, before, tab: e.ui.shopTab };
+            if (!btn) return { skipped: true, before, afterTab, tab: e.ui.shopTab };
             btn.click();
             const entries = Array.from(document.querySelectorAll("#chronicleLog .log-entry"));
             const after = {
@@ -882,6 +900,7 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
                 tab: e.ui.shopTab,
                 sellPaneHidden: document.querySelector('[data-shop-pane="sell"]').classList.contains("hidden"),
                 sellButtons: document.querySelectorAll(".btn-sell").length,
+                crownHeld: e.player.inventory.some((item) => item.id === "crown_eternity"),
                 log: entries.length ? entries[entries.length - 1].textContent.trim() : "",
             };
             e.ui.closeModal();
@@ -893,16 +912,19 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
                 unchanged: e.player.gold === guardGold
                     && e.player.inventory.length === guardCount,
             };
-            return { skipped: false, before, after, closed, guarded };
+            return { skipped: false, before, afterTab, after, closed, guarded };
         }"""
     )
     checks.append(_check(
         "merchant_sells_a_backpack_item",
         sale.get("skipped") is not True
         and sale["before"]["shopOpen"] is True
+        and sale["before"]["crownInSellRows"] is False
+        and sale["before"]["sellButtons"] == sale["before"]["count"] - 1
         and sale["after"]["gold"] > sale["before"]["gold"]
         and sale["after"]["count"] == sale["before"]["count"] - 1
         and sale["after"]["sellButtons"] == sale["before"]["sellButtons"] - 1
+        and sale["after"]["crownHeld"] is True
         and sale["after"]["shopOpen"] is True
         and sale["after"]["tab"] == "sell"
         and sale["after"]["sellPaneHidden"] is False
@@ -910,6 +932,17 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         and sale["closed"]["shopOpen"] is False
         and sale["closed"]["modalOpen"] is False
         and sale["guarded"]["unchanged"] is True,
+        sale,
+    ))
+    checks.append(_check(
+        "merchant_tabs_are_accessible",
+        sale.get("skipped") is not True
+        and sale["before"]["tabRoles"] == ["tab", "tab"]
+        and sale["before"]["tabSelected"] == ["true", "false"]
+        and sale["before"]["paneRoles"] == ["tabpanel", "tabpanel"]
+        and sale["before"]["paneLabelledBy"] == ["shopTabBuy", "shopTabSell"]
+        and sale["afterTab"]["selected"] == ["false", "true"]
+        and sale["afterTab"]["active"] == [False, True],
         sale,
     ))
     checks.append(_check("no_page_errors_after_sell", not harness.errors, harness.errors))

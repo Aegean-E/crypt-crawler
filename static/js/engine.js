@@ -1780,11 +1780,9 @@ export class GameEngine {
   }
 
   _refreshMerchantShop(activeTab = "buy") {
-    const sellable = this.player.inventory.map((item, index) => ({
-      item,
-      index,
-      price: this._sellPrice(item),
-    }));
+    const sellable = this.player.inventory
+      .map((item, index) => ({ item, index, price: this._sellPrice(item) }))
+      .filter((entry) => entry.item.id !== "crown_eternity");
     this.ui.showMerchantShopModal(
       this.merchantStock,
       this.player.gold,

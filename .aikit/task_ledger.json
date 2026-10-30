@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-020",
+    "task_id": "CC-021",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793373794.1195142,
-    "owner": "opencode:crypt-crawler-cc020",
-    "started_by": "opencode:crypt-crawler-cc020",
+    "updated_at": 1793374427.9141724,
+    "owner": "opencode:crypt-crawler-cc021",
+    "started_by": "opencode:crypt-crawler-cc021",
     "continuations": [],
-    "completed_at": 1793373798.8680947
+    "completed_at": 1793374436.0459523
   },
   "checkpoints": [
     {
@@ -505,6 +505,49 @@
       "timestamp": 1793373922.8609214,
       "timestamp_str": "2026-10-30 18:25:22",
       "agent": "opencode"
+    },
+    {
+      "task_id": "CC-021",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Exclude crown_eternity from the merchant sell list while preserving real inventory indices; [2/2] add role=tab, aria-selected, role=tabpanel and aria-labelledby to the Buy/Sell tabs, prove the crown exclusion and ARIA in the harness and inspector, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793374072.3866246,
+      "timestamp_str": "2026-10-30 18:27:52",
+      "agent": "opencode:crypt-crawler-cc021",
+      "impact_assessment": {
+        "why": "Reforge run-5 accepted two merchant findings: the one legendary quest relic can be sold for 100 gold during the 1.5s victory delay, and the tablist has no tab/tabpanel roles or aria-selected, so assistive technology cannot announce the active pane",
+        "benefits": "The Crown of Eternity stays a trophy and the victory text cannot be contradicted by a sale; Buy/Sell is announced as a real tab pair and the selected pane is exposed",
+        "risks": "contract: the sell list omits crown_eternity, tab markup gains ARIA attributes; dependency: none; concurrency: none; state: no save change; UI: engine.js and ui.js are in the game-ui surface",
+        "mitigation": "Selftest injects a crown, opens the shop and asserts it is absent while a real backpack item still sells; inspector checks tab roles and aria-selected; UI guard plus unit, mechanics and gate set"
+      }
+    },
+    {
+      "task_id": "CC-021",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Sell list maps before filtering crown_eternity so real indices stay valid; Buy/Sell tabs now expose role=tab, aria-selected, aria-controls and tabpanel/aria-labelledby, updating aria-selected on click. Harness injects a crown and proves it is absent while a real item sells, plus ARIA switching (37/37); inspector repeats the crown/ARIA proof (69/69, 16 screenshots, 0 console errors); UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793374427.9141724,
+      "timestamp_str": "2026-10-30 18:33:47",
+      "agent": "opencode:crypt-crawler-cc021",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-021 then check --strict",
+        "evidence": "71 tests, harness 37/37, inspector 69/69, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-021",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-021' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793374436.0459557,
+      "timestamp_str": "2026-10-30 18:33:56",
+      "agent": "opencode:crypt-crawler-cc021"
     }
   ]
 }

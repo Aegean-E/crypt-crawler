@@ -1143,23 +1143,53 @@ def run_inspection(
                         sale = page.evaluate(
                             """() => {
                                 const e = window.gameEngine;
+                                e.ui.closeModal();
+                                e.player.inventory.push({
+                                    id: "crown_eternity", name: "Crown of Eternity", type: "ring",
+                                    rarity: "legendary", description: "", stats: {},
+                                });
+                                e.openMerchantShop();
+                                const tabs = Array.from(document.querySelectorAll(".shop-tab"));
+                                const panes = Array.from(document.querySelectorAll(".shop-pane"));
+                                const sellRows = Array.from(
+                                    document.querySelectorAll('[data-shop-pane="sell"] .shop-item-row')
+                                );
                                 const before = {
                                     gold: e.player.gold,
                                     count: e.player.inventory.length,
                                     sellButtons: document.querySelectorAll(".btn-sell").length,
+                                    crownInSellRows: sellRows.some(
+                                        (row) => row.textContent.includes("Crown of Eternity")
+                                    ),
+                                    tabRoles: tabs.map((tab) => tab.getAttribute("role")),
+                                    tabSelected: tabs.map((tab) => tab.getAttribute("aria-selected")),
+                                    paneRoles: panes.map((pane) => pane.getAttribute("role")),
+                                    paneLabelledBy: panes.map((pane) => pane.getAttribute("aria-labelledby")),
                                 };
                                 const tab = document.querySelector('[data-shop-tab="sell"]');
                                 if (!tab) return { skip: false, hasTab: false, before };
                                 tab.click();
+                                const afterTab = {
+                                    selected: tabs.map((tab) => tab.getAttribute("aria-selected")),
+                                    active: tabs.map((tab) => tab.classList.contains("active")),
+                                };
                                 const btn = document.querySelector(".btn-sell");
-                                if (!btn) return { skip: true, hasTab: true, before, tab: e.ui.shopTab };
+                                if (!btn) return { skip: true, hasTab: true, before, afterTab, tab: e.ui.shopTab };
                                 btn.click();
+                                const crownHeld = e.player.inventory.some((item) => item.id === "crown_eternity");
+                                const afterCount = e.player.inventory.length;
+                                const crownIndex = e.player.inventory.findIndex(
+                                    (item) => item.id === "crown_eternity"
+                                );
+                                if (crownIndex >= 0) e.player.inventory.splice(crownIndex, 1);
                                 return {
                                     skip: false,
                                     hasTab: true,
                                     before,
+                                    afterTab,
+                                    crownHeld,
                                     gold: e.player.gold,
-                                    count: e.player.inventory.length,
+                                    count: afterCount,
                                     shopOpen: e.ui.shopOpen,
                                     tab: e.ui.shopTab,
                                     sellPaneHidden: document.querySelector('[data-shop-pane="sell"]').classList.contains("hidden"),
@@ -1189,6 +1219,26 @@ def run_inspection(
                                     and sale.get("shopOpen") is True
                                     and sale.get("tab") == "sell"
                                     and sale.get("sellPaneHidden") is False
+                                ),
+                            }
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "merchant_tabs_and_crown_exclusion": sale.get("skip") is True
+                                or (
+                                    sale.get("hasTab") is True
+                                    and sale.get("before", {}).get("crownInSellRows") is False
+                                    and sale.get("before", {}).get("sellButtons")
+                                    == sale.get("before", {}).get("count", 0) - 1
+                                    and sale.get("crownHeld") is True
+                                    and sale.get("before", {}).get("tabRoles") == ["tab", "tab"]
+                                    and sale.get("before", {}).get("tabSelected") == ["true", "false"]
+                                    and sale.get("before", {}).get("paneRoles") == ["tabpanel", "tabpanel"]
+                                    and sale.get("before", {}).get("paneLabelledBy")
+                                    == ["shopTabBuy", "shopTabSell"]
+                                    and sale.get("afterTab", {}).get("selected") == ["false", "true"]
+                                    and sale.get("afterTab", {}).get("active") == [False, True]
                                 ),
                             }
                         )

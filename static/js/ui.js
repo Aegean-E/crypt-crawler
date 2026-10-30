@@ -389,14 +389,14 @@ export class UIController {
           <span>Your Gold: <strong class="shop-gold">🪙 ${playerGold}</strong></span>
         </div>
         <div class="shop-tabs" role="tablist">
-          <button class="shop-tab${activeTab === "buy" ? " active" : ""}" data-shop-tab="buy" type="button">Buy</button>
-          <button class="shop-tab${activeTab === "sell" ? " active" : ""}" data-shop-tab="sell" type="button">Sell</button>
+          <button class="shop-tab${activeTab === "buy" ? " active" : ""}" data-shop-tab="buy" id="shopTabBuy" role="tab" aria-selected="${activeTab === "buy"}" aria-controls="shopPaneBuy" type="button">Buy</button>
+          <button class="shop-tab${activeTab === "sell" ? " active" : ""}" data-shop-tab="sell" id="shopTabSell" role="tab" aria-selected="${activeTab === "sell"}" aria-controls="shopPaneSell" type="button">Sell</button>
         </div>
-        <div class="shop-pane${activeTab === "buy" ? "" : " hidden"}" data-shop-pane="buy">
+        <div class="shop-pane${activeTab === "buy" ? "" : " hidden"}" data-shop-pane="buy" id="shopPaneBuy" role="tabpanel" aria-labelledby="shopTabBuy">
           <h3 class="shop-section-title">Wares for Sale</h3>
           ${itemsHtml}
         </div>
-        <div class="shop-pane${activeTab === "sell" ? "" : " hidden"}" data-shop-pane="sell">
+        <div class="shop-pane${activeTab === "sell" ? "" : " hidden"}" data-shop-pane="sell" id="shopPaneSell" role="tabpanel" aria-labelledby="shopTabSell">
           <h3 class="shop-section-title">Sell from Backpack</h3>
           <p class="shop-hint">Grimbold pays a fair price for loot you no longer need.</p>
           ${sellHtml}
@@ -430,6 +430,7 @@ export class UIController {
         this.shopTab = target;
         this.modalBody.querySelectorAll(".shop-tab").forEach((other) => {
           other.classList.toggle("active", other === tab);
+          other.setAttribute("aria-selected", String(other === tab));
         });
         this.modalBody.querySelectorAll(".shop-pane").forEach((pane) => {
           pane.classList.toggle("hidden", pane.getAttribute("data-shop-pane") !== target);

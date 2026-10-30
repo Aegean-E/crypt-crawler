@@ -147,6 +147,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: The economy now has both a source and a sink: players can clear a full backpack without discarding value, and the price table keeps selling below the merchant's buy prices. No save field changes because gold and inventory already persist. The harness proves a real Sell-tab click (gold up, inventory down, tab preserved, closed-shop call refused), and the inspector adds the same sale to the shop scenario.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one clearly labelled tab, no prompt) and PRINCIPLE-014 (browser-level regression coverage for the new branch).
 
+### ADR-020: Quest Relic Protection and Accessible Shop Tabs
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The run-5 review accepted two merchant follow-ups. The Sell list included the Crown of Eternity, so a fast player could sell the one legendary quest relic for 100 gold during the 1.5s victory delay and contradict the ending text. The Buy/Sell `role="tablist"` also contained ordinary buttons with no tab/tabpanel roles or `aria-selected`, so assistive technology could not announce the active pane.
+- **Decision**: Map the backpack to `{ item, index, price }` first and then filter out `crown_eternity`, which preserves the real inventory indices for every remaining item. Give each shop tab `role="tab"`, `aria-selected`, `aria-controls` and an id, give each pane `role="tabpanel"` and `aria-labelledby`, and update `aria-selected` alongside the active class when a tab is clicked.
+- **Consequences**: The crown remains a trophy and the ending can no longer be contradicted by a sale; every other item still sells at the correct index. Screen readers now hear a real two-tab set and which pane is selected. The harness proves a crown-bearing backpack shows one fewer Sell button, the crown survives a sale, and the ARIA attributes switch with the tab; the inspector checks the same in the shop scenario.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns both rules and the harness drives them), PRINCIPLE-011 (keyboard and assistive accessibility without a prompt) and PRINCIPLE-014 (browser-level regression coverage for both findings).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
