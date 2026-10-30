@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-026",
+    "task_id": "CC-027",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793378975.5013907,
-    "owner": "opencode:crypt-crawler-cc026",
-    "started_by": "opencode:crypt-crawler-cc026",
+    "updated_at": 1793379488.8214452,
+    "owner": "opencode:crypt-crawler-cc027",
+    "started_by": "opencode:crypt-crawler-cc027",
     "continuations": [],
-    "completed_at": 1793378985.2003958
+    "completed_at": 1793379496.8561308
   },
   "checkpoints": [
     {
@@ -785,6 +785,49 @@
       "timestamp": 1793378985.200399,
       "timestamp_str": "2026-10-30 19:49:45",
       "agent": "opencode:crypt-crawler-cc026"
+    },
+    {
+      "task_id": "CC-027",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Add an effective-FOV helper so standing within two tiles of a wall sconce restores the lantern to 7 tiles, and use it on start, resume, descent and every turn; [2/2] prove Deep Fog plus sconce in the harness, update the omen/guide/README text and ADR-026, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793379224.2683506,
+      "timestamp_str": "2026-10-30 19:53:44",
+      "agent": "opencode:crypt-crawler-cc027",
+      "impact_assessment": {
+        "why": "The guide tells players to stay near wall sconces for light, but the fog-of-war radius is owned only by the omen, so Deep Fog is a flat 5-tile penalty with no counterplay and the documented promise is false",
+        "benefits": "Sconces become a real tactical light source, Deep Fog gains a positional counterplay, and the guide and README match the shipped rule",
+        "risks": "contract: the fog radius becomes an effective value derived from the omen and nearby sconces; dependency: none; concurrency: none; state: no save change; UI: engine.js is in the game-ui surface",
+        "mitigation": "Pure _effectiveFov helper with a two-tile Manhattan rule, one deterministic seed-4242 Deep Fog harness check near versus far from a sconce, text updates, UI guard and full gates"
+      }
+    },
+    {
+      "task_id": "CC-027",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Sconce light shipped: an effective-FOV helper keeps the omen radius away from sconces and restores 7 within two Manhattan tiles, applied on start, resume, descent and every turn; Deep Fog omen/guide/README now state the rule. Harness proves base 5 -> near 7 -> away 5 and 52 vs 36 visible tiles (56/56); inspector 75/75, 16 screenshots, 0 console errors; UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793379488.8214452,
+      "timestamp_str": "2026-10-30 19:58:08",
+      "agent": "opencode:crypt-crawler-cc027",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-027 then check --strict",
+        "evidence": "71 tests, harness 56/56, inspector 75/75, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-027",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-027' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793379496.8561332,
+      "timestamp_str": "2026-10-30 19:58:16",
+      "agent": "opencode:crypt-crawler-cc027"
     }
   ]
 }

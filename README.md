@@ -37,7 +37,7 @@ python tools/ai_harness.py play --seed 42 --class paladin --difficulty hard --ac
 python tools/ai_harness.py play --script run.json
 python tools/ai_harness.py selftest
 ```
-`catalog` prints the classes, their passives, the five deck abilities, every action field, the pact choices, the difficulty keys and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed, class, difficulty and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, class passives, difficulty scaling and resume, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
+`catalog` prints the classes, their passives, the five deck abilities, every action field, the pact choices, the difficulty keys and the state keys. `play` drives the shipped JavaScript engine in headless Edge, installs a seeded `Math.random`, and prints one JSON object per run: each step plus the final state (player, monsters, props, log tail, `layout_hash`). Because the RNG is seeded, the same seed, class, difficulty and action list reproduce the same dungeon, so an agent can test a mechanic, change the code, and diff the result; `layout_hash` fingerprints every seeded decision, including rooms, monsters, props, merchants, traps and sconces. `selftest` proves the harness and the mechanics it exposes (layout determinism, deck labels per class, class passives, sconce light, difficulty scaling and resume, all three pact bargains surviving turns, boss damage, save round-trip, Scroll of Inferno consumption, number-row hotkeys casting instead of moving, numpad movement, single-flight floor descent and new-run precedence) and exits non-zero on any failure. Script file shape:
 ```json
 {"seed": 42, "depth": 1, "class": "rogue", "difficulty": "hard",
  "actions": [{"action": "move", "dx": 1, "dy": 0}, {"action": "ability", "slot": 2}]}
@@ -75,7 +75,9 @@ New Game offers **Normal** and **Hard**. Hard multiplies enemy max HP by 1.4, en
 The passive is printed on each class card before you choose, and the in-game guide repeats it.
 
 ### 🎭 Floor Omens, Mobs and Story
-Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.
+Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles, or 7 near a wall sconce), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.
+
+Wall sconces are real light sources: standing within two tiles restores the lantern to 7, so Deep Fog has a positional counterplay instead of a flat penalty.
 
 | Enemy | From | Behaviour |
 |---|---|---|

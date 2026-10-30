@@ -21,7 +21,7 @@ export const OMENS = [
   },
   {
     id: "deep_fog", name: "Deep Fog", icon: "🌫️",
-    desc: "The air is thick. Your lantern reaches only 5 tiles.",
+    desc: "The air is thick. Your lantern reaches only 5 tiles; a nearby wall sconce restores it to 7.",
     atkMult: 1, fov: 5, goldMult: 1, extraFoe: 0,
   },
   {
@@ -160,7 +160,7 @@ export class GameEngine {
         this.sigilCount = Number.isFinite(saved.sigilCount) ? saved.sigilCount : 0;
         sounds.setBiome(this.dungeon.biome);
         this._applyOmen({ announce: false, extraFoe: false });
-        this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
+        this.dungeon.updateFOV(this.player.x, this.player.y, this._effectiveFov());
         this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
         this.ui.renderBounties(this.bounties);
         this.ui.updateJournal(this.loreUnlocked.length, this.loreEntries.length);
@@ -204,7 +204,7 @@ export class GameEngine {
 
     // Initialize FOV
     this._applyOmen();
-    this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
+    this.dungeon.updateFOV(this.player.x, this.player.y, this._effectiveFov());
 
     // Initial UI update
     this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
@@ -718,14 +718,14 @@ export class GameEngine {
            <li><strong>Journal:</strong> Every discovery is recorded in the codex and survives death.</li>
            <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
-           <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to reveal them or to disarm a revealed trap beside you for a little XP, or stay near wall sconces for light!</li>
+           <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to reveal them or to disarm a revealed trap beside you for a little XP. Wall sconces within two tiles restore the lantern to 7 tiles, even in Deep Fog!</li>
            <li><strong>Gilded Mimics:</strong> Some chests are teeth in a wooden lid; open one and fight instead of looting.</li>
            <li><strong>Class Passives:</strong> Paladin Zeal restores HP/MP on a kill; Rogue Executioner hits foes below 30% HP harder; Mage Arcane Focus boosts spell damage.</li>
          </ul>
          <br>
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
          <br>
-         <p><strong>Floor Omens:</strong> every floor carries one omen — Blood Moon (enemies hit 25% harder), Deep Fog (lantern reaches 5 tiles), Gilded Crypt (+50% chest and urn gold) or Restless Dead (one extra enemy). The omen pill in the header always names the current one.</p>
+         <p><strong>Floor Omens:</strong> every floor carries one omen — Blood Moon (enemies hit 25% harder), Deep Fog (lantern 5 tiles, or 7 near a sconce), Gilded Crypt (+50% chest and urn gold) or Restless Dead (one extra enemy). The omen pill in the header always names the current one.</p>
          <p><strong>Enemies:</strong> Skeletal Archers shoot across open rooms, Crypt Hounds lunge two tiles a turn, and Pact-Bound Wraiths rise from Avarice.</p>
          <p><strong>Shortcuts:</strong> <strong>?</strong> opens this guide, <strong>R</strong> searches for traps, <strong>Escape</strong> closes any dialog, and the 🎞️ button toggles reduced motion (persisted).</p>`
       );
@@ -919,7 +919,7 @@ export class GameEngine {
 
       sounds.setBiome(this.dungeon.biome);
       this._applyOmen();
-      this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius);
+      this.dungeon.updateFOV(this.player.x, this.player.y, this._effectiveFov());
       this.ui.updateHero(this.player, this.turn, this.depth, this.kills);
       this.ui.renderBounties(this.bounties);
       this.sigilCount = 0;
@@ -1179,6 +1179,15 @@ export class GameEngine {
 
   _applyDifficulty() {
     for (const monster of this.monsters || []) this._scaleMonster(monster);
+  }
+
+  _effectiveFov() {
+    const base = this.fovRadius || 7;
+    if (!this.dungeon || !this.player) return base;
+    const nearSconce = (this.dungeon.sconces || []).some((sconce) =>
+      Math.abs(sconce.x - this.player.x) + Math.abs(sconce.y - this.player.y) <= 2
+    );
+    return nearSconce ? Math.max(base, 7) : base;
   }
 
   _omenFor(seed, depth) {
@@ -2318,7 +2327,7 @@ export class GameEngine {
 
   finishPlayerTurn() {
     this.turn += 1;
-    this.dungeon.updateFOV(this.player.x, this.player.y, this.fovRadius || 7);
+    this.dungeon.updateFOV(this.player.x, this.player.y, this._effectiveFov());
 
     // 1. Tick Player Status Effects
     this._tickPlayerStatuses();

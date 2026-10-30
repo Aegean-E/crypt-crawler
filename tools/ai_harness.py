@@ -667,6 +667,57 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     checks.append(_check("no_page_errors_after_arcane_focus", not harness.errors, harness.errors))
     page.context.close()
 
+    # Sconce light: Deep Fog is 5 tiles unless standing within two of a wall sconce.
+    page = harness.open_page(4242)
+    sconce = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const d = e.dungeon;
+            const sconces = d.sconces || [];
+            let near = null;
+            let far = null;
+            for (let y = 1; y < d.height - 1 && (!near || !far); y += 1) {
+                for (let x = 1; x < d.width - 1 && (!near || !far); x += 1) {
+                    if (!d.isWalkable(x, y)) continue;
+                    const close = sconces.some(
+                        (s) => Math.abs(s.x - x) + Math.abs(s.y - y) <= 2
+                    );
+                    const distant = sconces.every(
+                        (s) => Math.abs(s.x - x) + Math.abs(s.y - y) > 2
+                    );
+                    if (close && !near) near = { x, y };
+                    if (distant && !far) far = { x, y };
+                }
+            }
+            if (!near || !far) return { skipped: true };
+            const base = e.fovRadius;
+            e.player.x = near.x;
+            e.player.y = near.y;
+            const nearFov = e._effectiveFov();
+            d.updateFOV(near.x, near.y, nearFov);
+            const nearVisible = d.visible.size;
+            e.player.x = far.x;
+            e.player.y = far.y;
+            const farFov = e._effectiveFov();
+            d.updateFOV(far.x, far.y, farFov);
+            return {
+                skipped: false, base, nearFov, farFov, near, far,
+                nearVisible, farVisible: d.visible.size,
+            };
+        }"""
+    )
+    checks.append(_check(
+        "sconce_light_restores_deep_fog_radius",
+        sconce.get("skipped") is not True
+        and sconce["base"] == 5
+        and sconce["nearFov"] == 7
+        and sconce["farFov"] == 5
+        and sconce["nearVisible"] > sconce["farVisible"],
+        sconce,
+    ))
+    checks.append(_check("no_page_errors_after_sconce", not harness.errors, harness.errors))
+    page.context.close()
+
     page = harness.open_page(seed)
     before = harness.state(page)
     after = page.evaluate(

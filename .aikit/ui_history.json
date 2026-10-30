@@ -199,5 +199,19 @@
     "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
     "final_snapshot_entries": 198,
     "surface_digest": "e6978a8d99a4d3344f623e71a2e320dce314aebcb66a43250c72716759e99384"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "4ebb7738a86945ed2a25029fc09d12131bfefdaf",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793379233.465,
+    "finished_at": 1793379323.80448,
+    "strikes": 0,
+    "reviewer": "headless sconce probe (Deep Fog base 5 -> 7 near a sconce, back to 5 away; 52 vs 36 visible tiles) + omen/guide text review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "b1207d9a0ef093d2011922af975684be102982d3d4f6cfc6d862f9ea81e8c29c",
+    "final_snapshot_entries": 198,
+    "surface_digest": "67636385efa871d4ccc80cbac223624ce4d81eddd6111e83b0f5e21e979853d8"
   }
 ]

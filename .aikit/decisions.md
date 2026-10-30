@@ -195,6 +195,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: Class choice now changes how a run is played, not only how its numbers look. The passives are additive rules and do not change the save format. The harness proves Zeal's heal, Executioner's threshold multiplier and Arcane Focus's multiplier plus a real Fireball; the inspector checks all three class cards print a passive.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns each rule and the harness drives it), PRINCIPLE-011 (one passive line on the class card, no prompt) and PRINCIPLE-014 (deterministic coverage for all three passives).
 
+### ADR-026: Sconce Light and Deep Fog Counterplay
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The guide told players to stay near wall sconces for light, but the fog-of-war radius was owned only by the floor omen. Deep Fog was therefore a flat 5-tile penalty and the documented sconce promise was false.
+- **Decision**: Add a pure `_effectiveFov` helper: start from the omen radius, and if the player is within two Manhattan tiles of any wall sconce, return at least 7. Use the effective radius on start, resume, descent and every turn instead of the raw `fovRadius`. Update the Deep Fog description, the guide and the README to state the rule.
+- **Consequences**: Deep Fog now has a positional counterplay: crossing to a lit wall restores the full lantern, while the rest of the floor stays dark. Normal floors are unchanged because their base radius is already 7. No save field changes; the rule is derived from the existing player and sconce positions. The harness proves base 5, near-sconce 7, away 5, and a visibly larger explored area; the inspector remains green.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (the guide's promise is now true) and PRINCIPLE-014 (deterministic near/far radius coverage).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
