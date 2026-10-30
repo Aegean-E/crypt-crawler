@@ -131,6 +131,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: The hash changes once for every existing seed because the material grew; afterwards any seeded room, biome, merchant, trap or sconce change fails a determinism test. The scroll branch is now proven through the shipped engine and the same JSON action path an agent uses, so potions, scrolls and gear are playable from `play`, not only from the selftest. An out-of-range item index is a reported action failure instead of a silent no-op. The harness output gains three read-only dungeon fields, and no game save format or player-facing rule changes.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (state parity between the shipped engine and the harness), PRINCIPLE-014 (failing-first coverage for a previously untested branch) and PRINCIPLE-015 (browser-level proof of a consumable).
 
+### ADR-018: Turn-Cost Trap Search and Revealed-Trap Rendering
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Traps were concealed until the player stepped on one, then dealt 8–13 damage. There was no counterplay beyond memorizing a floor or accepting chip damage, and the renderer drew only traps that had already sprung. The tactical deck also had no information-gathering action.
+- **Decision**: Add `discovered` to the client trap model (the save format gains an additive boolean, and old saves default to false). Add `searchForTraps()`: it spends one turn, reveals every untriggered trap within three tiles that is currently visible to the lantern, logs the count, persists the revealed state, and never disarms the trap. Add the Search deck button and the `R` hotkey. Draw a revealed trap with a dashed amber grille and a warning core, mark it on the minimap, explain it in the hover card, and keep the existing spike burst for a triggered trap. Expose `search` as a harness action and prove it in the selftest; add a three-viewport inspector check and screenshot.
+- **Consequences**: Searching is a real turn-cost decision: it buys route information but not safety, and Deep Fog shortens its effective range because it shares the lantern's line of sight. Hidden traps still surprise a player who does not search, while a revealed trap is legible and avoidable. The server needs no change because it sends coordinates and the client owns discovery state. The harness grows to 32 checks and the full inspector audit to 67 checks.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and the harness drives it), PRINCIPLE-011 (one visible button and one hotkey, no prompt), PRINCIPLE-014 (harness, unit and save coverage) and PRINCIPLE-015 (three-viewport browser proof with a screenshot).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

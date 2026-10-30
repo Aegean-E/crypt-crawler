@@ -21,6 +21,8 @@ export class DungeonRenderer {
     this.hoverTile = null;
     this.reducedMotion = false;
     this.emberColor = "#dd6b20";
+    this.trapColor = "#d69e2e";
+    this.warningColor = "#f6ad55";
   }
 
   addJackpotExplosion(x, y) {
@@ -237,7 +239,7 @@ export class DungeonRenderer {
       }
     }
     for (const trap of dungeon.traps) {
-      if (dungeon.isVisible(trap.x, trap.y) && trap.triggered) {
+      if (dungeon.isVisible(trap.x, trap.y) && (trap.discovered || trap.triggered)) {
         this._drawTrap(ctx, trap, ts);
       }
     }
@@ -500,11 +502,15 @@ export class DungeonRenderer {
     const px = trap.x * ts + 4;
     const py = trap.y * ts + 4;
     const size = ts - 8;
+    const armed = !trap.triggered;
 
-    // Iron floor grille
-    ctx.strokeStyle = "#4a5568";
+    ctx.save();
+    // Iron floor grille; a revealed trap keeps a dashed amber warning border.
+    ctx.strokeStyle = armed ? "#d69e2e" : "#4a5568";
     ctx.lineWidth = 1.5;
+    if (armed) ctx.setLineDash([4, 3]);
     ctx.strokeRect(px, py, size, size);
+    ctx.setLineDash([]);
 
     // Grille bars
     ctx.beginPath();
@@ -514,20 +520,36 @@ export class DungeonRenderer {
     ctx.lineTo(px + size / 2, py + size);
     ctx.stroke();
 
-    // Retractable razor spikes
-    ctx.fillStyle = "#e53e3e";
-    const spikes = [
-      [px + 4, py + 4],
-      [px + size - 4, py + 4],
-      [px + 4, py + size - 4],
-      [px + size - 4, py + size - 4],
-      [px + size / 2, py + size / 2],
-    ];
-    spikes.forEach(([sx, sy]) => {
+    if (armed) {
+      // Revealed but not sprung: a warning core, not the spike burst.
+      const cx = px + size / 2;
+      const cy = py + size / 2;
+      ctx.strokeStyle = "#f6ad55";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#e53e3e";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 1.8, 0, Math.PI * 2);
       ctx.fill();
-    });
+    } else {
+      // Retractable razor spikes
+      ctx.fillStyle = "#e53e3e";
+      const spikes = [
+        [px + 4, py + 4],
+        [px + size - 4, py + 4],
+        [px + 4, py + size - 4],
+        [px + size - 4, py + size - 4],
+        [px + size / 2, py + size / 2],
+      ];
+      spikes.forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    ctx.restore();
   }
 
   _drawShrine(ctx, shrine, ts, timestamp, isVis) {
@@ -1902,6 +1924,14 @@ export class DungeonRenderer {
       }
     }
 
+    // Revealed traps
+    ctx.fillStyle = "#d69e2e";
+    for (const trap of dungeon.traps || []) {
+      if (trap.discovered && !trap.triggered) {
+        ctx.fillRect(mx + trap.x * scaleX, my + trap.y * scaleY, 2, 2);
+      }
+    }
+
     // Visible monsters
     ctx.fillStyle = "#e53e3e";
     for (const m of monsters) {
@@ -2067,6 +2097,15 @@ export class DungeonRenderer {
   _propAt(tx, ty, dungeon) {
     if (!dungeon) return null;
     const at = (entry) => entry && entry.x === tx && entry.y === ty;
+    const trap = (dungeon.traps || []).find((t) => at(t) && t.discovered && !t.triggered);
+    if (trap) {
+      return {
+        title: "⚠️ Revealed Spike Trap",
+        border: "#d69e2e",
+        color: "#f6ad55",
+        lines: ["It is armed and waiting.", "Step around it; it still triggers."],
+      };
+    }
     const pact = (dungeon.pacts || []).find((p) => at(p) && !p.used);
     if (pact) {
       return {

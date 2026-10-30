@@ -467,6 +467,11 @@ export class GameEngine {
         document.getElementById("btnHelp")?.click();
         return;
       }
+      if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        this.searchForTraps();
+        return;
+      }
 
       // Numpad movement is read from e.code so the 1-6 deck hotkeys on the
       // number row keep working; e.key would report the same digits.
@@ -596,6 +601,10 @@ export class GameEngine {
       this._triggerMusicStart();
       this.waitTurn();
     });
+    document.getElementById("btnActionSearch").addEventListener("click", () => {
+      this._triggerMusicStart();
+      this.searchForTraps();
+    });
 
     // D-Pad buttons
     document.getElementById("btnDpadUp").addEventListener("click", () => this.stepPlayer(0, -1));
@@ -688,14 +697,14 @@ export class GameEngine {
            <li><strong>Journal:</strong> Every discovery is recorded in the codex and survives death.</li>
            <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
-           <li><strong>Traps & Sconces:</strong> Watch out for poison/spike traps; stay near wall sconces for light!</li>
+           <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to search and reveal them, or stay near wall sconces for light!</li>
          </ul>
          <br>
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
          <br>
          <p><strong>Floor Omens:</strong> every floor carries one omen — Blood Moon (enemies hit 25% harder), Deep Fog (lantern reaches 5 tiles), Gilded Crypt (+50% chest and urn gold) or Restless Dead (one extra enemy). The omen pill in the header always names the current one.</p>
          <p><strong>Enemies:</strong> Skeletal Archers shoot across open rooms, Crypt Hounds lunge two tiles a turn, and Pact-Bound Wraiths rise from Avarice.</p>
-         <p><strong>Shortcuts:</strong> <strong>?</strong> opens this guide, <strong>Escape</strong> closes any dialog, and the 🎞️ button toggles reduced motion (persisted).</p>`
+         <p><strong>Shortcuts:</strong> <strong>?</strong> opens this guide, <strong>R</strong> searches for traps, <strong>Escape</strong> closes any dialog, and the 🎞️ button toggles reduced motion (persisted).</p>`
       );
     });
   }
@@ -1390,6 +1399,7 @@ export class GameEngine {
     const trap = this.dungeon.traps.find((t) => t.x === nx && t.y === ny && !t.triggered);
     if (trap) {
       trap.triggered = true;
+      trap.discovered = true;
       const trapDmg = 8 + Math.floor(Math.random() * 6);
       this.player.hp = Math.max(0, this.player.hp - trapDmg);
       sounds.playHit(false);
@@ -1954,6 +1964,32 @@ export class GameEngine {
     this.finishPlayerTurn();
   }
 
+  searchForTraps() {
+    if (this.gameOver || this.victory || this.transitioning) return;
+    const radius = 3;
+    const found = [];
+    for (const trap of this.dungeon.traps || []) {
+      if (trap.triggered || trap.discovered) continue;
+      if (Math.hypot(trap.x - this.player.x, trap.y - this.player.y) > radius) continue;
+      if (!this.dungeon.isVisible(trap.x, trap.y)) continue;
+      trap.discovered = true;
+      found.push(trap);
+    }
+    if (found.length > 0) {
+      sounds.playShrine();
+      for (const trap of found) {
+        this.renderer.addFloatingText("TRAP!", trap.x, trap.y, this.renderer.warningColor);
+        this.renderer.addParticles(trap.x, trap.y, this.renderer.trapColor, 8);
+      }
+      const label = found.length === 1 ? "trap" : "traps";
+      this.ui.logMessage(`🔍 You search the floor and reveal ${found.length} ${label}.`, "system");
+    } else {
+      sounds.playStep();
+      this.ui.logMessage("🔍 You search the floor and find nothing.", "system");
+    }
+    this.finishPlayerTurn();
+  }
+
   useInventoryItem(idx) {
     if (this.gameOver || this.victory || this.transitioning) return;
     if (idx < 0 || idx >= this.player.inventory.length) return;
@@ -2482,7 +2518,9 @@ export class GameEngine {
           stairs_pos: this.dungeon.stairsPos,
           rooms: this.dungeon.rooms,
           chests: this.dungeon.chests.map((c) => ({ x: c.x, y: c.y, opened: c.opened })),
-          traps: this.dungeon.traps.map((t) => ({ x: t.x, y: t.y, triggered: t.triggered })),
+          traps: this.dungeon.traps.map((t) => ({
+            x: t.x, y: t.y, triggered: t.triggered, discovered: Boolean(t.discovered),
+          })),
           shrines: this.dungeon.shrines.map((s) => ({ x: s.x, y: s.y, activated: s.activated })),
           urns: this.dungeon.urns.map((u) => ({ x: u.x, y: u.y, broken: u.broken })),
           souls: (this.dungeon.souls || []).map((s) => ({ x: s.x, y: s.y, resolved: s.resolved })),

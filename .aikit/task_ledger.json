@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-017",
+    "task_id": "CC-018",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793370117.6900938,
-    "owner": "opencode:crypt-crawler-cc017",
-    "started_by": "opencode:crypt-crawler-cc017",
+    "updated_at": 1793372186.1713104,
+    "owner": "opencode:crypt-crawler-cc018",
+    "started_by": "opencode:crypt-crawler-cc018",
     "continuations": [],
-    "completed_at": 1793371051.7796404
+    "completed_at": 1793372204.1023161
   },
   "checkpoints": [
     {
@@ -332,6 +332,49 @@
       "timestamp": 1793371051.7796416,
       "timestamp_str": "2026-10-30 17:37:31",
       "agent": "opencode:crypt-crawler-cc017"
+    },
+    {
+      "task_id": "CC-018",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add trap discovery state and searchForTraps (3 visible tiles, one turn); [2/3] render revealed traps with a distinct grille, hover card, deck Search button and R hotkey; [3/3] add the harness search action and selftest, inspector proof, docs and ADR-018, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793371273.3612897,
+      "timestamp_str": "2026-10-30 17:41:13",
+      "agent": "opencode:crypt-crawler-cc018",
+      "impact_assessment": {
+        "why": "Traps are concealed until they deal 8-13 damage, so the only counterplay is memorizing the floor or accepting random chip damage; a turn-cost search gives the player agency and makes Deep Fog and Gilded Crypt floors tactical",
+        "benefits": "Players can spend a turn to reveal armed traps, route around them, and see what they are on hover; the revealed state survives saves; agents can drive the same search through the harness",
+        "risks": "contract: traps gain discovered, the save format gains an additive field, and the action catalog gains search; dependency: none; concurrency: none; state: discovered persists, old saves default to false; UI: new deck button and render branch",
+        "mitigation": "Harness selftest proves a trap is revealed without triggering and a turn is spent; unit tests cover the search action; save round-trip and inspector checks; UI guard with the full gate set"
+      }
+    },
+    {
+      "task_id": "CC-018",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Trap search shipped: discovered trap state with save round-trip, searchForTraps over three visible tiles for one turn, dashed amber render/minimap/hover card, Search deck button and R hotkey, harness search action (32/32), inspector 67/67 full audit and 27/27 layout audit, UI guard verified and finished, ADR-018. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793372186.1713104,
+      "timestamp_str": "2026-10-30 17:56:26",
+      "agent": "opencode:crypt-crawler-cc018",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-018 then run check --strict",
+        "evidence": "71 tests, harness 32/32, inspector 67/67, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-018",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-018' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793372204.1023176,
+      "timestamp_str": "2026-10-30 17:56:44",
+      "agent": "opencode:crypt-crawler-cc018"
     }
   ]
 }

@@ -135,6 +135,7 @@ def run_inspection(
                     "dpad_only_when_narrow": layout["dpadShown"] == layout["narrow"],
                     "dpad_inside_panel": layout["dpadInsidePanel"] or not layout["dpadShown"],
                     "inventory_reachable": layout["inventoryReachable"],
+                    "search_button_visible": page.is_visible("#btnActionSearch"),
                 }
                 report["audit_checks"].append(audit_check)
 
@@ -721,6 +722,75 @@ def run_inspection(
                                 and motion["on"]["stored"] == "1"
                                 and motion["off"]["reduced"] == motion["before"]
                                 and motion["off"]["stored"] == "0",
+                            }
+                        )
+
+                        # Trap search: the deck button must reveal an armed trap, spend a
+                        # turn and paint the revealed grille without springing it.
+                        search_state = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const p = e.player;
+                                const button = document.getElementById("btnActionSearch");
+                                if (!button) return { skip: false, button: false };
+                                e.monsters = [];
+                                const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                                    .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+                                if (!step) return { skip: true };
+                                const trap = { x: p.x + step[0], y: p.y + step[1],
+                                               triggered: false, discovered: false };
+                                e.dungeon.traps = [trap];
+                                e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+                                e.renderer.render(e.dungeon, p, e.monsters, 1000);
+                                const before = window.__auditSnap();
+                                const beforeTurn = e.turn;
+                                const beforeHp = p.hp;
+                                button.click();
+                                const entries = Array.from(document.querySelectorAll("#chronicleLog .log-entry"));
+                                const log = entries.length ? entries[entries.length - 1].textContent.trim() : "";
+                                e.renderer.render(e.dungeon, p, e.monsters, 1000);
+                                const painted = window.__auditDiff(before, window.__auditSnap());
+                                const label = button.querySelector(".deck-label")?.textContent || "";
+                                const hotkey = button.querySelector(".deck-hotkey")?.textContent || "";
+                                return {
+                                    skip: false,
+                                    button: true,
+                                    label,
+                                    hotkey,
+                                    discovered: trap.discovered,
+                                    triggered: trap.triggered,
+                                    turnAdvanced: e.turn > beforeTurn,
+                                    hpUnchanged: p.hp === beforeHp,
+                                    log,
+                                    painted,
+                                };
+                            }"""
+                        )
+                        page.screenshot(
+                            path=str(out_dir / f"search_trap_{vp_name}.png"), full_page=True
+                        )
+                        report["screenshots"].append(
+                            {
+                                "viewport": vp_name,
+                                "scenario": "search",
+                                "file": str(out_dir / f"search_trap_{vp_name}.png"),
+                            }
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "search_button_reveals_trap": search_state.get("skip") is True
+                                or (
+                                    search_state.get("button") is True
+                                    and search_state.get("label") == "Search"
+                                    and search_state.get("hotkey") == "[R]"
+                                    and search_state.get("discovered") is True
+                                    and search_state.get("triggered") is False
+                                    and search_state.get("turnAdvanced") is True
+                                    and search_state.get("hpUnchanged") is True
+                                    and "reveal 1 trap" in search_state.get("log", "")
+                                    and search_state.get("painted", 0) > 60
+                                ),
                             }
                         )
 

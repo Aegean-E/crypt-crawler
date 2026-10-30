@@ -34,7 +34,7 @@ class TestHarnessCatalog(unittest.TestCase):
     def test_catalog_actions_and_pacts(self):
         data = catalog()
         for action in (
-            "move", "ability", "potion", "use_item", "wait", "teleport", "pact",
+            "move", "ability", "potion", "use_item", "wait", "search", "teleport", "pact",
             "descend", "save",
         ):
             self.assertIn(action, data["actions"])
@@ -56,9 +56,10 @@ class TestActionValidation(unittest.TestCase):
             {"action": "move", "dx": 1, "dy": 0},
             {"action": "ability", "slot": 3},
             {"action": "use_item", "index": 0},
+            {"action": "wait"},
+            {"action": "search"},
             {"action": "teleport", "x": 4, "y": 9},
             {"action": "pact", "choice": "ward"},
-            {"action": "wait"},
             {"action": "save"},
         ):
             with self.subTest(action=action):

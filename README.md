@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -26,9 +26,9 @@ Tactical turn-based web dungeon crawler with procedural levels, per-floor omens,
 
 ### 📸 Headless Browser UI Review & Inspection
 ```bash
-python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario dungeon --out .inspect
+python tools/inspect_ui.py --viewports desktop,laptop,mobile --scenario all --out .inspect
 ```
-The inspector reports every audit check and exits non-zero when any check or console error fails, so it can gate a commit.
+The inspector runs the full interactive audit, reports every audit check and exits non-zero when any check or console error fails, so it can gate a commit.
 
 ### 🤖 AI Mechanics Harness (deterministic, JSON in / JSON out)
 ```bash
@@ -68,7 +68,10 @@ Every floor carries one omen chosen deterministically from the seed: **Blood Moo
 | Crypt Hound | B2F | Lunges two tiles per turn and never lets the scent go |
 | Pact-Bound Wraith | any | Raised in pairs by the Pact of Avarice and hunts the debtor |
 
-QoL: `?` opens the guide, `Escape` closes any dialog, and the 🎞️ header button toggles reduced motion (persisted, disables screen shake and pulsing accents). Story: three new codex entries — *Signs in the Blood*, *The Lantern-Keeper* and *The Debt of Malakor* — and a victory epilogue that closes the ledger.
+QoL: `?` opens the guide, `R` searches for traps, `Escape` closes any dialog, and the 🎞️ header button toggles reduced motion (persisted, disables screen shake and pulsing accents). Story: three new codex entries — *Signs in the Blood*, *The Lantern-Keeper* and *The Debt of Malakor* — and a victory epilogue that closes the ledger.
+
+### 🔍 Trap Search
+Press `R` or the deck's **Search** button to spend a turn revealing armed traps within three visible tiles. A revealed trap gets a dashed amber grille and a hover card, but it still triggers if stepped on: the search buys information, not safety. The revealed state survives saves and floor transitions, and Deep Fog shortens the search because it uses the same line of sight as the lantern.
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 | Role | Command |

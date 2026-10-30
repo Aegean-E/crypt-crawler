@@ -40,6 +40,7 @@ export class ClientDungeon {
     this.traps = (data.traps || []).map((t) => ({
       ...point(t),
       triggered: Array.isArray(t) ? false : Boolean(t.triggered),
+      discovered: Array.isArray(t) ? false : Boolean(t.discovered),
     }));
     this.shrines = (data.shrines || []).map((s) => ({
       ...point(s),

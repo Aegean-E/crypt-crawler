@@ -48,6 +48,7 @@ ACTION_KEYS: Dict[str, tuple] = {
     "potion": (),
     "use_item": ("index",),
     "wait": (),
+    "search": (),
     "teleport": ("x", "y"),
     "pact": ("choice",),
     "descend": (),
@@ -124,7 +125,9 @@ STATE_JS = """
         : null,
       pacts: (e.dungeon.pacts || []).map((a) => ({ ...point(a), used: a.used })),
       merchants: (e.dungeon.merchants || []).map(point),
-      traps: (e.dungeon.traps || []).map((t) => ({ ...point(t), triggered: t.triggered })),
+      traps: (e.dungeon.traps || []).map((t) => ({
+        ...point(t), triggered: t.triggered, discovered: Boolean(t.discovered),
+      })),
       sconces: (e.dungeon.sconces || []).map(point),
       rooms: (e.dungeon.rooms || []).map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h })),
     },
@@ -361,6 +364,7 @@ class Harness:
                         e.useInventoryItem(action.index);
                         break;
                     case "wait": e.waitTurn(); break;
+                    case "search": e.searchForTraps(); break;
                     case "teleport":
                         // A debug pose, not a teleport spell: refuse to stand in rock, or
                         // every later state reads as a player outside the map.
@@ -777,6 +781,56 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         scroll,
     ))
     checks.append(_check("no_page_errors_after_scroll", not harness.errors, harness.errors))
+    page.context.close()
+
+    # Search is a turn-cost reveal: it must mark an armed trap without springing it.
+    page = harness.open_page(seed)
+    search_setup = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const p = e.player;
+            e.monsters = [];
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(p.x + dx, p.y + dy));
+            if (!step) return { skipped: true };
+            const trap = { x: p.x + step[0], y: p.y + step[1], triggered: false, discovered: false };
+            e.dungeon.traps = [trap];
+            e.dungeon.updateFOV(p.x, p.y, e.fovRadius || 7);
+            return { skipped: false, x: trap.x, y: trap.y };
+        }"""
+    )
+    if search_setup.get("skipped") is True:
+        search = search_setup
+    else:
+        before = harness.state(page)
+        after = harness.apply(page, {"action": "search"})
+        trap = next(
+            (
+                entry for entry in after["dungeon"]["traps"]
+                if entry["x"] == search_setup["x"] and entry["y"] == search_setup["y"]
+            ),
+            {},
+        )
+        search = {
+            "discovered": trap.get("discovered"),
+            "triggered": trap.get("triggered"),
+            "beforeTurn": before["turn"],
+            "afterTurn": after["turn"],
+            "beforeHp": before["player"]["hp"],
+            "afterHp": after["player"]["hp"],
+            "log": after["log"],
+        }
+    checks.append(_check(
+        "search_reveals_a_trap_without_triggering_it",
+        search_setup.get("skipped") is not True
+        and search["discovered"] is True
+        and search["triggered"] is False
+        and search["afterTurn"] == search["beforeTurn"] + 1
+        and search["afterHp"] == search["beforeHp"]
+        and any("reveal 1 trap" in line for line in search["log"]),
+        search,
+    ))
+    checks.append(_check("no_page_errors_after_search", not harness.errors, harness.errors))
     page.context.close()
 
     # A short scripted run must not throw: the harness is only useful if a green

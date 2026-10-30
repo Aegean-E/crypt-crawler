@@ -68,5 +68,19 @@
     "final_snapshot_digest": "a905017ed61b0a34fa39e720672f457ecb5d0aa6e99960f1c616a9c0b332a4ff",
     "final_snapshot_entries": 191,
     "surface_digest": "d2d794b51b4923ade4910e1409192b2f3d81d9fd7c625f728c0af1406416b7d0"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "d32c47399a63f8ebfb493bd242189420025ea462",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793371281.37122,
+    "finished_at": 1793371598.558769,
+    "strikes": 1,
+    "reviewer": "headless inspector (24/24 checks, three viewports) + mobile deck review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "55128675cf76fed6cf58a6eb1810223d74e0b4e495b4c92ab265ea3cdf09afba",
+    "final_snapshot_entries": 193,
+    "surface_digest": "86ee7220c4001ce88bf10c5d6ad7463c3a6723b242613c4b88e053b972fc5b7c"
   }
 ]
