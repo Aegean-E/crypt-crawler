@@ -1255,6 +1255,33 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "records", "file": str(records_shot)}
                         )
                         print(f"      Saved screenshot: {records_shot.name}")
+                        records_seed = page.evaluate(
+                            """() => {
+                                const seed = window.gameEngine.dungeon?.seed;
+                                const row = document.querySelector(".records-seed-row");
+                                const btn = document.getElementById("btnCopySeed");
+                                return {
+                                    seed,
+                                    row: row ? row.textContent.trim() : "",
+                                    hasCopy: Boolean(btn),
+                                    disabled: btn ? btn.disabled : null,
+                                };
+                            }"""
+                        )
+                        page.evaluate("() => document.getElementById('btnCopySeed')?.click()")
+                        time.sleep(0.3)
+                        copied = page.evaluate(
+                            "() => document.getElementById('btnCopySeed')?.textContent.trim() || ''"
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "records_shows_and_copies_seed": records_seed["hasCopy"] is True
+                                and str(records_seed["seed"]) in records_seed["row"]
+                                and records_seed["disabled"] is False
+                                and copied == "Copied",
+                            }
+                        )
                         page.click("#btnModalClose")
                         time.sleep(0.2)
 
@@ -1302,8 +1329,19 @@ def run_inspection(
                             {"viewport": vp_name, "scenario": "classes", "file": str(class_shot)}
                         )
                         print(f"      Saved screenshot: {class_shot.name}")
-                        # Pick Rogue and descend to B2F Caverns
+                        # Pick Rogue with an explicit seed, then descend to B2F Caverns.
+                        page.fill("#seedInput", "424242")
                         page.click(".class-card[data-class='rogue']")
+                        page.wait_for_function(
+                            "window.gameEngine?.dungeon?.seed === 424242", timeout=15000
+                        )
+                        seeded = page.evaluate("() => window.gameEngine.dungeon.seed")
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "class_select_seed_is_applied": seeded == 424242,
+                            }
+                        )
                         time.sleep(0.4)
                         page.evaluate("() => window.gameEngine.start(42, 2, 'rogue')")
                         time.sleep(0.4)

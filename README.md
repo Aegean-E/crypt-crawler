@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, a two-way merchant, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -58,6 +58,9 @@ python aikit.py ui abort crypt-crawler
 
 ### 📱 Mobile Layout
 Below 768px the three panels stack into one vertically scrolling column; the action deck and the on-screen movement D-pad stay fully visible above it, and the header wraps instead of overflowing sideways.
+
+### 🎲 Seeds
+The class-selection screen accepts an optional positive run seed; leave it blank for a random run. The same seed and class reproduce the same dungeon, and the Records modal shows the current seed with a **Copy Seed** button so a run can be replayed or shared.
 
 ### 🎭 Floor Omens, Mobs and Story
 Every floor carries one omen chosen deterministically from the seed: **Blood Moon** (enemies strike 25% harder), **Deep Fog** (lantern 5 tiles), **Gilded Crypt** (+50% chest and urn gold) or **Restless Dead** (one extra enemy). The header pill names it, the chronicle announces it, and the journal keeps it.

@@ -155,6 +155,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: The crown remains a trophy and the ending can no longer be contradicted by a sale; every other item still sells at the correct index. Screen readers now hear a real two-tab set and which pane is selected. The harness proves a crown-bearing backpack shows one fewer Sell button, the crown survives a sale, and the ARIA attributes switch with the tab; the inspector checks the same in the shop scenario.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns both rules and the harness drives them), PRINCIPLE-011 (keyboard and assistive accessibility without a prompt) and PRINCIPLE-014 (browser-level regression coverage for both findings).
 
+### ADR-021: Player-Facing Run Seeds and Copyable Records
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The dungeon generator is deterministic and the harness already accepts `--seed`, but a player could only press New Game for a random run and had no way to read or share the seed of a run worth replaying. The Records modal was the natural place to surface career data, but it did not know the current run.
+- **Decision**: Add an optional positive integer field to the class-selection modal. A blank field keeps the random run; a valid integer is passed through the class callback into `start`, so the same seed and class reproduce the same dungeon. Show the current seed in the Records modal with a **Copy Seed** button; copy through `navigator.clipboard.writeText`, show `Copied` on success and `Copy failed` on refusal, and disable the control when no run seed exists.
+- **Consequences**: Players can replay a known dungeon, share it, or hand a bug report a reproducible seed. The seed is derived from the running dungeon and is not a new save field; the class modal gains one input and the Records modal gains one row. The harness starts a run through the real modal and asserts the exact seed, then opens Records and verifies the copy state; the inspector repeats both paths.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the seed path and the harness drives it), PRINCIPLE-011 (one optional field with a blank default) and PRINCIPLE-014 (browser-level coverage for replay and copy).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.

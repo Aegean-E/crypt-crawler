@@ -268,6 +268,10 @@ export class UIController {
       <p style="color: #cbd5e0; font-size: 0.85rem; margin-bottom: 8px;">
         Choose your hero archetype to venture into the forsaken depths:
       </p>
+      <div class="seed-row">
+        <label class="seed-label" for="seedInput">Run seed <span>(optional positive integer; blank is random)</span></label>
+        <input class="seed-input" id="seedInput" type="number" min="1" step="1" inputmode="numeric" placeholder="Random">
+      </div>
       <div class="class-grid">
         <div class="class-card" data-class="paladin">
           <div class="class-avatar-badge">🛡️</div>
@@ -320,8 +324,11 @@ export class UIController {
     cards.forEach((card) => {
       card.addEventListener("click", () => {
         const cls = card.getAttribute("data-class");
+        const raw = (this.modalBody.querySelector("#seedInput")?.value || "").trim();
+        const parsed = Number(raw);
+        const seed = raw !== "" && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
         this.closeModal();
-        if (onSelect) onSelect(cls);
+        if (onSelect) onSelect(cls, seed);
       });
     });
   }
@@ -628,7 +635,7 @@ export class UIController {
     this.btnModalClose.textContent = "Back to Dungeon";
   }
 
-  showHallOfRecordsModal(records) {
+  showHallOfRecordsModal(records, currentSeed = null) {
     const r = records || {
       totalRuns: 0,
       victories: 0,
@@ -670,6 +677,10 @@ export class UIController {
     const html = `
       <div class="records-container">
         <h3 style="font-size: 0.9rem; color: #cbd5e0; margin-bottom: 8px;">Ancestral Career Records</h3>
+        <div class="records-seed-row">
+          <span>Current Run Seed: <strong class="seed-value">${Number.isFinite(currentSeed) ? currentSeed : "—"}</strong></span>
+          <button id="btnCopySeed" class="btn btn-secondary btn-sm" type="button" ${Number.isFinite(currentSeed) ? "" : "disabled"}>Copy Seed</button>
+        </div>
         <div class="records-stat-grid">
           <div class="records-stat-box">
             <div class="stat-val">${r.totalRuns || 0}</div>
@@ -706,6 +717,20 @@ export class UIController {
 
     this.showModal("🏆 Ancestral Hall of Records", html);
     this.btnModalClose.textContent = "Close Chronicle";
+
+    const copyBtn = this.modalBody.querySelector("#btnCopySeed");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        if (!Number.isFinite(currentSeed)) return;
+        try {
+          await navigator.clipboard.writeText(String(currentSeed));
+          copyBtn.textContent = "Copied";
+        } catch (err) {
+          copyBtn.textContent = "Copy failed";
+        }
+        setTimeout(() => { copyBtn.textContent = "Copy Seed"; }, 1500);
+      });
+    }
   }
 
   flashDamage() {

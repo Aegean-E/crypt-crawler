@@ -803,6 +803,38 @@ body.theme-dark {
 }
 
 /* Hero Class Selection Modal Styles */
+.seed-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.seed-label {
+  font-size: 0.78rem;
+  color: #cbd5e0;
+}
+
+.seed-label span {
+  color: #a0aec0;
+  font-weight: 400;
+}
+
+.seed-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: #171d28;
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  color: #f7fafc;
+  font-size: 0.85rem;
+}
+
+.seed-input:focus {
+  outline: none;
+  border-color: var(--border-gold);
+}
+
 .class-grid {
   display: flex;
   flex-direction: column;
@@ -1201,6 +1233,24 @@ body.reduced-motion .inv-slot.rarity-legendary {
 
 
 /* Hall of Records & Bestiary */
+.records-seed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+}
+
+.seed-value {
+  color: var(--color-gold);
+  letter-spacing: 0.04em;
+}
+
 .records-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

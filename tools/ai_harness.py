@@ -948,6 +948,52 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
     checks.append(_check("no_page_errors_after_sell", not harness.errors, harness.errors))
     page.context.close()
 
+    # New Game accepts a seed, and Records exposes and copies the current run.
+    page = harness.open_page(seed)
+    page.click("#btnRestart")
+    page.fill("#seedInput", "424242")
+    page.click(".class-card[data-class='rogue']")
+    page.wait_for_function("window.gameEngine?.dungeon?.seed === 424242", timeout=15000)
+    seeded = page.evaluate(
+        """() => ({
+            seed: window.gameEngine.dungeon.seed,
+            heroClass: window.gameEngine.heroClass,
+            modalOpen: window.gameEngine.ui.isModalOpen(),
+        })"""
+    )
+    page.click("#btnRecords")
+    records = page.evaluate(
+        """() => {
+            const row = document.querySelector(".records-seed-row");
+            const btn = document.getElementById("btnCopySeed");
+            return {
+                row: row ? row.textContent.trim() : "",
+                hasCopy: Boolean(btn),
+                disabled: btn ? btn.disabled : null,
+            };
+        }"""
+    )
+    page.evaluate("() => document.getElementById('btnCopySeed').click()")
+    page.wait_for_timeout(250)
+    copied = page.evaluate("() => document.getElementById('btnCopySeed').textContent.trim()")
+    checks.append(_check(
+        "seed_modal_starts_the_requested_run",
+        seeded["seed"] == 424242
+        and seeded["heroClass"] == "rogue"
+        and seeded["modalOpen"] is False,
+        seeded,
+    ))
+    checks.append(_check(
+        "records_shows_and_copies_the_seed",
+        "424242" in records["row"]
+        and records["hasCopy"] is True
+        and records["disabled"] is False
+        and copied == "Copied",
+        {"records": records, "copied": copied},
+    ))
+    checks.append(_check("no_page_errors_after_seed_flow", not harness.errors, harness.errors))
+    page.context.close()
+
     # A short scripted run must not throw: the harness is only useful if a green
     # result means the engine actually ran.
     page = harness.open_page(seed)

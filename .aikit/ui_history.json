@@ -124,5 +124,19 @@
     "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
     "final_snapshot_entries": 196,
     "surface_digest": "56f7fbac979ad2ca063f715b3eb184ce40273017899329e1136051880f8647c2"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "c199773386f75cc88187ee250935a3a511fcc0c2",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793374850.2505949,
+    "finished_at": 1793375020.347979,
+    "strikes": 0,
+    "reviewer": "headless seed probe (seed 424242 applied, Records shows the seed, Copy Seed -> Copied) + visual review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
+    "final_snapshot_entries": 196,
+    "surface_digest": "16d7e434a6005a26170a5638026dd9e7cdf099eff4a237f3dfbab408405df7bf"
   }
 ]

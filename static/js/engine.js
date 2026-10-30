@@ -644,7 +644,7 @@ export class GameEngine {
     const btnRec = document.getElementById("btnRecords");
     if (btnRec) {
       btnRec.addEventListener("click", () => {
-        this.ui.showHallOfRecordsModal(this.loadRecords());
+        this.ui.showHallOfRecordsModal(this.loadRecords(), this.dungeon?.seed ?? null);
       });
     }
 
@@ -667,9 +667,12 @@ export class GameEngine {
     });
 
     document.getElementById("btnRestart").addEventListener("click", () => {
-      this.ui.showClassSelectModal((chosenClass) => {
+      this.ui.showClassSelectModal((chosenClass, chosenSeed) => {
         this.clearSavedRun();
-        this.start(Date.now() % 1000000, 1, chosenClass, false);
+        const seed = Number.isInteger(chosenSeed) && chosenSeed > 0
+          ? chosenSeed
+          : Date.now() % 1000000;
+        this.start(seed, 1, chosenClass, false);
       });
     });
 

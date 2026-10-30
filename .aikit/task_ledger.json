@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "CC-021",
+    "task_id": "CC-022",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793374427.9141724,
-    "owner": "opencode:crypt-crawler-cc021",
-    "started_by": "opencode:crypt-crawler-cc021",
+    "updated_at": 1793375250.6923351,
+    "owner": "opencode:crypt-crawler-cc022",
+    "started_by": "opencode:crypt-crawler-cc022",
     "continuations": [],
-    "completed_at": 1793374436.0459523
+    "completed_at": 1793375257.2498353
   },
   "checkpoints": [
     {
@@ -548,6 +548,49 @@
       "timestamp": 1793374436.0459557,
       "timestamp_str": "2026-10-30 18:33:56",
       "agent": "opencode:crypt-crawler-cc021"
+    },
+    {
+      "task_id": "CC-022",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add an optional positive seed field to the class-selection modal and pass it into start; [2/3] show the current run seed in Records with a copy button; [3/3] prove seed replay and the copy control in the harness and inspector, document it in README and ADR-021, then run the UI guard and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793374841.8933835,
+      "timestamp_str": "2026-10-30 18:40:41",
+      "agent": "opencode:crypt-crawler-cc022",
+      "impact_assessment": {
+        "why": "The dungeon generator is deterministic and the harness already accepts --seed, but a player can only press New Game for a random run and has no way to read or share the seed of a run worth replaying",
+        "benefits": "Players can replay a known dungeon, share a seed with someone else, and reproduce a bug or a lucky run; the Records modal makes the seed discoverable and copyable",
+        "risks": "contract: New Game gains an optional numeric field, Records gains a seed row and copy button; dependency: navigator.clipboard with a text fallback; concurrency: none; state: no save format change; UI: engine.js, ui.js and style.css are in the game-ui surface",
+        "mitigation": "Blank stays random; only a positive integer is accepted; selftest starts through the modal and asserts the exact seed; inspector checks the class modal and Records row; UI guard plus unit, mechanics and gate set"
+      }
+    },
+    {
+      "task_id": "CC-022",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] New Game accepts an optional positive seed and passes it into start; Records shows the current seed and Copy Seed -> Copied; harness starts through the real modal (seed 424242), verifies Records/copy (40/40); inspector checks class-select seed and Records copy (71/71, 16 screenshots, 0 console errors); UI guard verified and finished. Phase 4 green: 71 unit tests, aikit check 5/5. checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793375250.6923351,
+      "timestamp_str": "2026-10-30 18:47:30",
+      "agent": "opencode:crypt-crawler-cc022",
+      "handoff": {
+        "state": "ready to commit",
+        "next": "commit CC-022 then check --strict",
+        "evidence": "71 tests, harness 40/40, inspector 71/71, UI guard finished, gates 5/5"
+      }
+    },
+    {
+      "task_id": "CC-022",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'CC-022' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793375257.2498364,
+      "timestamp_str": "2026-10-30 18:47:37",
+      "agent": "opencode:crypt-crawler-cc022"
     }
   ]
 }
