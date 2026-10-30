@@ -6,7 +6,7 @@
 <!-- aegean:media:end -->
 
 
-Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
+Tactical turn-based web dungeon crawler with procedural levels, per-floor omens, a turn-cost trap search, mimic chests, a two-way merchant, seed replay, five-slot equipment, side-by-side loot comparison, filterable inventory, a persistent lore codex, branching soul encounters, risk-for-power black pact altars, sigil-sealed vaults, hover-annotated props, ranged and lunging enemies, phased boss fights, and headless browser inspection.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -69,7 +69,10 @@ Every floor carries one omen chosen deterministically from the seed: **Blood Moo
 |---|---|---|
 | Skeletal Archer | B2F | Fires a bone arrow up to 4 tiles when it has line of sight; does not close to melee |
 | Crypt Hound | B2F | Lunges two tiles per turn and never lets the scent go |
+| Gilded Mimic | any chest | Disguised as a chest; opening it springs a scaled fight instead of loot |
 | Pact-Bound Wraith | any | Raised in pairs by the Pact of Avarice and hunts the debtor |
+
+Chests can be **Gilded Mimics**: opening one pushes you back and springs a depth-scaled fight instead of paying gold. The mimic is chosen deterministically from the run seed and chest order, so a known seed reproduces the same trapped chest. Trap search reveals traps, not mimics.
 
 QoL: `?` opens the guide, `R` searches for traps, `Escape` closes any dialog, and the 🎞️ header button toggles reduced motion (persisted, disables screen shake and pulsing accents). Story: three new codex entries — *Signs in the Blood*, *The Lantern-Keeper* and *The Debt of Malakor* — and a victory epilogue that closes the ledger.
 

@@ -116,6 +116,10 @@ STATE_JS = """
       stairs: { x: e.dungeon.stairsPos[0], y: e.dungeon.stairsPos[1] },
       visible_tiles: e.dungeon.visible.size,
       chests: e.dungeon.chests.map((c) => ({ ...point(c), opened: c.opened })),
+      mimics: Array.from(e.dungeon.mimics || []).map((key) => {
+        const [x, y] = key.split(",").map(Number);
+        return { x, y };
+      }),
       shrines: e.dungeon.shrines.map((s) => ({ ...point(s), activated: s.activated })),
       urns: e.dungeon.urns.map((u) => ({ ...point(u), broken: u.broken })),
       souls: (e.dungeon.souls || []).map((s) => ({ ...point(s), resolved: s.resolved })),
@@ -992,6 +996,73 @@ def selftest(harness: Harness) -> List[Dict[str, Any]]:
         {"records": records, "copied": copied},
     ))
     checks.append(_check("no_page_errors_after_seed_flow", not harness.errors, harness.errors))
+    page.context.close()
+
+    # A deterministic mimic chest springs a fight instead of paying loot.
+    page = harness.open_page(2, depth=1)
+    mimic_setup = page.evaluate(
+        """() => {
+            const e = window.gameEngine;
+            const key = Array.from(e.dungeon.mimics || [])[0];
+            if (!key) return { skipped: true };
+            const [mx, my] = key.split(",").map(Number);
+            const step = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .find(([dx, dy]) => e.dungeon.isWalkable(mx + dx, my + dy));
+            if (!step) return { skipped: true, mimics: [key] };
+            e.monsters = [];
+            e.player.x = mx + step[0];
+            e.player.y = my + step[1];
+            e.dungeon.updateFOV(e.player.x, e.player.y, e.fovRadius || 7);
+            return {
+                skipped: false,
+                x: mx,
+                y: my,
+                dx: -step[0],
+                dy: -step[1],
+                mimics: Array.from(e.dungeon.mimics),
+            };
+        }"""
+    )
+    if mimic_setup.get("skipped") is True:
+        mimic = mimic_setup
+    else:
+        before = harness.state(page)
+        after = harness.apply(
+            page,
+            {"action": "move", "dx": mimic_setup["dx"], "dy": mimic_setup["dy"]},
+        )
+        chest = next(
+            (
+                entry for entry in after["dungeon"]["chests"]
+                if entry["x"] == mimic_setup["x"] and entry["y"] == mimic_setup["y"]
+            ),
+            {},
+        )
+        mimic = {
+            "beforeMimics": before["dungeon"]["mimics"],
+            "afterMimics": after["dungeon"]["mimics"],
+            "chestOpened": chest.get("opened"),
+            "mimicAlive": any(monster["type"] == "mimic" for monster in after["monsters"]),
+            "goldBefore": before["player"]["gold"],
+            "goldAfter": after["player"]["gold"],
+            "invBefore": len(before["player"]["inventory"]),
+            "invAfter": len(after["player"]["inventory"]),
+            "playerBack": after["player"]["x"] == before["player"]["x"]
+            and after["player"]["y"] == before["player"]["y"],
+        }
+    checks.append(_check(
+        "mimic_chest_spawns_a_fight_without_loot",
+        mimic_setup.get("skipped") is not True
+        and len(mimic["beforeMimics"]) == 1
+        and mimic["afterMimics"] == []
+        and mimic["chestOpened"] is True
+        and mimic["mimicAlive"] is True
+        and mimic["goldAfter"] == mimic["goldBefore"]
+        and mimic["invAfter"] == mimic["invBefore"]
+        and mimic["playerBack"] is True,
+        mimic,
+    ))
+    checks.append(_check("no_page_errors_after_mimic", not harness.errors, harness.errors))
     page.context.close()
 
     # A short scripted run must not throw: the harness is only useful if a green

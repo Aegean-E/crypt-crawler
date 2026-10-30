@@ -703,6 +703,7 @@ export class GameEngine {
            <li><strong>Ancient Shrines:</strong> Bestow sacred blessings (Might, Aegis, Renewal)</li>
            <li><strong>Burial Urns:</strong> Shatter for hidden coins or relics</li>
            <li><strong>Traps &amp; Sconces:</strong> Watch out for concealed spike traps; press <strong>R</strong> to search and reveal them, or stay near wall sconces for light!</li>
+           <li><strong>Gilded Mimics:</strong> Some chests are teeth in a wooden lid; open one and fight instead of looting.</li>
          </ul>
          <br>
          <p>Conquer Depth B3F and slay <strong>Arch-Lich Malakor</strong> to claim the <em>Crown of Eternity</em>!</p>
@@ -1214,9 +1215,34 @@ export class GameEngine {
     this.renderer.addParticles(x, y, "#9ae6b4", 10);
   }
 
+  _spawnMimic(x, y) {
+    const scale = 1 + (this.depth - 1) * 0.35;
+    const hp = Math.max(18, Math.floor(32 * scale));
+    this.monsters.push({
+      name: "Gilded Mimic",
+      type: "mimic",
+      x,
+      y,
+      hp,
+      max_hp: hp,
+      attack: Math.max(3, Math.floor(8 * scale)),
+      defense: 2,
+      xp_reward: 35,
+      gold_reward: 25,
+      loot_drop: "potion_rejuvenation",
+      is_boss: false,
+      is_champion: false,
+      champion_affix: null,
+      status_effects: {},
+    });
+    return this.monsters[this.monsters.length - 1];
+  }
+
   stepPlayer(dx, dy) {
     if (this.gameOver || this.victory || this.transitioning) return;
 
+    const fromX = this.player.x;
+    const fromY = this.player.y;
     const nx = this.player.x + dx;
     const ny = this.player.y + dy;
 
@@ -1354,6 +1380,19 @@ export class GameEngine {
     // Check chest
     const chest = this.dungeon.chests.find((c) => c.x === nx && c.y === ny && !c.opened);
     if (chest) {
+      if (this.dungeon.mimics?.has(`${nx},${ny}`)) {
+        chest.opened = true;
+        this.dungeon.mimics.delete(`${nx},${ny}`);
+        this.player.x = fromX;
+        this.player.y = fromY;
+        this._spawnMimic(nx, ny);
+        sounds.playHit(false);
+        this.renderer.addFloatingText("MIMIC!", nx, ny, this.renderer.warningColor);
+        this.renderer.addParticles(nx, ny, this.renderer.trapColor, 14);
+        this.ui.logMessage("🦷 The chest was a mimic! It snaps shut and lunges from the lid!", "hit");
+        this.finishPlayerTurn();
+        return;
+      }
       chest.opened = true;
       const roll = Math.random();
       const baseGold = Math.floor(

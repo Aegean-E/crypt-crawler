@@ -19,6 +19,16 @@ export const TileType = {
   PACT: 13,
 };
 
+export function mimicChestIndex(seed, depth, chestCount) {
+  if (!chestCount) return -1;
+  let hash = (Number(seed) >>> 0) ^ Math.imul(Number(depth) || 1, 0x9e3779b1) ^ 0x6d2b79f5;
+  hash = Math.imul(hash ^ (hash >>> 15), 0x85ebca6b);
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
+  if (hash % 4 !== 0) return -1;
+  return hash % chestCount;
+}
+
 export class ClientDungeon {
   constructor(data) {
     this.width = data.width;
@@ -37,6 +47,14 @@ export class ClientDungeon {
       ...point(c),
       opened: Array.isArray(c) ? false : Boolean(c.opened),
     }));
+    this.mimics = new Set();
+    const mimicIndex = mimicChestIndex(this.seed, this.depth, this.chests.length);
+    if (mimicIndex >= 0) {
+      const mimicChest = this.chests[mimicIndex];
+      if (mimicChest && !mimicChest.opened) {
+        this.mimics.add(`${mimicChest.x},${mimicChest.y}`);
+      }
+    }
     this.traps = (data.traps || []).map((t) => ({
       ...point(t),
       triggered: Array.isArray(t) ? false : Boolean(t.triggered),

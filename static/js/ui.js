@@ -655,6 +655,7 @@ export class UIController {
       { id: "wraith", name: "Pact-Bound Wraith", icon: "👻", desc: "A debt given shape. Rises from a Pact of Avarice and hunts the debtor.", weakness: "Holy / Fire" },
       { id: "archer", name: "Skeletal Archer", icon: "🏹", desc: "Keeps its distance and looses bone arrows across open rooms.", weakness: "Melee / Smoke" },
       { id: "hound", name: "Crypt Hound", icon: "🐺", desc: "Lunges two tiles a turn and never lets the scent go.", weakness: "Fire / Stun" },
+      { id: "mimic", name: "Gilded Mimic", icon: "🦷", desc: "A chest that grew teeth. Opening it springs a fight instead of loot.", weakness: "Fire / Blunt" },
       { id: "boss_lich", name: "Arch-Lich Malakor", icon: "👑", desc: "Lord of the Sunken Crypt. Drains mortal souls to regenerate essence.", weakness: "Crown of Eternity" },
     ];
 

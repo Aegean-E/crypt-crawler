@@ -1420,6 +1420,44 @@ export class DungeonRenderer {
       ctx.beginPath();
       ctx.arc(px + ts - 4, py + 2, 3.5 + flamePulse * 0.5, 0, Math.PI * 2);
       ctx.fill();
+    } else if (monster.type === "mimic") {
+      // Gilded Mimic: a chest lid split by teeth and two bright eyes.
+      const midX = px + ts / 2;
+      const midY = py + ts / 2;
+      ctx.fillStyle = "#7b341e";
+      ctx.fillRect(px + 5, midY - 2, ts - 10, ts / 2 - 2);
+      ctx.strokeStyle = "#ecc94b";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px + 5, midY - 2, ts - 10, ts / 2 - 2);
+      ctx.beginPath();
+      ctx.moveTo(px + 5, midY + 4);
+      ctx.lineTo(px + ts - 5, midY + 4);
+      ctx.stroke();
+      ctx.fillStyle = "#4a1d12";
+      ctx.beginPath();
+      ctx.moveTo(px + 4, midY - 2);
+      ctx.lineTo(px + ts - 4, midY - 2);
+      ctx.lineTo(px + ts - 7, midY - 10);
+      ctx.lineTo(px + 7, midY - 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#f7fafc";
+      for (let i = 0; i < 4; i += 1) {
+        const tx = px + 8 + i * ((ts - 16) / 3);
+        ctx.beginPath();
+        ctx.moveTo(tx, midY - 4);
+        ctx.lineTo(tx + 3, midY - 4);
+        ctx.lineTo(tx + 1.5, midY + 1);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = "#f6ad55";
+      ctx.beginPath();
+      ctx.arc(midX - 5, midY - 12, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(midX + 5, midY - 12, 2, 0, Math.PI * 2);
+      ctx.fill();
     } else {
       ctx.fillStyle = "#718096";
       ctx.beginPath();

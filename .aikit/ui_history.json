@@ -138,5 +138,19 @@
     "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
     "final_snapshot_entries": 196,
     "surface_digest": "16d7e434a6005a26170a5638026dd9e7cdf099eff4a237f3dfbab408405df7bf"
+  },
+  {
+    "schema": 1,
+    "surface": "game-ui",
+    "baseline_commit": "3a3233fe7707bf77c29edb5adf0d9a43dcfb2c60",
+    "contract_hash": "9c09d581a8113b4ea0b7dd817a3e4369c216cae42c2aed582dc88029728687fc",
+    "started_at": 1793376021.1131823,
+    "finished_at": 1793376197.4806328,
+    "strikes": 0,
+    "reviewer": "headless mimic probe (seed 2, mimic at 40,7; player pushed back, no loot, mimic attacks) + sprite review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "49a6cb5cf9b7ede04cea6754e52f5164908284af966100f433a5d82fe61ec9f5",
+    "final_snapshot_entries": 196,
+    "surface_digest": "ca4e8ae11b8a5b0429c27a2b14821049a65d6635871c8cd3ae1e39e4d6e7c2e4"
   }
 ]

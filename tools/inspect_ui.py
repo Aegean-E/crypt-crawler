@@ -568,6 +568,41 @@ def run_inspection(
                             }
                         )
 
+                        # The mimic sprite must paint, not fall back to the generic blob.
+                        mimic = page.evaluate(
+                            """() => {
+                                const e = window.gameEngine;
+                                const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                                    .map(([dx, dy]) => [e.player.x + dx, e.player.y + dy])
+                                    .find(([x, y]) => e.dungeon.isWalkable(x, y));
+                                if (!spot) return { skip: true };
+                                const origin = e.monsters;
+                                const mimic = {
+                                    name: "Gilded Mimic", type: "mimic", x: spot[0], y: spot[1],
+                                    hp: 32, max_hp: 32, attack: 8, defense: 2,
+                                    xp_reward: 35, gold_reward: 25, loot_drop: null,
+                                    is_boss: false, is_champion: false, champion_affix: null,
+                                    status_effects: {},
+                                };
+                                e.monsters = origin.slice();
+                                e.renderer.render(e.dungeon, e.player, e.monsters, 1000);
+                                const before = window.__auditSnap();
+                                e.monsters.push(mimic);
+                                e.renderer.render(e.dungeon, e.player, e.monsters, 1000);
+                                const painted = window.__auditDiff(before, window.__auditSnap());
+                                e.monsters = origin;
+                                e.renderer.render(e.dungeon, e.player, e.monsters, 1000);
+                                return { skip: false, painted };
+                            }"""
+                        )
+                        report["audit_checks"].append(
+                            {
+                                "viewport": vp_name,
+                                "mimic_renders_distinct_sprite": mimic.get("skip") is True
+                                or mimic.get("painted", 0) > 60,
+                            }
+                        )
+
                         # New mob sprites must paint, not fall back to a generic shape.
                         new_mobs = page.evaluate(
                             """() => {

@@ -163,6 +163,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Consequences**: Players can replay a known dungeon, share it, or hand a bug report a reproducible seed. The seed is derived from the running dungeon and is not a new save field; the class modal gains one input and the Records modal gains one row. The harness starts a run through the real modal and asserts the exact seed, then opens Records and verifies the copy state; the inspector repeats both paths.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the seed path and the harness drives it), PRINCIPLE-011 (one optional field with a blank default) and PRINCIPLE-014 (browser-level coverage for replay and copy).
 
+### ADR-022: Deterministic Gilded Mimic Chests
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Every chest paid safe loot, so exploration risk came only from monsters and traps; the chest interaction had no second outcome. The run seed was already the contract for dungeon generation, so a mimic could be reproducible instead of a hidden random punishment.
+- **Decision**: Add a pure `mimicChestIndex(seed, depth, chestCount)` hash with a one-in-four floor chance; `ClientDungeon` marks the selected chest only while it is unopened. Entering that chest springs the mimic: the chest opens, the marker is removed, the player is pushed back to the tile they came from, a depth-scaled **Gilded Mimic** spawns on the chest tile, no gold or item is paid, and the turn finishes so the mimic can act. Add a mimic sprite, bestiary entry and guide line. The marker is recomputed from the saved seed/depth/chest list, so no new save field is needed; an opened chest is skipped and the spawned mimic is saved as a normal monster.
+- **Consequences**: A chest now carries a real risk/reward decision, and a known seed reproduces the same mimic floor for players and tests. The offline fallback gets the rule automatically because it builds the same client dungeon. Search reveals traps, not mimics. The harness proves seed 2 selects a mimic, springing it leaves gold and inventory unchanged, pushes the player back and spawns a live mimic; the inspector pixel-diffs the new sprite.
+- Cross-principle check: no principle section changed. Serves PRINCIPLE-003 (the shipped client owns the rule and server/offline data feed it), PRINCIPLE-011 (one legible outcome, no prompt) and PRINCIPLE-014 (harness and inspector coverage for the new branch).
+
 ## Licensing migration (agpl-final)
 
 - New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
